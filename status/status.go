@@ -56,13 +56,11 @@ func parseUrl(url string) (path_parts []string, e error) {
 	return path_parts, nil
 }
 
-func valueToStatus(revision int, value statusValue) (result *Status, e error) {
-	result = &Status{revision: revision}
-
+func valueToStatusValue(value statusValue) (result statusValue, e error) {
 	switch t := value.(type) {
 	case bool, float64, int, string, nil:
 		// Immutable values are simply assigned.
-		result.value = t
+		result = t
 	case []interface{}:
 		// Verify the array only contains supported values.
 		for _, v := range t {
@@ -77,16 +75,18 @@ func valueToStatus(revision int, value statusValue) (result *Status, e error) {
 		for i, v := range t {
 			value_array[i] = v
 		}
-		result.value = value_array
+		result = value_array
 	case map[string]interface{}:
 		// Convert each sub-value in a map.
 		value_map := statusMap{}
 		for k, v := range t {
-			if value_map[k], e = valueToStatus(revision, v); e != nil {
+			sub_value, e := valueToStatusValue(v)
+			if e != nil {
 				return nil, e
 			}
+			value_map[k] = &Status{value: sub_value}
 		}
-		result.value = value_map
+		result = value_map
 	default:
 		return nil, fmt.Errorf("Can't convert type: %T to Status value", t)
 	}
@@ -134,9 +134,24 @@ func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*St
 	result[0] = current
 
 	for i, u := range url_path {
-		current, e := current.getChildStatus(u)
-		if e != nil {
-			return nil, e
+		// If there is nothing at all, and we are creating the path..
+		if fillInMissing && current.value == nil {
+			current.value = statusMap{}
+		}
+
+		child_map, ok := current.value.(statusMap)
+		if !ok {
+			return nil, fmt.Errorf("Status: Node is not a map")
+		}
+
+		current, ok = child_map[u]
+		if !ok {
+			if fillInMissing {
+				current = &Status{value: statusMap{}}
+				child_map[u] = current
+			} else {
+				return nil, fmt.Errorf("Status: Node does not have child: %s", u)
+			}
 		}
 
 		result[i+1] = current
@@ -184,12 +199,28 @@ func (s *Status) Set(url string, value interface{}) (e error) {
 		return e
 	}
 
-	new_status, e := valueToStatus(22, value)
+	new_value, e := valueToStatusValue(value)
 	if e != nil {
 		return e
 	}
 
-	*statuses[len(statuses)-1] = *new_status
+	// Set the new value to the last node found.
+	statuses[len(statuses)-1].value = new_value
+
+	// Update the revision for all affected nodes.
+	new_revision := statuses[0].revision + 1
+	for _, v := range statuses {
+		v.revision = new_revision
+	}
 
 	return nil
+}
+
+func (s *Status) Revision(url string) (result int, e error) {
+	statuses, e := s.urlPathToStatuses(url, false)
+	if e != nil {
+		return 0, e
+	}
+
+	return statuses[len(statuses)-1].revision, nil
 }

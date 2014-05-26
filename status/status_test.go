@@ -56,42 +56,154 @@ func (suite *MySuite) TestUrlParsing(c *check.C) {
 }
 
 func (suite *MySuite) TestUrlPathToStatuses(c *check.C) {
-	status := Status{}
+	status := Status{value: statusMap{}}
 
-	// Verify the empty case.
+	// Verify not creating children.
 	statuses, e := status.urlPathToStatuses("status://", false)
 	c.Check(statuses, check.DeepEquals, []*Status{&status})
 	c.Check(e, check.IsNil)
 
+	// Verify creating children.
 	statuses, e = status.urlPathToStatuses("status://", true)
 	c.Check(statuses, check.DeepEquals, []*Status{&status})
 	c.Check(e, check.IsNil)
 
+	statuses, e = status.urlPathToStatuses("status://foo/bar", true)
+	c.Check(statuses[0], check.Equals, &status)
+	c.Check(statuses[1], check.Equals, statuses[0].value.(statusMap)["foo"])
+	// c.Check(statuses[2], check.Equals, statuses[1].value.(statusMap)["bar"])
+	c.Check(e, check.IsNil)
+
+}
+
+func (s *MySuite) TestGetSet(c *check.C) {
+	status := Status{}
+
+	// Get from empty status.
+	value, e := status.Get("status://")
+	c.Check(value, check.IsNil)
+	c.Check(e, check.IsNil)
+
+	value, e = status.Get("status://foo/bar")
+	c.Check(value, check.IsNil)
+	c.Check(e, check.NotNil)
+	r, e := status.Revision("status://")
+	c.Check(r, check.Equals, 0)
+
+	// Set value to empty status
+	e = status.Set("status://", 5)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 1)
+
+	value, e = status.Get("status://")
+	c.Check(value, check.Equals, 5)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 1)
+
+	// Clear all contents.
+	e = status.Set("status://", nil)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 2)
+
+	value, e = status.Get("status://")
+	c.Check(value, check.Equals, nil)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 2)
+
+	// Create a sub-path.
+	e = status.Set("status://foo", 5)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 3)
+
+	r, e = status.Revision("status://foo")
+	c.Check(r, check.Equals, 3)
+
+	value, e = status.Get("status://foo")
+	c.Check(value, check.Equals, 5)
+	c.Check(e, check.IsNil)
+
+	// Clear all contents.
+	e = status.Set("status://", nil)
+	c.Check(e, check.IsNil)
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 4)
+
+	value, e = status.Get("status://")
+	c.Check(value, check.Equals, nil)
+	c.Check(e, check.IsNil)
+
+	// Create a complex tree.
+	e = status.Set("status://sub1/sub2/int", 5)
+	c.Check(e, check.IsNil)
+	e = status.Set("status://sub1/sub2/float", 2.5)
+	c.Check(e, check.IsNil)
+	e = status.Set("status://sub1/string", "string value")
+	c.Check(e, check.IsNil)
+	e = status.Set("status://sub1/sub2/array", []interface{}{1, "foo", 2.5})
+	c.Check(e, check.IsNil)
+
+	r, e = status.Revision("status://")
+	c.Check(r, check.Equals, 8)
+
+	// Verify it, one value at a time.
+	value, e = status.Get("status://sub1/sub2/int")
+	c.Check(e, check.IsNil)
+	c.Check(value, check.Equals, 5)
+	value, e = status.Get("status://sub1/sub2/float")
+	c.Check(e, check.IsNil)
+	c.Check(value, check.Equals, 2.5)
+	value, e = status.Get("status://sub1/string")
+	c.Check(e, check.IsNil)
+	c.Check(value, check.Equals, "string value")
+	value, e = status.Get("status://sub1/sub2/array")
+	c.Check(e, check.IsNil)
+	c.Check(value, check.DeepEquals, []interface{}{1, "foo", 2.5})
+
+	value, e = status.Get("status://float")
+	c.Check(e, check.NotNil)
+
+	// Verify the whole tree.
+	value, e = status.Get("status://")
+	c.Check(e, check.IsNil)
+	c.Check(value,
+		check.DeepEquals,
+		map[string]interface{}{
+			"sub1": map[string]interface{}{
+				"sub2": map[string]interface{}{
+					"int":   5,
+					"float": 2.5,
+					"array": []interface{}{1, "foo", 2.5},
+				},
+				"string": "string value"}})
 }
 
 func (s *MySuite) TestIdentity(c *check.C) {
 
-	verifyIdentity := func(value interface{}, intermediate *Status) {
-		var s *Status
+	verifyIdentity := func(value interface{}) {
 		var e error
-
-		s, e = valueToStatus(22, value)
-		c.Check(e, check.IsNil)
-		c.Check(s.revision, check.Equals, 22)
-
-		c.Check(s, check.DeepEquals, intermediate)
-
+		var s statusValue
 		var after interface{}
-		after, e = s.toValue()
+
+		s, e = valueToStatusValue(value)
+		c.Check(e, check.IsNil)
+
+		wrapper := Status{value: s}
+
+		after, e = wrapper.toValue()
 		c.Check(e, check.IsNil)
 
 		c.Check(after, check.DeepEquals, value)
 	}
 
-	verifyIdentity(nil, &Status{22, nil})
-	verifyIdentity("foo", &Status{22, "foo"})
-	verifyIdentity(true, &Status{22, true})
-	verifyIdentity(false, &Status{22, false})
+	verifyIdentity(nil)
+	verifyIdentity("foo")
+	verifyIdentity(true)
+	verifyIdentity(false)
 
 	verifyIdentity(
 		map[string]interface{}{
@@ -100,39 +212,20 @@ func (s *MySuite) TestIdentity(c *check.C) {
 			"CST": -6,
 			"MST": -7,
 			"PST": -8,
-		},
-		&Status{22, statusMap{
-			"UTC": &Status{22, 0},
-			"EST": &Status{22, -5},
-			"CST": &Status{22, -6},
-			"MST": &Status{22, -7},
-			"PST": &Status{22, -8}}})
+		})
 
-	verifyIdentity(
-		[]interface{}{1, 2, 3, "foo"},
-		&Status{22, []statusValue{1, 2, 3, "foo"}},
-	)
+	verifyIdentity([]interface{}{1, 2, 3, "foo"})
 
-	verifyIdentity(
-		map[string]interface{}{},
-		&Status{22, statusMap{}})
+	verifyIdentity(map[string]interface{}{})
 
 	verifyIdentity(
 		map[string]interface{}{
-			"sub": map[string]interface{}{"subsub1": 1, "subsub2": 2}},
-		&Status{22, statusMap{
-			"sub": &Status{22, statusMap{
-				"subsub1": &Status{22, 1},
-				"subsub2": &Status{22, 2}}}}})
+			"sub": map[string]interface{}{"subsub1": 1, "subsub2": 2}})
 
 	verifyIdentity(
 		map[string]interface{}{
 			"sub": map[string]interface{}{"subsub": map[string]interface{}{"foo": "bar"}},
-		},
-		&Status{22, statusMap{
-			"sub": &Status{22, statusMap{
-				"subsub": &Status{22, statusMap{
-					"foo": &Status{22, "bar"}}}}}}})
+		})
 
 	verifyIdentity(
 		map[string]interface{}{
@@ -142,16 +235,5 @@ func (s *MySuite) TestIdentity(c *check.C) {
 			"array":  []interface{}{1, 2, 3, "foo"},
 			"nil":    nil,
 			"sub":    map[string]interface{}{"subsub1": 1, "subsub2": map[string]interface{}{}},
-		},
-		&Status{22, statusMap{
-			"int":    &Status{22, 1},
-			"string": &Status{22, "foobar"},
-			"float":  &Status{22, 1.0},
-			"array":  &Status{22, []statusValue{1, 2, 3, "foo"}},
-			"nil":    &Status{22, nil},
-			"sub": &Status{22, statusMap{
-				"subsub1": &Status{22, 1},
-				"subsub2": &Status{22, statusMap{}}}},
-		}})
-
+		})
 }
