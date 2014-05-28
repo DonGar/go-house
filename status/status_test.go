@@ -146,9 +146,18 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	c.Check(e, check.IsNil)
 	e = status.Set("status://sub1/sub2/array", []interface{}{1, "foo", 2.5})
 	c.Check(e, check.IsNil)
+	e = status.Set("status://sub1/sub2/nested", map[string]interface{}{
+		"subnested": map[string]interface{}{}})
+	c.Check(e, check.IsNil)
 
 	r, e = status.Revision("status://")
-	c.Check(r, check.Equals, 8)
+	c.Check(r, check.Equals, 9)
+	r, e = status.Revision("status://sub1/sub2/nested")
+	c.Check(r, check.Equals, 9)
+	r, e = status.Revision("status://sub1/sub2/nested/subnested")
+	c.Check(r, check.Equals, 9)
+	r, e = status.Revision("status://sub1/string")
+	c.Check(r, check.Equals, 7)
 
 	// Verify it, one value at a time.
 	value, e = status.Get("status://sub1/sub2/int")
@@ -178,6 +187,8 @@ func (s *MySuite) TestGetSet(c *check.C) {
 					"int":   5,
 					"float": 2.5,
 					"array": []interface{}{1, "foo", 2.5},
+					"nested": map[string]interface{}{
+						"subnested": map[string]interface{}{}},
 				},
 				"string": "string value"}})
 }
@@ -189,12 +200,10 @@ func (s *MySuite) TestIdentity(c *check.C) {
 		var s statusValue
 		var after interface{}
 
-		s, e = valueToStatusValue(value)
+		s, e = valueToStatusValue(value, 22)
 		c.Check(e, check.IsNil)
 
-		wrapper := Status{value: s}
-
-		after, e = wrapper.toValue()
+		after, e = statusValueToValue(s)
 		c.Check(e, check.IsNil)
 
 		c.Check(after, check.DeepEquals, value)
