@@ -62,6 +62,7 @@ func (s *Status) Set(url string, value interface{}) (e error) {
 	return nil
 }
 
+// Get the current revision of the node pointed to by the url.
 func (s *Status) Revision(url string) (result int, e error) {
 	statuses, e := s.urlPathToStatuses(url, false)
 	if e != nil {
@@ -71,13 +72,78 @@ func (s *Status) Revision(url string) (result int, e error) {
 	return statuses[len(statuses)-1].revision, nil
 }
 
+// Find all URLs that exist, which match a wildcard URL.
+//
+// A wildcard URL contains zero or more elements of '*' which match all
+// keys on the relevant node.
+func (s *Status) GetMatchingUrls(url string) (urls []string, e error) {
+
+	if url == "status://" {
+		return []string{url}, nil
+	}
+
+	// Create a slice for fully expanded URLs.
+	matched_urls := []string{}
+
+	// Create a slice of URLs that haven't been expanded yet.
+	unfinished_urls := []string{url}
+
+UnfinishedUrls:
+	for len(unfinished_urls) > 0 {
+		// Pop off the last element for processing.
+		testing_url := unfinished_urls[len(unfinished_urls)-1]
+		unfinished_urls = unfinished_urls[:len(unfinished_urls)-1]
+
+		// Parse the Url.
+		url_path, e := parseUrl(testing_url)
+		if e != nil {
+			return nil, e
+		}
+
+		// Walk down the tree looking for matches.
+		current := s
+		for i, v := range url_path {
+
+			current_map, ok := current.value.(statusMap)
+			if !ok {
+				continue UnfinishedUrls
+			}
+
+			if v == "*" {
+				expanded_path_parts := make([]string, len(url_path))
+				copy(expanded_path_parts, url_path)
+
+				// Expand the star for each key in the current node.
+				for k := range current_map {
+					expanded_path_parts[i] = k
+					unfinished_urls = append(unfinished_urls, joinUrl(expanded_path_parts))
+				}
+
+				continue UnfinishedUrls
+			}
+
+			// Step to the next child, if it exists.
+			if current, ok = current_map[v]; !ok {
+				continue UnfinishedUrls
+			}
+
+			// If we found the final element in the path, we fully expanded the URL
+			// and found a match.
+			if i == len(url_path)-1 {
+				matched_urls = append(matched_urls, joinUrl(url_path))
+			}
+		}
+	}
+
+	return matched_urls, nil
+}
+
+const url_base = "status://"
+
 // Parse a status url, and return it as a slice of strings.
 // One for each step in the URL. Error if it's not a legal
 // status URL.
 func parseUrl(url string) (path_parts []string, e error) {
-
-	const url_base = "status://"
-
 	// Handle this special case quickly.
 	if url == url_base {
 		return []string{}, nil
@@ -102,6 +168,11 @@ func parseUrl(url string) (path_parts []string, e error) {
 	}
 
 	return path_parts, nil
+}
+
+// The inverse of parseUrl.
+func joinUrl(path_parts []string) (url string) {
+	return url_base + strings.Join(path_parts, "/")
 }
 
 // Given a status URL, return a slice of *Status to each of the nodes referenced

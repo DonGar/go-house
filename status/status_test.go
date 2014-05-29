@@ -246,3 +246,82 @@ func (s *MySuite) TestIdentity(c *check.C) {
 			"sub":    map[string]interface{}{"subsub1": 1, "subsub2": map[string]interface{}{}},
 		})
 }
+
+func (s *MySuite) TestGetMatchingUrls(c *check.C) {
+	status := Status{}
+
+	e := status.Set(
+		"status://",
+		map[string]interface{}{
+			"sub1": map[string]interface{}{
+				"sub2": map[string]interface{}{
+					"int":   5,
+					"float": 2.5,
+					"array": []interface{}{1, "foo", 2.5},
+					"nested": map[string]interface{}{
+						"subnested": map[string]interface{}{}},
+				},
+				"string": "string value"}})
+	c.Check(e, check.IsNil)
+
+	var found []string
+
+	found, e = status.GetMatchingUrls("")
+	c.Check(e, check.NotNil)
+
+	found, e = status.GetMatchingUrls("status://")
+	c.Check(e, check.IsNil)
+	c.Check(found, check.DeepEquals, []string{"status://"})
+
+	found, e = status.GetMatchingUrls("status://bogus")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{})
+
+	found, e = status.GetMatchingUrls("status://bogus/*")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{})
+
+	found, e = status.GetMatchingUrls("status://sub1")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{"status://sub1"})
+
+	found, e = status.GetMatchingUrls("status://sub1/string")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{"status://sub1/string"})
+
+	found, e = status.GetMatchingUrls("status://sub1/*/int")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{"status://sub1/sub2/int"})
+
+	found, e = status.GetMatchingUrls("status://sub1/*/*")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{
+			"status://sub1/sub2/nested", "status://sub1/sub2/array",
+			"status://sub1/sub2/float", "status://sub1/sub2/int"})
+
+	found, e = status.GetMatchingUrls("status://sub1/sub2/array/*")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{})
+
+}
