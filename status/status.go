@@ -27,25 +27,50 @@ type statusValue interface{}
 //   return json.Marshal(s.Get(url))
 
 // Get a value from the status as described by the URL.
-func (s *Status) Get(url string) (interface{}, error) {
+func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	statuses, e := s.urlPathToStatuses(url, false)
 	if e != nil {
-		return nil, e
+		return nil, 0, e
 	}
 
-	return statusValueToValue(statuses[len(statuses)-1].value)
+	node := statuses[len(statuses)-1]
+
+	revision = node.revision
+	value, e = statusValueToValue(node.value)
+	if e != nil {
+		return nil, 0, e
+	}
+
+	return
 }
 
 // Set a value from the status as described by the URL. Revision numbers are
 // updated as needed.
-func (s *Status) Set(url string, value interface{}) (e error) {
+func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	statuses, e := s.urlPathToStatuses(url, true)
 	if e != nil {
 		return e
 	}
 
+	// Find out if the passed in revision is an exact match for the selected node,
+	// or any of it's parents.
+	var revision_valid bool = false
+	for _, v := range statuses {
+		if v.revision == revision {
+			revision_valid = true
+			break
+		}
+	}
+	if !revision_valid {
+		return fmt.Errorf(
+			"Status: Invalid Revision: %d - %s. Expected %d",
+			revision, url, s.revision)
+	}
+
+	// Look up the new revision to update.
 	new_revision := statuses[0].revision + 1
 
+	// Covert the new value into internal format.
 	new_value, e := valueToStatusValue(value, new_revision)
 	if e != nil {
 		return e
@@ -62,24 +87,15 @@ func (s *Status) Set(url string, value interface{}) (e error) {
 	return nil
 }
 
-// Get the current revision of the node pointed to by the url.
-func (s *Status) Revision(url string) (result int, e error) {
-	statuses, e := s.urlPathToStatuses(url, false)
-	if e != nil {
-		return 0, e
-	}
-
-	return statuses[len(statuses)-1].revision, nil
-}
-
 // Find all URLs that exist, which match a wildcard URL.
 //
 // A wildcard URL contains zero or more elements of '*' which match all
 // keys on the relevant node.
-func (s *Status) GetMatchingUrls(url string) (urls []string, e error) {
+func (s *Status) GetMatchingUrls(url string) (urls []string, revision int, e error) {
 
+	// We special case the root directory.
 	if url == "status://" {
-		return []string{url}, nil
+		return []string{url}, s.revision, nil
 	}
 
 	// Create a slice for fully expanded URLs.
@@ -97,7 +113,7 @@ UnfinishedUrls:
 		// Parse the Url.
 		url_path, e := parseUrl(testing_url)
 		if e != nil {
-			return nil, e
+			return nil, 0, e
 		}
 
 		// Walk down the tree looking for matches.
@@ -135,7 +151,7 @@ UnfinishedUrls:
 		}
 	}
 
-	return matched_urls, nil
+	return matched_urls, s.revision, nil
 }
 
 const url_base = "status://"
@@ -150,7 +166,7 @@ func parseUrl(url string) (path_parts []string, e error) {
 	}
 
 	if !strings.HasPrefix(url, url_base) {
-		return nil, fmt.Errorf("Invalid status url: %s", url)
+		return nil, fmt.Errorf("Status: Invalid status url: %s", url)
 	}
 
 	// remove status:// from beginning, and / from end.
@@ -163,7 +179,7 @@ func parseUrl(url string) (path_parts []string, e error) {
 	// URL contained a double slash like "foo//bar", which we consider invalid.
 	for _, part := range path_parts {
 		if part == "" {
-			return nil, fmt.Errorf("Invalid status url: %s", url)
+			return nil, fmt.Errorf("Status: Invalid status url: %s", url)
 		}
 	}
 
@@ -203,7 +219,7 @@ func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*St
 		current, ok = child_map[u]
 		if !ok {
 			if fillInMissing {
-				current = &Status{value: statusMap{}}
+				current = &Status{value: statusMap{}, revision: s.revision}
 				child_map[u] = current
 			} else {
 				return nil, fmt.Errorf("Status: Node does not have child: %s", u)
@@ -230,7 +246,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 			switch element := v.(type) {
 			case bool, float64, int, string, nil:
 			default:
-				return nil, fmt.Errorf("Illegal type: %T in Status array.", element)
+				return nil, fmt.Errorf("Status: Illegal type: %T in Status array.", element)
 			}
 		}
 		// Duplicate the array.
@@ -251,7 +267,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 		}
 		result = value_map
 	default:
-		return nil, fmt.Errorf("Can't convert type: %T to Status value", t)
+		return nil, fmt.Errorf("Status: Can't convert type: %T to Status value", t)
 	}
 
 	return result, nil
@@ -280,7 +296,7 @@ func statusValueToValue(value statusValue) (result interface{}, e error) {
 		}
 		result = value_map
 	default:
-		return nil, fmt.Errorf("Can't convert type: %T to Status value", t)
+		return nil, fmt.Errorf("Status: Can't convert type: %T to Status value", t)
 	}
 
 	return result, nil

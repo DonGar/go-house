@@ -80,106 +80,100 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	status := Status{}
 
 	// Get from empty status.
-	value, e := status.Get("status://")
-	c.Check(value, check.IsNil)
+	v, r, e := status.Get("status://")
+	c.Check(v, check.IsNil)
+	c.Check(r, check.Equals, 0)
 	c.Check(e, check.IsNil)
 
-	value, e = status.Get("status://foo/bar")
-	c.Check(value, check.IsNil)
+	v, r, e = status.Get("status://foo/bar")
+	c.Check(v, check.IsNil)
 	c.Check(e, check.NotNil)
-	r, e := status.Revision("status://")
 	c.Check(r, check.Equals, 0)
 
 	// Set value to empty status
-	e = status.Set("status://", 5)
+	e = status.Set("status://", 5, 0)
 	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
+	v, r, e = status.Get("status://")
+	c.Check(v, check.Equals, 5)
 	c.Check(r, check.Equals, 1)
-
-	value, e = status.Get("status://")
-	c.Check(value, check.Equals, 5)
 	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
-	c.Check(r, check.Equals, 1)
 
 	// Clear all contents.
-	e = status.Set("status://", nil)
+	e = status.Set("status://", nil, 1)
 	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
-	c.Check(r, check.Equals, 2)
 
-	value, e = status.Get("status://")
-	c.Check(value, check.Equals, nil)
-	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
+	v, r, e = status.Get("status://")
+	c.Check(v, check.Equals, nil)
 	c.Check(r, check.Equals, 2)
+	c.Check(e, check.IsNil)
 
 	// Create a sub-path.
-	e = status.Set("status://foo", 5)
+	e = status.Set("status://foo", 5, 2)
 	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
-	c.Check(r, check.Equals, 3)
 
-	r, e = status.Revision("status://foo")
+	v, r, e = status.Get("status://")
 	c.Check(r, check.Equals, 3)
+	c.Check(e, check.IsNil)
 
-	value, e = status.Get("status://foo")
-	c.Check(value, check.Equals, 5)
+	v, r, e = status.Get("status://foo")
+	c.Check(v, check.Equals, 5)
+	c.Check(r, check.Equals, 3)
 	c.Check(e, check.IsNil)
 
 	// Clear all contents.
-	e = status.Set("status://", nil)
+	e = status.Set("status://", nil, 3)
 	c.Check(e, check.IsNil)
-	r, e = status.Revision("status://")
-	c.Check(r, check.Equals, 4)
 
-	value, e = status.Get("status://")
-	c.Check(value, check.Equals, nil)
+	v, r, e = status.Get("status://")
+	c.Check(v, check.Equals, nil)
+	c.Check(r, check.Equals, 4)
 	c.Check(e, check.IsNil)
 
 	// Create a complex tree.
-	e = status.Set("status://sub1/sub2/int", 5)
+	e = status.Set("status://sub1/sub2/int", 5, 4)
 	c.Check(e, check.IsNil)
-	e = status.Set("status://sub1/sub2/float", 2.5)
+	e = status.Set("status://sub1/sub2/float", 2.5, 5)
 	c.Check(e, check.IsNil)
-	e = status.Set("status://sub1/string", "string value")
+	e = status.Set("status://sub1/string", "string value", 6)
 	c.Check(e, check.IsNil)
-	e = status.Set("status://sub1/sub2/array", []interface{}{1, "foo", 2.5})
+	e = status.Set("status://sub1/sub2/array", []interface{}{1, "foo", 2.5}, 6)
 	c.Check(e, check.IsNil)
-	e = status.Set("status://sub1/sub2/nested", map[string]interface{}{
-		"subnested": map[string]interface{}{}})
+	e = status.Set("status://sub1/sub2/nested",
+		map[string]interface{}{"subnested": map[string]interface{}{}},
+		8)
 	c.Check(e, check.IsNil)
 
-	r, e = status.Revision("status://")
+	v, r, e = status.Get("status://")
 	c.Check(r, check.Equals, 9)
-	r, e = status.Revision("status://sub1/sub2/nested")
+	v, r, e = status.Get("status://sub1/sub2/nested")
 	c.Check(r, check.Equals, 9)
-	r, e = status.Revision("status://sub1/sub2/nested/subnested")
+	v, r, e = status.Get("status://sub1/sub2/nested/subnested")
 	c.Check(r, check.Equals, 9)
-	r, e = status.Revision("status://sub1/string")
+	v, r, e = status.Get("status://sub1/string")
+	c.Check(v, check.Equals, "string value")
 	c.Check(r, check.Equals, 7)
 
-	// Verify it, one value at a time.
-	value, e = status.Get("status://sub1/sub2/int")
-	c.Check(e, check.IsNil)
-	c.Check(value, check.Equals, 5)
-	value, e = status.Get("status://sub1/sub2/float")
-	c.Check(e, check.IsNil)
-	c.Check(value, check.Equals, 2.5)
-	value, e = status.Get("status://sub1/string")
-	c.Check(e, check.IsNil)
-	c.Check(value, check.Equals, "string value")
-	value, e = status.Get("status://sub1/sub2/array")
-	c.Check(e, check.IsNil)
-	c.Check(value, check.DeepEquals, []interface{}{1, "foo", 2.5})
+	v, r, e = status.Get("status://sub1/sub2/int")
+	c.Check(v, check.Equals, 5)
+	c.Check(r, check.Equals, 5)
 
-	value, e = status.Get("status://float")
+	v, r, e = status.Get("status://sub1/sub2/float")
+	c.Check(v, check.Equals, 2.5)
+	c.Check(r, check.Equals, 6)
+
+	v, r, e = status.Get("status://sub1/sub2/array")
+	c.Check(v, check.DeepEquals, []interface{}{1, "foo", 2.5})
+	c.Check(r, check.Equals, 8)
+
+	v, r, e = status.Get("status://float")
 	c.Check(e, check.NotNil)
 
 	// Verify the whole tree.
-	value, e = status.Get("status://")
+	v, r, e = status.Get("status://")
 	c.Check(e, check.IsNil)
-	c.Check(value,
+	c.Check(r, check.Equals, 9)
+	c.Check(
+		v,
 		check.DeepEquals,
 		map[string]interface{}{
 			"sub1": map[string]interface{}{
@@ -261,54 +255,61 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 					"nested": map[string]interface{}{
 						"subnested": map[string]interface{}{}},
 				},
-				"string": "string value"}})
+				"string": "string value"}},
+		0)
 	c.Check(e, check.IsNil)
 
 	var found []string
+	var r int
 
-	found, e = status.GetMatchingUrls("")
+	_, r, e = status.Get("status://")
+	c.Check(r, check.Equals, 1)
+
+	found, r, e = status.GetMatchingUrls("")
 	c.Check(e, check.NotNil)
+	c.Check(r, check.Equals, 0)
 
-	found, e = status.GetMatchingUrls("status://")
-	c.Check(e, check.IsNil)
+	found, r, e = status.GetMatchingUrls("status://")
 	c.Check(found, check.DeepEquals, []string{"status://"})
+	c.Check(r, check.Equals, 1)
+	c.Check(e, check.IsNil)
 
-	found, e = status.GetMatchingUrls("status://bogus")
+	found, r, e = status.GetMatchingUrls("status://bogus")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{})
 
-	found, e = status.GetMatchingUrls("status://bogus/*")
+	found, r, e = status.GetMatchingUrls("status://bogus/*")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{})
 
-	found, e = status.GetMatchingUrls("status://sub1")
+	found, r, e = status.GetMatchingUrls("status://sub1")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1"})
 
-	found, e = status.GetMatchingUrls("status://sub1/string")
+	found, r, e = status.GetMatchingUrls("status://sub1/string")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1/string"})
 
-	found, e = status.GetMatchingUrls("status://sub1/*/int")
+	found, r, e = status.GetMatchingUrls("status://sub1/*/int")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1/sub2/int"})
 
-	found, e = status.GetMatchingUrls("status://sub1/*/*")
+	found, r, e = status.GetMatchingUrls("status://sub1/*/*")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
@@ -317,7 +318,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 			"status://sub1/sub2/nested", "status://sub1/sub2/array",
 			"status://sub1/sub2/float", "status://sub1/sub2/int"})
 
-	found, e = status.GetMatchingUrls("status://sub1/sub2/array/*")
+	found, r, e = status.GetMatchingUrls("status://sub1/sub2/array/*")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
