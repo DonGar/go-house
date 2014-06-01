@@ -143,8 +143,12 @@ func (s *MySuite) TestGetSet(c *check.C) {
 		8)
 	c.Check(e, check.IsNil)
 
+	// Set with a UNCHECKED_REVISION revision (doesn't match, still works)
+	e = status.Set("status://unchecked_rev", "value", UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+
 	v, r, e = status.Get("status://")
-	c.Check(r, check.Equals, 9)
+	c.Check(r, check.Equals, 10)
 	v, r, e = status.Get("status://sub1/sub2/nested")
 	c.Check(r, check.Equals, 9)
 	v, r, e = status.Get("status://sub1/sub2/nested/subnested")
@@ -171,7 +175,7 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	// Verify the whole tree.
 	v, r, e = status.Get("status://")
 	c.Check(e, check.IsNil)
-	c.Check(r, check.Equals, 9)
+	c.Check(r, check.Equals, 10)
 	c.Check(
 		v,
 		check.DeepEquals,
@@ -184,7 +188,8 @@ func (s *MySuite) TestGetSet(c *check.C) {
 					"nested": map[string]interface{}{
 						"subnested": map[string]interface{}{}},
 				},
-				"string": "string value"}})
+				"string": "string value"},
+			"unchecked_rev": "value"})
 }
 
 func (s *MySuite) TestIdentity(c *check.C) {
@@ -239,6 +244,35 @@ func (s *MySuite) TestIdentity(c *check.C) {
 			"nil":    nil,
 			"sub":    map[string]interface{}{"subsub1": 1, "subsub2": map[string]interface{}{}},
 		})
+}
+
+func (s *MySuite) TestJsonIdentity(c *check.C) {
+	test_status := Status{}
+
+	verifySetGet := func(url, string_json string) {
+		raw_json := []byte(string_json)
+
+		var e error
+		var after []byte
+
+		e = test_status.SetJson(url, raw_json, -1)
+		c.Check(e, check.IsNil)
+
+		after, _, e = test_status.GetJson(url)
+		c.Check(e, check.IsNil)
+		c.Check(string(after), check.DeepEquals, string(raw_json))
+	}
+
+	verifySetGet("status://foo", `null`)
+	verifySetGet("status://foo", `"foo"`)
+	verifySetGet("status://foo", `true`)
+	verifySetGet("status://foo", `false`)
+	verifySetGet("status://foo", `{"foo":"bar","int":3}`)
+	verifySetGet("status://foo", `[1,2,3,"foo"]`)
+	verifySetGet("status://foo", `{}`)
+	verifySetGet("status://foo", `{"sub":{"subsub1":1,"subsub2":2}}`)
+	verifySetGet("status://foo", `{"sub":{"subsub":{"foo":"bar"}}}`)
+	verifySetGet("status://foo", `{"array":[1,2,3,"foo"],"float":1.1,"int":1,"nil":null,"string":"foobar","sub":{"subsub1":1,"subsub2":{}}}`)
 }
 
 func (s *MySuite) TestGetMatchingUrls(c *check.C) {

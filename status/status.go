@@ -1,8 +1,7 @@
 package status
 
 import (
-	// "errors"
-	// "encoding/json"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -17,14 +16,13 @@ type Status struct {
 type statusMap map[string]*Status
 
 // Internal type used for the value stored in a Status. May be any of:
-//   bool, float64, int, string, nil, for basic values.
+//   bool, float64, int, int64, string, nil, for basic values.
 //   []statusValue, for JSON arrays
 //   statusMap, for JSON objects
 type statusValue interface{}
 
-// Json methods.
-//   return json.Marshal(s.value)
-//   return json.Marshal(s.Get(url))
+// When calling Set, use this revision to avoid revision checking.
+const UNCHECKED_REVISION = -1
 
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
@@ -44,6 +42,21 @@ func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	return
 }
 
+// This is just like Get, except it returns the value in Json format.
+func (s *Status) GetJson(url string) (value_json []byte, revision int, e error) {
+	value, revision, e := s.Get(url)
+	if e != nil {
+		return nil, 0, e
+	}
+
+	value_json, e = json.Marshal(value)
+	if e != nil {
+		return nil, 0, e
+	}
+
+	return value_json, revision, e
+}
+
 // Set a value from the status as described by the URL. Revision numbers are
 // updated as needed.
 func (s *Status) Set(url string, value interface{}, revision int) (e error) {
@@ -52,19 +65,22 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 		return e
 	}
 
-	// Find out if the passed in revision is an exact match for the selected node,
-	// or any of it's parents.
-	var revision_valid bool = false
-	for _, v := range statuses {
-		if v.revision == revision {
-			revision_valid = true
-			break
+	// UNCHECKED_REVISION is always a valid revision. It means don't test.
+	if revision != UNCHECKED_REVISION {
+		// Find out if the passed in revision is an exact match for the selected node,
+		// or any of it's parents.
+		var revision_valid bool = false
+		for _, v := range statuses {
+			if v.revision == revision {
+				revision_valid = true
+				break
+			}
 		}
-	}
-	if !revision_valid {
-		return fmt.Errorf(
-			"Status: Invalid Revision: %d - %s. Expected %d",
-			revision, url, s.revision)
+		if !revision_valid {
+			return fmt.Errorf(
+				"Status: Invalid Revision: %d - %s. Expected %d",
+				revision, url, s.revision)
+		}
 	}
 
 	// Look up the new revision to update.
@@ -85,6 +101,17 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	}
 
 	return nil
+}
+
+// This is just like Set, except it accepts the value to set in Json format.
+func (s *Status) SetJson(url string, value_json []byte, revision int) (e error) {
+	var value interface{}
+	e = json.Unmarshal(value_json, &value)
+	if e != nil {
+		return e
+	}
+
+	return s.Set(url, value, revision)
 }
 
 // Find all URLs that exist, which match a wildcard URL.
@@ -237,14 +264,14 @@ func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*St
 // converted to Status values.
 func valueToStatusValue(value interface{}, revision int) (result statusValue, e error) {
 	switch t := value.(type) {
-	case bool, float64, int, string, nil:
+	case bool, float64, int, int64, string, nil:
 		// Immutable values are simply assigned.
 		result = t
 	case []interface{}:
 		// Verify the array only contains supported values.
 		for _, v := range t {
 			switch element := v.(type) {
-			case bool, float64, int, string, nil:
+			case bool, float64, int, int64, string, nil:
 			default:
 				return nil, fmt.Errorf("Status: Illegal type: %T in Status array.", element)
 			}
@@ -276,7 +303,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 // Convert an internal value to the external (JSON structure) equivalent.
 func statusValueToValue(value statusValue) (result interface{}, e error) {
 	switch t := value.(type) {
-	case bool, float64, int, string, nil:
+	case bool, float64, int, int64, string, nil:
 		// Immutable values are simply assigned.
 		result = t
 	case []statusValue:
