@@ -17,25 +17,25 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 func (suite *MySuite) TestLoadServerConfig(c *check.C) {
-	temp_dir := c.MkDir()
+	tempDir := c.MkDir()
 
 	var e error
 
 	// Write out a test server config file.
-	server_file := filepath.Join(temp_dir, "server.json")
-	e = ioutil.WriteFile(server_file, []byte(`{"foo": "bar"}`), os.ModePerm)
+	serverFile := filepath.Join(tempDir, "server.json")
+	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
 	c.Assert(e, check.IsNil)
 
-	options := Options{config_dir: temp_dir}
-	test_status := status.Status{}
+	options := Options{ConfigDir: tempDir}
+	testStatus := status.Status{}
 
-	e = loadServerConfig(options, &test_status)
+	e = loadServerConfig(options, &testStatus)
 	c.Assert(e, check.IsNil)
 
-	server_value_json, _, e := test_status.GetJson("status://server")
+	serverValueJson, _, e := testStatus.GetJson("status://server")
 
 	// And the value we pulled out of the Status matches the file contents.
-	c.Assert(string(server_value_json), check.Equals, `{"foo":"bar"}`)
+	c.Assert(string(serverValueJson), check.Equals, `{"foo":"bar"}`)
 }
 
 func (suite *MySuite) TestFindOptions(c *check.C) {
@@ -45,7 +45,7 @@ func (suite *MySuite) TestFindOptions(c *check.C) {
 	options, e = findOptions()
 	c.Check(e, check.IsNil)
 	c.Check(
-		options.config_dir,
+		options.ConfigDir,
 		check.Matches,
 		".*github.com/DonGar/go-house/_test")
 

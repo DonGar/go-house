@@ -247,20 +247,20 @@ func (s *MySuite) TestIdentity(c *check.C) {
 }
 
 func (s *MySuite) TestJsonIdentity(c *check.C) {
-	test_status := Status{}
+	testStatus := Status{}
 
-	verifySetGet := func(url, string_json string) {
-		raw_json := []byte(string_json)
+	verifySetGet := func(url, stringJson string) {
+		rawJson := []byte(stringJson)
 
 		var e error
 		var after []byte
 
-		e = test_status.SetJson(url, raw_json, -1)
+		e = testStatus.SetJson(url, rawJson, -1)
 		c.Check(e, check.IsNil)
 
-		after, _, e = test_status.GetJson(url)
+		after, _, e = testStatus.GetJson(url)
 		c.Check(e, check.IsNil)
-		c.Check(string(after), check.DeepEquals, string(raw_json))
+		c.Check(string(after), check.DeepEquals, string(rawJson))
 	}
 
 	verifySetGet("status://foo", `null`)

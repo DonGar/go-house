@@ -13,14 +13,14 @@ import (
 )
 
 func loadServerConfig(options Options, s *status.Status) (e error) {
-	config_file := filepath.Join(options.config_dir, "server.json")
+	configFile := filepath.Join(options.ConfigDir, "server.json")
 
-	raw_json, e := ioutil.ReadFile(config_file)
+	rawJson, e := ioutil.ReadFile(configFile)
 	if e != nil {
 		return e
 	}
 
-	e = s.SetJson("status://server", raw_json, status.UNCHECKED_REVISION)
+	e = s.SetJson("status://server", rawJson, status.UNCHECKED_REVISION)
 	if e != nil {
 		return e
 	}
@@ -30,17 +30,19 @@ func loadServerConfig(options Options, s *status.Status) (e error) {
 }
 
 type Options struct {
-	config_dir string
+	ConfigDir string
+	StaticDir string
 }
 
 func findOptions() (options Options, e error) {
-	exec_name, e := filepath.Abs(os.Args[0])
+	execName, e := filepath.Abs(os.Args[0])
 	if e != nil {
 		return
 	}
 
 	// TODO: parse command args and make this configurable.
-	options.config_dir = filepath.Dir(exec_name)
+	options.ConfigDir = filepath.Dir(execName)
+	options.StaticDir = "/home/dgarrett/Development/go-house/static"
 
 	return
 }
@@ -71,6 +73,6 @@ func main() {
 	log.Println("Starting web server.")
 	http.HandleFunc("/", handler)
 	http.Handle("/static/", http.StripPrefix("/static/",
-		http.FileServer(http.Dir("/home/dgarrett/Development/go-house/static"))))
+		http.FileServer(http.Dir(options.StaticDir))))
 	http.ListenAndServe(":8082", nil)
 }

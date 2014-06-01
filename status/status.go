@@ -23,6 +23,7 @@ type statusValue interface{}
 
 // When calling Set, use this revision to avoid revision checking.
 const UNCHECKED_REVISION = -1
+const urlBase = "status://"
 
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
@@ -43,18 +44,18 @@ func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 }
 
 // This is just like Get, except it returns the value in Json format.
-func (s *Status) GetJson(url string) (value_json []byte, revision int, e error) {
+func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
 	value, revision, e := s.Get(url)
 	if e != nil {
 		return nil, 0, e
 	}
 
-	value_json, e = json.Marshal(value)
+	valueJson, e = json.Marshal(value)
 	if e != nil {
 		return nil, 0, e
 	}
 
-	return value_json, revision, e
+	return valueJson, revision, e
 }
 
 // Set a value from the status as described by the URL. Revision numbers are
@@ -69,14 +70,14 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	if revision != UNCHECKED_REVISION {
 		// Find out if the passed in revision is an exact match for the selected node,
 		// or any of it's parents.
-		var revision_valid bool = false
+		var revisionValid bool = false
 		for _, v := range statuses {
 			if v.revision == revision {
-				revision_valid = true
+				revisionValid = true
 				break
 			}
 		}
-		if !revision_valid {
+		if !revisionValid {
 			return fmt.Errorf(
 				"Status: Invalid Revision: %d - %s. Expected %d",
 				revision, url, s.revision)
@@ -84,29 +85,29 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	}
 
 	// Look up the new revision to update.
-	new_revision := statuses[0].revision + 1
+	newRevision := statuses[0].revision + 1
 
 	// Covert the new value into internal format.
-	new_value, e := valueToStatusValue(value, new_revision)
+	newValue, e := valueToStatusValue(value, newRevision)
 	if e != nil {
 		return e
 	}
 
 	// Set the new value to the last node found.
-	statuses[len(statuses)-1].value = new_value
+	statuses[len(statuses)-1].value = newValue
 
 	// Update the revision for all affected nodes.
 	for _, v := range statuses {
-		v.revision = new_revision
+		v.revision = newRevision
 	}
 
 	return nil
 }
 
 // This is just like Set, except it accepts the value to set in Json format.
-func (s *Status) SetJson(url string, value_json []byte, revision int) (e error) {
+func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
 	var value interface{}
-	e = json.Unmarshal(value_json, &value)
+	e = json.Unmarshal(valueJson, &value)
 	if e != nil {
 		return e
 	}
@@ -121,101 +122,99 @@ func (s *Status) SetJson(url string, value_json []byte, revision int) (e error) 
 func (s *Status) GetMatchingUrls(url string) (urls []string, revision int, e error) {
 
 	// We special case the root directory.
-	if url == "status://" {
+	if url == urlBase {
 		return []string{url}, s.revision, nil
 	}
 
 	// Create a slice for fully expanded URLs.
-	matched_urls := []string{}
+	matchedUrls := []string{}
 
 	// Create a slice of URLs that haven't been expanded yet.
-	unfinished_urls := []string{url}
+	unfinishedUrls := []string{url}
 
 UnfinishedUrls:
-	for len(unfinished_urls) > 0 {
+	for len(unfinishedUrls) > 0 {
 		// Pop off the last element for processing.
-		testing_url := unfinished_urls[len(unfinished_urls)-1]
-		unfinished_urls = unfinished_urls[:len(unfinished_urls)-1]
+		testingUrl := unfinishedUrls[len(unfinishedUrls)-1]
+		unfinishedUrls = unfinishedUrls[:len(unfinishedUrls)-1]
 
 		// Parse the Url.
-		url_path, e := parseUrl(testing_url)
+		urlPath, e := parseUrl(testingUrl)
 		if e != nil {
 			return nil, 0, e
 		}
 
 		// Walk down the tree looking for matches.
 		current := s
-		for i, v := range url_path {
+		for i, v := range urlPath {
 
-			current_map, ok := current.value.(statusMap)
+			currentMap, ok := current.value.(statusMap)
 			if !ok {
 				continue UnfinishedUrls
 			}
 
 			if v == "*" {
-				expanded_path_parts := make([]string, len(url_path))
-				copy(expanded_path_parts, url_path)
+				expandedPathParts := make([]string, len(urlPath))
+				copy(expandedPathParts, urlPath)
 
 				// Expand the star for each key in the current node.
-				for k := range current_map {
-					expanded_path_parts[i] = k
-					unfinished_urls = append(unfinished_urls, joinUrl(expanded_path_parts))
+				for k := range currentMap {
+					expandedPathParts[i] = k
+					unfinishedUrls = append(unfinishedUrls, joinUrl(expandedPathParts))
 				}
 
 				continue UnfinishedUrls
 			}
 
 			// Step to the next child, if it exists.
-			if current, ok = current_map[v]; !ok {
+			if current, ok = currentMap[v]; !ok {
 				continue UnfinishedUrls
 			}
 
 			// If we found the final element in the path, we fully expanded the URL
 			// and found a match.
-			if i == len(url_path)-1 {
-				matched_urls = append(matched_urls, joinUrl(url_path))
+			if i == len(urlPath)-1 {
+				matchedUrls = append(matchedUrls, joinUrl(urlPath))
 			}
 		}
 	}
 
-	return matched_urls, s.revision, nil
+	return matchedUrls, s.revision, nil
 }
-
-const url_base = "status://"
 
 // Parse a status url, and return it as a slice of strings.
 // One for each step in the URL. Error if it's not a legal
 // status URL.
-func parseUrl(url string) (path_parts []string, e error) {
+func parseUrl(url string) (pathParts []string, e error) {
 	// Handle this special case quickly.
-	if url == url_base {
+	if url == urlBase {
 		return []string{}, nil
 	}
 
-	if !strings.HasPrefix(url, url_base) {
+	if !strings.HasPrefix(url, urlBase) {
 		return nil, fmt.Errorf("Status: Invalid status url: %s", url)
 	}
 
 	// remove status:// from beginning, and / from end.
-	prepped_url := strings.TrimPrefix(url, url_base)
-	prepped_url = strings.TrimRight(prepped_url, "/")
+	preppedUrl := strings.TrimPrefix(url, urlBase)
+	preppedUrl = strings.TrimRight(preppedUrl, "/")
 
-	path_parts = strings.Split(prepped_url, "/")
+	pathParts = strings.Split(preppedUrl, "/")
 
 	// If we still have an empty string in the slice after the trimming above, the
 	// URL contained a double slash like "foo//bar", which we consider invalid.
-	for _, part := range path_parts {
+	for _, part := range pathParts {
 		if part == "" {
 			return nil, fmt.Errorf("Status: Invalid status url: %s", url)
 		}
 	}
 
-	return path_parts, nil
+	return pathParts, nil
 }
 
 // The inverse of parseUrl.
-func joinUrl(path_parts []string) (url string) {
-	return url_base + strings.Join(path_parts, "/")
+func joinUrl(pathParts []string) (url string) {
+	return urlBase + strings.Join(pathParts, "/")
 }
 
 // Given a status URL, return a slice of *Status to each of the nodes referenced
@@ -223,31 +222,31 @@ func joinUrl(path_parts []string) (url string) {
 // this.
 func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*Status, e error) {
 
-	url_path, e := parseUrl(url)
+	urlPath, e := parseUrl(url)
 	if e != nil {
 		return
 	}
 
 	current := s
-	result = make([]*Status, len(url_path)+1)
+	result = make([]*Status, len(urlPath)+1)
 	result[0] = current
 
-	for i, u := range url_path {
+	for i, u := range urlPath {
 		// If there is nothing at all, and we are creating the path..
 		if fillInMissing && current.value == nil {
 			current.value = statusMap{}
 		}
 
-		child_map, ok := current.value.(statusMap)
+		childMap, ok := current.value.(statusMap)
 		if !ok {
 			return nil, fmt.Errorf("Status: Node is not a map")
 		}
 
-		current, ok = child_map[u]
+		current, ok = childMap[u]
 		if !ok {
 			if fillInMissing {
 				current = &Status{value: statusMap{}, revision: s.revision}
-				child_map[u] = current
+				childMap[u] = current
 			} else {
 				return nil, fmt.Errorf("Status: Node does not have child: %s", u)
 			}
@@ -277,22 +276,22 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 			}
 		}
 		// Duplicate the array.
-		value_array := make([]statusValue, len(t))
+		valueArray := make([]statusValue, len(t))
 		for i, v := range t {
-			value_array[i] = v
+			valueArray[i] = v
 		}
-		result = value_array
+		result = valueArray
 	case map[string]interface{}:
 		// Convert each sub-value in a map.
-		value_map := statusMap{}
+		valueMap := statusMap{}
 		for k, v := range t {
-			sub_value, e := valueToStatusValue(v, revision)
+			subValue, e := valueToStatusValue(v, revision)
 			if e != nil {
 				return nil, e
 			}
-			value_map[k] = &Status{revision: revision, value: sub_value}
+			valueMap[k] = &Status{revision: revision, value: subValue}
 		}
-		result = value_map
+		result = valueMap
 	default:
 		return nil, fmt.Errorf("Status: Can't convert type: %T to Status value", t)
 	}
@@ -308,20 +307,20 @@ func statusValueToValue(value statusValue) (result interface{}, e error) {
 		result = t
 	case []statusValue:
 		// Convert each sub-value in an array.
-		value_array := make([]interface{}, len(t))
+		valueArray := make([]interface{}, len(t))
 		for i, v := range t {
-			value_array[i] = v
+			valueArray[i] = v
 		}
-		result = value_array
+		result = valueArray
 	case statusMap:
 		// Convert each sub-value in a map.
-		value_map := map[string]interface{}{}
+		valueMap := map[string]interface{}{}
 		for k, v := range t {
-			if value_map[k], e = statusValueToValue(v.value); e != nil {
+			if valueMap[k], e = statusValueToValue(v.value); e != nil {
 				return nil, e
 			}
 		}
-		result = value_map
+		result = valueMap
 	default:
 		return nil, fmt.Errorf("Status: Can't convert type: %T to Status value", t)
 	}
