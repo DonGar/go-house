@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"io/ioutil"
@@ -26,7 +27,7 @@ func (suite *MySuite) TestLoadServerConfig(c *check.C) {
 	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
 	c.Assert(e, check.IsNil)
 
-	options := Options{ConfigDir: tempDir}
+	options := options.Options{ConfigDir: tempDir}
 	testStatus := status.Status{}
 
 	e = loadServerConfig(options, &testStatus)
@@ -36,17 +37,4 @@ func (suite *MySuite) TestLoadServerConfig(c *check.C) {
 
 	// And the value we pulled out of the Status matches the file contents.
 	c.Assert(string(serverValueJson), check.Equals, `{"foo":"bar"}`)
-}
-
-func (suite *MySuite) TestFindOptions(c *check.C) {
-	var options Options
-	var e error
-
-	options, e = findOptions()
-	c.Check(e, check.IsNil)
-	c.Check(
-		options.ConfigDir,
-		check.Matches,
-		".*github.com/DonGar/go-house/_test")
-
 }
