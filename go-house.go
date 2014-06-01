@@ -20,7 +20,7 @@ func loadServerConfig(options Options, s *status.Status) (e error) {
 		return e
 	}
 
-	e = s.SetJson("status://server", raw_json, -1)
+	e = s.SetJson("status://server", raw_json, status.UNCHECKED_REVISION)
 	if e != nil {
 		return e
 	}
