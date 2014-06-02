@@ -278,7 +278,10 @@ func (s *MySuite) TestJsonIdentity(c *check.C) {
 func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	status := Status{}
 
-	e := status.Set(
+	var found []string
+	var e error
+
+	e = status.Set(
 		"status://",
 		map[string]interface{}{
 			"sub1": map[string]interface{}{
@@ -293,57 +296,57 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 		0)
 	c.Check(e, check.IsNil)
 
-	var found []string
-	var r int
-
-	_, r, e = status.Get("status://")
-	c.Check(r, check.Equals, 1)
-
-	found, r, e = status.GetMatchingUrls("")
+	// Test bad URL.
+	found, e = status.getMatchingUrls("")
 	c.Check(e, check.NotNil)
-	c.Check(r, check.Equals, 0)
 
-	found, r, e = status.GetMatchingUrls("status://")
+	// Test base url.
+	found, e = status.getMatchingUrls("status://")
 	c.Check(found, check.DeepEquals, []string{"status://"})
-	c.Check(r, check.Equals, 1)
 	c.Check(e, check.IsNil)
 
-	found, r, e = status.GetMatchingUrls("status://bogus")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		[]string{})
-
-	found, r, e = status.GetMatchingUrls("status://bogus/*")
+	// Test non-existent url.
+	found, e = status.getMatchingUrls("status://bogus")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{})
 
-	found, r, e = status.GetMatchingUrls("status://sub1")
+	// Test non-existent wildcard.
+	found, e = status.getMatchingUrls("status://bogus/*")
+	c.Check(e, check.IsNil)
+	c.Check(
+		found,
+		check.DeepEquals,
+		[]string{})
+
+	// Test exact matching url to map.
+	found, e = status.getMatchingUrls("status://sub1")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1"})
 
-	found, r, e = status.GetMatchingUrls("status://sub1/string")
+	// Test exact matching url to value.
+	found, e = status.getMatchingUrls("status://sub1/string")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1/string"})
 
-	found, r, e = status.GetMatchingUrls("status://sub1/*/int")
+	// Test wildcard matching url to single value.
+	found, e = status.getMatchingUrls("status://sub1/*/int")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
 		check.DeepEquals,
 		[]string{"status://sub1/sub2/int"})
 
-	found, r, e = status.GetMatchingUrls("status://sub1/*/*")
+	// Test wildcard matching url to multiple values.
+	found, e = status.getMatchingUrls("status://sub1/*/*")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,
@@ -352,7 +355,8 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 			"status://sub1/sub2/nested", "status://sub1/sub2/array",
 			"status://sub1/sub2/float", "status://sub1/sub2/int"})
 
-	found, r, e = status.GetMatchingUrls("status://sub1/sub2/array/*")
+	// Test wildcard url to value children.
+	found, e = status.getMatchingUrls("status://sub1/sub2/array/*")
 	c.Check(e, check.IsNil)
 	c.Check(
 		found,

@@ -119,11 +119,11 @@ func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
 //
 // A wildcard URL contains zero or more elements of '*' which match all
 // keys on the relevant node.
-func (s *Status) GetMatchingUrls(url string) (urls []string, revision int, e error) {
+func (s *Status) getMatchingUrls(url string) (urls []string, e error) {
 
 	// We special case the root directory.
 	if url == urlBase {
-		return []string{url}, s.revision, nil
+		return []string{url}, nil
 	}
 
 	// Create a slice for fully expanded URLs.
@@ -141,7 +141,7 @@ UnfinishedUrls:
 		// Parse the Url.
 		urlPath, e := parseUrl(testingUrl)
 		if e != nil {
-			return nil, 0, e
+			return nil, e
 		}
 
 		// Walk down the tree looking for matches.
@@ -179,7 +179,7 @@ UnfinishedUrls:
 		}
 	}
 
-	return matchedUrls, s.revision, nil
+	return matchedUrls, nil
 }
 
 // Parse a status url, and return it as a slice of strings.
