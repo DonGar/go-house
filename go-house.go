@@ -47,5 +47,5 @@ func main() {
 	// TODO: Start up the rules engine.
 	// TODO: Start up the adapters
 
-	server.RunHttpServerForever(options)
+	server.RunHttpServerForever(options, &status)
 }
