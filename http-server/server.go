@@ -19,9 +19,16 @@ type StatusHandler struct {
 // Handle Get/Post Status requests.
 func (s *StatusHandler) HandleGet(
 	w http.ResponseWriter, r *http.Request,
-	status_url string, revision int) {
+	statusUrl string, revision int) {
 
-	json_value, revision, e := s.status.GetJson(status_url)
+	// select {
+	// case <-nil:
+	// 	log.Println("Blocking with revision:", revision)
+	// case <-w.(http.CloseNotifier).CloseNotify():
+	// 	log.Println("Connection was closed.")
+	// }
+
+	json_value, revision, e := s.status.GetJson(statusUrl)
 	if e != nil {
 		// TODO: Produce other error codes as needed.
 		http.Error(w, e.Error(), http.StatusNotFound)
@@ -34,7 +41,7 @@ func (s *StatusHandler) HandleGet(
 // Handle a Status request. This parses arguments, then hands off to Method
 // specific handlers.
 func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	status_url := "status://" + r.URL.Path[len("/status/"):]
+	statusUrl := "status://" + r.URL.Path[len("/status/"):]
 
 	// Find the revision associated with the request.
 	revision := status.UNCHECKED_REVISION
@@ -50,12 +57,12 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Handling Status %s Rev: %d - Url: '%s'\n",
-		r.Method, revision, status_url)
+		r.Method, revision, statusUrl)
 
 	// Dispatch the request, based on the type of request.
 	switch r.Method {
 	case "GET", "POST":
-		s.HandleGet(w, r, status_url, revision)
+		s.HandleGet(w, r, statusUrl, revision)
 	default:
 		http.Error(w, fmt.Sprintf("Method %s no supported", r.Method),
 			http.StatusMethodNotAllowed)
