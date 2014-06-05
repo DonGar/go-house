@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // When calling Set, use this revision to avoid revision checking.
@@ -12,6 +13,7 @@ const UNCHECKED_REVISION = -1
 // The status structure.
 type Status struct {
 	node
+	lock sync.RWMutex
 }
 
 // Structure used at every node in a Status tree.
@@ -33,6 +35,9 @@ const urlBase = "status://"
 
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	nodes, e := s.urlPathToNodes(url, false)
 	if e != nil {
 		return nil, 0, e
@@ -67,6 +72,9 @@ func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
 // Set a value from the status as described by the URL. Revision numbers are
 // updated as needed.
 func (s *Status) Set(url string, value interface{}, revision int) (e error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	nodes, e := s.urlPathToNodes(url, true)
 	if e != nil {
 		return e
