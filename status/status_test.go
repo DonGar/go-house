@@ -55,25 +55,24 @@ func (suite *MySuite) TestUrlParsing(c *check.C) {
 	c.Check(e, check.IsNil)
 }
 
-func (suite *MySuite) TestUrlPathToStatuses(c *check.C) {
-	status := Status{value: statusMap{}}
+func (suite *MySuite) TestUrlPathToNodes(c *check.C) {
+	status := Status{node: node{value: statusMap{}}}
 
 	// Verify not creating children.
-	statuses, e := status.urlPathToStatuses("status://", false)
-	c.Check(statuses, check.DeepEquals, []*Status{&status})
+	nodes, e := status.urlPathToNodes("status://", false)
+	c.Check(nodes, check.DeepEquals, []*node{&status.node})
 	c.Check(e, check.IsNil)
 
 	// Verify creating children.
-	statuses, e = status.urlPathToStatuses("status://", true)
-	c.Check(statuses, check.DeepEquals, []*Status{&status})
+	nodes, e = status.urlPathToNodes("status://", true)
+	c.Check(nodes, check.DeepEquals, []*node{&status.node})
 	c.Check(e, check.IsNil)
 
-	statuses, e = status.urlPathToStatuses("status://foo/bar", true)
-	c.Check(statuses[0], check.Equals, &status)
-	c.Check(statuses[1], check.Equals, statuses[0].value.(statusMap)["foo"])
-	// c.Check(statuses[2], check.Equals, statuses[1].value.(statusMap)["bar"])
+	nodes, e = status.urlPathToNodes("status://foo/bar", true)
+	c.Check(nodes[0], check.Equals, &status.node)
+	c.Check(nodes[1], check.Equals, nodes[0].value.(statusMap)["foo"])
+	c.Check(nodes[2], check.Equals, nodes[1].value.(statusMap)["bar"])
 	c.Check(e, check.IsNil)
-
 }
 
 func (s *MySuite) TestGetSet(c *check.C) {

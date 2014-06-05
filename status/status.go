@@ -6,14 +6,22 @@ import (
 	"strings"
 )
 
-//
+// When calling Set, use this revision to avoid revision checking.
+const UNCHECKED_REVISION = -1
+
+// The status structure.
 type Status struct {
+	node
+}
+
+// Structure used at every node in a Status tree.
+type node struct {
 	revision int
 	value    statusValue
 }
 
 // Internal type used as the value of Status nodes with children.
-type statusMap map[string]*Status
+type statusMap map[string]*node
 
 // Internal type used for the value stored in a Status. May be any of:
 //   bool, float64, int, int64, string, nil, for basic values.
@@ -21,18 +29,16 @@ type statusMap map[string]*Status
 //   statusMap, for JSON objects
 type statusValue interface{}
 
-// When calling Set, use this revision to avoid revision checking.
-const UNCHECKED_REVISION = -1
 const urlBase = "status://"
 
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
-	statuses, e := s.urlPathToStatuses(url, false)
+	nodes, e := s.urlPathToNodes(url, false)
 	if e != nil {
 		return nil, 0, e
 	}
 
-	node := statuses[len(statuses)-1]
+	node := nodes[len(nodes)-1]
 
 	revision = node.revision
 	value, e = statusValueToValue(node.value)
@@ -61,7 +67,7 @@ func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
 // Set a value from the status as described by the URL. Revision numbers are
 // updated as needed.
 func (s *Status) Set(url string, value interface{}, revision int) (e error) {
-	statuses, e := s.urlPathToStatuses(url, true)
+	nodes, e := s.urlPathToNodes(url, true)
 	if e != nil {
 		return e
 	}
@@ -71,7 +77,7 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 		// Find out if the passed in revision is an exact match for the selected node,
 		// or any of it's parents.
 		var revisionValid bool = false
-		for _, v := range statuses {
+		for _, v := range nodes {
 			if v.revision == revision {
 				revisionValid = true
 				break
@@ -85,7 +91,7 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	}
 
 	// Look up the new revision to update.
-	newRevision := statuses[0].revision + 1
+	newRevision := nodes[0].revision + 1
 
 	// Covert the new value into internal format.
 	newValue, e := valueToStatusValue(value, newRevision)
@@ -94,10 +100,10 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	}
 
 	// Set the new value to the last node found.
-	statuses[len(statuses)-1].value = newValue
+	nodes[len(nodes)-1].value = newValue
 
 	// Update the revision for all affected nodes.
-	for _, v := range statuses {
+	for _, v := range nodes {
 		v.revision = newRevision
 	}
 
@@ -145,7 +151,7 @@ UnfinishedUrls:
 		}
 
 		// Walk down the tree looking for matches.
-		current := s
+		current := &s.node
 		for i, v := range urlPath {
 
 			currentMap, ok := current.value.(statusMap)
@@ -220,15 +226,15 @@ func joinUrl(pathParts []string) (url string) {
 // Given a status URL, return a slice of *Status to each of the nodes referenced
 // by the URL. If fillInMissing is true, create missing nodes as needed to do
 // this.
-func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*Status, e error) {
+func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node, e error) {
 
 	urlPath, e := parseUrl(url)
 	if e != nil {
 		return
 	}
 
-	current := s
-	result = make([]*Status, len(urlPath)+1)
+	current := &s.node
+	result = make([]*node, len(urlPath)+1)
 	result[0] = current
 
 	for i, u := range urlPath {
@@ -245,7 +251,7 @@ func (s *Status) urlPathToStatuses(url string, fillInMissing bool) (result []*St
 		current, ok = childMap[u]
 		if !ok {
 			if fillInMissing {
-				current = &Status{value: statusMap{}, revision: s.revision}
+				current = &node{value: statusMap{}, revision: s.revision}
 				childMap[u] = current
 			} else {
 				return nil, fmt.Errorf("Status: Node does not have child: %s", u)
@@ -289,7 +295,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 			if e != nil {
 				return nil, e
 			}
-			valueMap[k] = &Status{revision: revision, value: subValue}
+			valueMap[k] = &node{revision: revision, value: subValue}
 		}
 		result = valueMap
 	default:
