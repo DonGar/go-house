@@ -277,21 +277,25 @@ func (s *MySuite) TestJsonIdentity(c *check.C) {
 func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	status := Status{}
 
-	var found []string
+	var found UrlMatches
 	var e error
+
+	nested_value := map[string]interface{}{
+		"subnested": map[string]interface{}{}}
+
+	tree_value := map[string]interface{}{
+		"sub1": map[string]interface{}{
+			"sub2": map[string]interface{}{
+				"int":    5,
+				"float":  2.5,
+				"array":  []interface{}{1, "foo", 2.5},
+				"nested": nested_value,
+			},
+			"string": "string value"}}
 
 	e = status.Set(
 		"status://",
-		map[string]interface{}{
-			"sub1": map[string]interface{}{
-				"sub2": map[string]interface{}{
-					"int":   5,
-					"float": 2.5,
-					"array": []interface{}{1, "foo", 2.5},
-					"nested": map[string]interface{}{
-						"subnested": map[string]interface{}{}},
-				},
-				"string": "string value"}},
+		tree_value,
 		0)
 	c.Check(e, check.IsNil)
 
@@ -301,7 +305,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 
 	// Test base url.
 	found, e = status.getMatchingUrls("status://")
-	c.Check(found, check.DeepEquals, []string{"status://"})
+	c.Check(found, check.DeepEquals, UrlMatches{"status://": {1, tree_value}})
 	c.Check(e, check.IsNil)
 
 	// Test non-existent url.
@@ -310,7 +314,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{})
+		UrlMatches{})
 
 	// Test non-existent wildcard.
 	found, e = status.getMatchingUrls("status://bogus/*")
@@ -318,7 +322,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{})
+		UrlMatches{})
 
 	// Test exact matching url to map.
 	found, e = status.getMatchingUrls("status://sub1")
@@ -326,7 +330,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{"status://sub1"})
+		UrlMatches{"status://sub1": {revision: 1, value: tree_value["sub1"]}})
 
 	// Test exact matching url to value.
 	found, e = status.getMatchingUrls("status://sub1/string")
@@ -334,7 +338,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{"status://sub1/string"})
+		UrlMatches{"status://sub1/string": {revision: 1, value: "string value"}})
 
 	// Test wildcard matching url to single value.
 	found, e = status.getMatchingUrls("status://sub1/*/int")
@@ -342,7 +346,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{"status://sub1/sub2/int"})
+		UrlMatches{"status://sub1/sub2/int": {revision: 1, value: 5}})
 
 	// Test wildcard matching url to multiple values.
 	found, e = status.getMatchingUrls("status://sub1/*/*")
@@ -350,9 +354,12 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{
-			"status://sub1/sub2/nested", "status://sub1/sub2/array",
-			"status://sub1/sub2/float", "status://sub1/sub2/int"})
+		UrlMatches{
+			"status://sub1/sub2/nested": {revision: 1, value: nested_value},
+			"status://sub1/sub2/array":  {revision: 1, value: []interface{}{1, "foo", 2.5}},
+			"status://sub1/sub2/float":  {revision: 1, value: 2.5},
+			"status://sub1/sub2/int":    {revision: 1, value: 5},
+		})
 
 	// Test wildcard url to value children.
 	found, e = status.getMatchingUrls("status://sub1/sub2/array/*")
@@ -360,6 +367,6 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		[]string{})
+		UrlMatches{})
 
 }

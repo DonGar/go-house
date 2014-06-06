@@ -33,6 +33,15 @@ type statusValue interface{}
 
 const urlBase = "status://"
 
+// This represents a single URL match after wildcards are expanded.
+type UrlMatch struct {
+	revision int
+	value    interface{}
+}
+
+// This is a map of status URLs to values, used when wildcard URLs are expanded.
+type UrlMatches map[string]UrlMatch
+
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	s.lock.RLock()
@@ -133,15 +142,19 @@ func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
 //
 // A wildcard URL contains zero or more elements of '*' which match all
 // keys on the relevant node.
-func (s *Status) getMatchingUrls(url string) (urls []string, e error) {
+func (s *Status) getMatchingUrls(url string) (matches UrlMatches, e error) {
 
 	// We special case the root directory.
 	if url == urlBase {
-		return []string{url}, nil
+		value, e := statusValueToValue(s.value)
+		if e != nil {
+			return nil, e
+		}
+		return UrlMatches{url: {revision: s.revision, value: value}}, nil
 	}
 
 	// Create a slice for fully expanded URLs.
-	matchedUrls := []string{}
+	matches = UrlMatches{}
 
 	// Create a slice of URLs that haven't been expanded yet.
 	unfinishedUrls := []string{url}
@@ -188,12 +201,16 @@ UnfinishedUrls:
 			// If we found the final element in the path, we fully expanded the URL
 			// and found a match.
 			if i == len(urlPath)-1 {
-				matchedUrls = append(matchedUrls, joinUrl(urlPath))
+				value, e := statusValueToValue(current.value)
+				if e != nil {
+					return nil, e
+				}
+				matches[joinUrl(urlPath)] = UrlMatch{revision: current.revision, value: value}
 			}
 		}
 	}
 
-	return matchedUrls, nil
+	return matches, nil
 }
 
 // Parse a status url, and return it as a slice of strings.
