@@ -143,16 +143,6 @@ func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
 // A wildcard URL contains zero or more elements of '*' which match all
 // keys on the relevant node.
 func (s *Status) getMatchingUrls(url string) (matches UrlMatches, e error) {
-
-	// We special case the root directory.
-	if url == urlBase {
-		value, e := statusValueToValue(s.value)
-		if e != nil {
-			return nil, e
-		}
-		return UrlMatches{url: {revision: s.revision, value: value}}, nil
-	}
-
 	// Create a slice for fully expanded URLs.
 	matches = UrlMatches{}
 
@@ -197,17 +187,14 @@ UnfinishedUrls:
 			if current, ok = currentMap[v]; !ok {
 				continue UnfinishedUrls
 			}
-
-			// If we found the final element in the path, we fully expanded the URL
-			// and found a match.
-			if i == len(urlPath)-1 {
-				value, e := statusValueToValue(current.value)
-				if e != nil {
-					return nil, e
-				}
-				matches[joinUrl(urlPath)] = UrlMatch{revision: current.revision, value: value}
-			}
 		}
+
+		// If we finished without continuing to the next URL, it's a match.
+		value, e := statusValueToValue(current.value)
+		if e != nil {
+			return nil, e
+		}
+		matches[joinUrl(urlPath)] = UrlMatch{revision: current.revision, value: value}
 	}
 
 	return matches, nil
