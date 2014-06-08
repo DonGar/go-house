@@ -31,8 +31,6 @@ type statusMap map[string]*node
 //   statusMap, for JSON objects
 type statusValue interface{}
 
-const urlBase = "status://"
-
 // This represents a single URL match after wildcards are expanded.
 type UrlMatch struct {
 	revision int
@@ -41,6 +39,8 @@ type UrlMatch struct {
 
 // This is a map of status URLs to values, used when wildcard URLs are expanded.
 type UrlMatches map[string]UrlMatch
+
+const urlBase = "status://"
 
 // Get a value from the status as described by the URL.
 func (s *Status) Get(url string) (value interface{}, revision int, e error) {
@@ -84,27 +84,13 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	nodes, e := s.urlPathToNodes(url, true)
-	if e != nil {
+	if e := s.validRevision(url, revision); e != nil {
 		return e
 	}
 
-	// UNCHECKED_REVISION is always a valid revision. It means don't test.
-	if revision != UNCHECKED_REVISION {
-		// Find out if the passed in revision is an exact match for the selected node,
-		// or any of it's parents.
-		var revisionValid bool = false
-		for _, v := range nodes {
-			if v.revision == revision {
-				revisionValid = true
-				break
-			}
-		}
-		if !revisionValid {
-			return fmt.Errorf(
-				"Status: Invalid Revision: %d - %s. Expected %d",
-				revision, url, s.revision)
-		}
+	nodes, e := s.urlPathToNodes(url, true)
+	if e != nil {
+		return e
 	}
 
 	// Look up the new revision to update.
@@ -115,6 +101,8 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	if e != nil {
 		return e
 	}
+
+	// TODO: Verify the value is different from the old value.
 
 	// Set the new value to the last node found.
 	nodes[len(nodes)-1].value = newValue
@@ -242,11 +230,12 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 
 	urlPath, e := parseUrl(url)
 	if e != nil {
-		return
+		return nil, e
 	}
 
-	current := &s.node
 	result = make([]*node, len(urlPath)+1)
+
+	current := &s.node
 	result[0] = current
 
 	for i, u := range urlPath {
@@ -274,6 +263,49 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 	}
 
 	return result, nil
+}
+
+func (s *Status) validRevision(url string, revision int) (e error) {
+
+	// UNCHECKED_REVISION is always a valid revision. It means don't test.
+	if revision == UNCHECKED_REVISION {
+		return nil
+	}
+
+	urlPath, e := parseUrl(url)
+	if e != nil {
+		return e
+	}
+
+	current := &s.node
+
+	for _, u := range urlPath {
+		if current.revision == revision {
+			// If we found a revision match, there is no error.
+			return nil
+		}
+
+		childMap, ok := current.value.(statusMap)
+		if !ok {
+			break
+		}
+
+		child, ok := childMap[u]
+		if !ok {
+			break
+		}
+
+		current = child
+	}
+
+	if current.revision == revision {
+		// If we found a revision match, there is no error.
+		return nil
+	}
+
+	return fmt.Errorf(
+		"Status: Invalid Revision: %d - %s. Expected %d",
+		revision, url, current.revision)
 }
 
 // Convert an external value (matching a JSON structure), to the internal

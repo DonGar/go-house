@@ -12,6 +12,26 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
+func CheckValue(c *check.C, status *Status, url string, value interface{}, revision int) {
+	v, r, e := status.Get(url)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.DeepEquals, value)
+	c.Check(r, check.Equals, revision)
+}
+
+func CheckGetFailure(c *check.C, status *Status, url string) {
+	v, r, e := status.Get(url)
+	c.Check(e, check.NotNil)
+	c.Check(v, check.Equals, nil)
+	c.Check(r, check.Equals, 0)
+}
+
+func CheckRevision(c *check.C, status *Status, url string, revision int) {
+	_, r, e := status.Get(url)
+	c.Check(e, check.IsNil)
+	c.Check(r, check.Equals, revision)
+}
+
 func (suite *MySuite) TestUrlParsing(c *check.C) {
 	var path []string
 	var e error
@@ -78,55 +98,37 @@ func (suite *MySuite) TestUrlPathToNodes(c *check.C) {
 func (s *MySuite) TestGetSet(c *check.C) {
 	status := Status{}
 
-	// Get from empty status.
-	v, r, e := status.Get("status://")
-	c.Check(v, check.IsNil)
-	c.Check(r, check.Equals, 0)
-	c.Check(e, check.IsNil)
+	var e error
 
-	v, r, e = status.Get("status://foo/bar")
-	c.Check(v, check.IsNil)
-	c.Check(e, check.NotNil)
-	c.Check(r, check.Equals, 0)
+	// Get from empty status.
+	CheckValue(c, &status, "status://", nil, 0)
+
+	// Fetch a non-existant nested path.
+	CheckGetFailure(c, &status, "status://foo/bar")
 
 	// Set value to empty status
 	e = status.Set("status://", 5, 0)
 	c.Check(e, check.IsNil)
-	v, r, e = status.Get("status://")
-	c.Check(v, check.Equals, 5)
-	c.Check(r, check.Equals, 1)
-	c.Check(e, check.IsNil)
+	CheckValue(c, &status, "status://", 5, 1)
 
 	// Clear all contents.
 	e = status.Set("status://", nil, 1)
 	c.Check(e, check.IsNil)
-
-	v, r, e = status.Get("status://")
-	c.Check(v, check.Equals, nil)
-	c.Check(r, check.Equals, 2)
-	c.Check(e, check.IsNil)
+	CheckValue(c, &status, "status://", nil, 2)
 
 	// Create a sub-path.
 	e = status.Set("status://foo", 5, 2)
 	c.Check(e, check.IsNil)
 
-	v, r, e = status.Get("status://")
-	c.Check(r, check.Equals, 3)
-	c.Check(e, check.IsNil)
-
-	v, r, e = status.Get("status://foo")
-	c.Check(v, check.Equals, 5)
-	c.Check(r, check.Equals, 3)
-	c.Check(e, check.IsNil)
+	CheckValue(c, &status, "status://", map[string]interface{}{"foo": 5}, 3)
+	CheckValue(c, &status, "status://foo", 5, 3)
 
 	// Clear all contents.
 	e = status.Set("status://", nil, 3)
 	c.Check(e, check.IsNil)
 
-	v, r, e = status.Get("status://")
-	c.Check(v, check.Equals, nil)
-	c.Check(r, check.Equals, 4)
-	c.Check(e, check.IsNil)
+	// Make sure previously valid URL is invalid.
+	CheckGetFailure(c, &status, "status://foo")
 
 	// Create a complex tree.
 	e = status.Set("status://sub1/sub2/int", 5, 4)
@@ -146,38 +148,25 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	e = status.Set("status://unchecked_rev", "value", UNCHECKED_REVISION)
 	c.Check(e, check.IsNil)
 
-	v, r, e = status.Get("status://")
-	c.Check(r, check.Equals, 10)
-	v, r, e = status.Get("status://sub1/sub2/nested")
-	c.Check(r, check.Equals, 9)
-	v, r, e = status.Get("status://sub1/sub2/nested/subnested")
-	c.Check(r, check.Equals, 9)
-	v, r, e = status.Get("status://sub1/string")
-	c.Check(v, check.Equals, "string value")
-	c.Check(r, check.Equals, 7)
+	// TODO: Broken behavior.
+	// // Set a value to the matching value. Ensure the revision doesn't change.
+	// e = status.Set("status://sub1/sub2/int", 5, 10)
 
-	v, r, e = status.Get("status://sub1/sub2/int")
-	c.Check(v, check.Equals, 5)
-	c.Check(r, check.Equals, 5)
+	CheckGetFailure(c, &status, "status://foo")
 
-	v, r, e = status.Get("status://sub1/sub2/float")
-	c.Check(v, check.Equals, 2.5)
-	c.Check(r, check.Equals, 6)
+	// Check Revisions throughout the tree.
+	CheckRevision(c, &status, "status://", 10)
+	CheckRevision(c, &status, "status://sub1", 9)
+	CheckRevision(c, &status, "status://sub1/string", 7)
+	CheckRevision(c, &status, "status://sub1/sub2", 9)
+	CheckRevision(c, &status, "status://sub1/sub2/int", 5)
+	CheckRevision(c, &status, "status://sub1/sub2/float", 6)
+	CheckRevision(c, &status, "status://sub1/sub2/array", 8)
+	CheckRevision(c, &status, "status://sub1/sub2/nested", 9)
+	CheckRevision(c, &status, "status://unchecked_rev", 10)
 
-	v, r, e = status.Get("status://sub1/sub2/array")
-	c.Check(v, check.DeepEquals, []interface{}{1, "foo", 2.5})
-	c.Check(r, check.Equals, 8)
-
-	v, r, e = status.Get("status://float")
-	c.Check(e, check.NotNil)
-
-	// Verify the whole tree.
-	v, r, e = status.Get("status://")
-	c.Check(e, check.IsNil)
-	c.Check(r, check.Equals, 10)
-	c.Check(
-		v,
-		check.DeepEquals,
+	// Verify all contents.
+	CheckValue(c, &status, "status://",
 		map[string]interface{}{
 			"sub1": map[string]interface{}{
 				"sub2": map[string]interface{}{
@@ -188,7 +177,8 @@ func (s *MySuite) TestGetSet(c *check.C) {
 						"subnested": map[string]interface{}{}},
 				},
 				"string": "string value"},
-			"unchecked_rev": "value"})
+			"unchecked_rev": "value"},
+		10)
 }
 
 func (s *MySuite) TestIdentity(c *check.C) {
@@ -368,5 +358,95 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 		found,
 		check.DeepEquals,
 		UrlMatches{})
+}
 
+func (s *MySuite) TestUrlPathToNodesNoFill(c *check.C) {
+	status := Status{}
+
+	c.Check(status.value, check.DeepEquals, nil)
+
+	// Ensure we don't mofify an empty node.
+	nodes, e := status.urlPathToNodes("status://", false)
+	c.Check(nodes, check.DeepEquals, []*node{&status.node})
+	c.Check(e, check.IsNil)
+
+	c.Check(status.value, check.DeepEquals, nil)
+
+	// Ensure we don't modify an empty node with a long path.
+	nodes, e = status.urlPathToNodes("status://foo/bar", false)
+	c.Check(nodes, check.DeepEquals, []*node(nil))
+	c.Check(e, check.NotNil)
+
+	c.Check(status.value, check.DeepEquals, nil)
+}
+
+func (s *MySuite) TestSetBadRevision(c *check.C) {
+	status := Status{}
+
+	v, r, e := status.Get("status://not_created")
+	c.Check(v, check.IsNil)
+	c.Check(e, check.NotNil)
+	c.Check(r, check.Equals, 0)
+
+	// Set a value using the wrong revision. Ensure we are rejected.
+	e = status.Set("status://not_created", "value", 223)
+	c.Check(e, check.NotNil)
+
+	// Ensure the top level revision didn't increment.
+	CheckRevision(c, &status, "status://", 0)
+
+	// Ensure the bogus path wasn't created.
+	v, r, e = status.Get("status://not_created")
+	c.Check(v, check.IsNil)
+	c.Check(e, check.NotNil)
+	c.Check(r, check.Equals, 0)
+}
+
+func (s *MySuite) TestValidRevision(c *check.C) {
+	status := Status{}
+
+	var e error
+
+	validInvalid := func(url string, valid []int, invalid []int) {
+		e = status.validRevision(url, UNCHECKED_REVISION)
+		c.Check(e, check.IsNil)
+
+		// Check valids
+		for _, v := range valid {
+			e = status.validRevision(url, v)
+			c.Check(e, check.IsNil)
+		}
+
+		// Check invalids
+		for _, v := range invalid {
+			e = status.validRevision(url, v)
+			c.Check(e, check.NotNil)
+		}
+	}
+
+	// Valid revisions for an empty status.
+	validInvalid("status://", []int{0}, []int{1, 12, 55})
+	validInvalid("status://foo/bar", []int{0}, []int{1, 12, 55})
+
+	// Make the status non-empty.
+	e = status.Set("status://sub/one", "foo", UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+	e = status.Set("status://sub/two", "foo", UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+	e = status.Set("status://diff", "1", UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+
+	// Ensure we know the revisions for status paths.
+	CheckRevision(c, &status, "status://", 3)
+	CheckRevision(c, &status, "status://sub", 2)
+	CheckRevision(c, &status, "status://sub/one", 1)
+	CheckRevision(c, &status, "status://sub/two", 2)
+	CheckRevision(c, &status, "status://diff", 3)
+
+	// These verify every possible valid revision for each URL.
+	validInvalid("status://", []int{3}, []int{0, 1, 2, 4, 5, 55})
+	validInvalid("status://sub", []int{2, 3}, []int{0, 1, 4, 5, 55})
+	validInvalid("status://sub/one", []int{1, 2, 3}, []int{0, 4, 5, 55})
+	validInvalid("status://sub/two", []int{2, 3}, []int{0, 1, 4, 5, 55})
+	validInvalid("status://diff", []int{3}, []int{0, 1, 2, 4, 5, 55})
 }
