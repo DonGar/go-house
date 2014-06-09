@@ -14,6 +14,7 @@ const UNCHECKED_REVISION = -1
 type Status struct {
 	node
 	lock sync.RWMutex
+	watchers []*watcher
 }
 
 // Structure used at every node in a Status tree.
@@ -112,6 +113,7 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 		v.revision = newRevision
 	}
 
+	s.checkWatchers()
 	return nil
 }
 
