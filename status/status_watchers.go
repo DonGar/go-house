@@ -1,9 +1,9 @@
 package status
 
 type watcher struct {
-	watchUrl      string            // Wildcard URL to watch.
-	lastSeen      map[string]int    // Map expanded URL to revision of last value.
-	updateChannel chan<- UrlMatches // Channel to notify clients.
+	watchUrl      string          // Wildcard URL to watch.
+	lastSeen      map[string]int  // Map expanded URL to revision of last value.
+	updateChannel chan UrlMatches // Channel to notify clients.
 }
 
 type WatcherClient struct {
@@ -29,7 +29,7 @@ func (s *Status) WatchForUpdate(url string) (wc *WatcherClient, e error) {
 	}
 
 	// Create the channel
-	notifyChannel := make(chan UrlMatches, 100)
+	notifyChannel := make(chan UrlMatches, 1)
 
 	w := &watcher{
 		watchUrl:      url,
@@ -92,6 +92,12 @@ func (w *watcher) checkForUpdate(status *Status) (e error) {
 	// If the list of seen values has changed,
 	if !lastSeenEqual(w.lastSeen, currentSeen) {
 		w.lastSeen = currentSeen
+
+		select {
+		case <-w.updateChannel: // Clear the channel if it hasn't been read from.
+		default: // Read nothing if it's empty.
+		}
+
 		w.updateChannel <- matches
 	}
 

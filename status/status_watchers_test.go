@@ -184,3 +184,20 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 		})
 	checkNotPending(c, watch)
 }
+
+// Create a root level watch, and verify correct behavior.
+func (s *MySuite) TestNoReadDeadlock(c *check.C) {
+	status := Status{}
+
+	watch, e := status.WatchForUpdate("status://")
+	c.Check(e, check.IsNil)
+
+	// Make sure no notifications before we make changes.
+	checkNotPending(c, watch)
+
+	// By writing twice, we try to exaust the channel buffer.
+	e = status.SetJson("status://foo", []byte("1"), UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+	e = status.SetJson("status://foo", []byte("2"), UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+}
