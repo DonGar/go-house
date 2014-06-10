@@ -30,11 +30,11 @@ func compareUrlMatches(c *check.C, left, right UrlMatches) {
 }
 
 // Validate that a received notification matchers expectations.
-func checkPending(c *check.C, wc *WatcherClient, expected UrlMatches) {
+func checkPending(c *check.C, wc <-chan UrlMatches, expected UrlMatches) {
 	var received UrlMatches
 
 	select {
-	case received = <-wc.Channel:
+	case received = <-wc:
 		compareUrlMatches(c, received, expected)
 	default:
 		c.Fatal("Nothing received")
@@ -42,11 +42,11 @@ func checkPending(c *check.C, wc *WatcherClient, expected UrlMatches) {
 }
 
 // Validate that no notification is pending.
-func checkNotPending(c *check.C, wc *WatcherClient) {
+func checkNotPending(c *check.C, wc <-chan UrlMatches) {
 	var received UrlMatches
 
 	select {
-	case received = <-wc.Channel:
+	case received = <-wc:
 		c.Fatal("Unexpected received: ", received)
 	default:
 	}

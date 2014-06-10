@@ -6,13 +6,8 @@ type watcher struct {
 	updateChannel chan UrlMatches // Channel to notify clients.
 }
 
-type WatcherClient struct {
-	w       *watcher
-	Channel <-chan UrlMatches // Channel to notify clients.
-}
-
 // Public method to create a watcher.
-func (s *Status) WatchForUpdate(url string) (wc *WatcherClient, e error) {
+func (s *Status) WatchForUpdate(url string) (Channel <-chan UrlMatches, e error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -31,30 +26,24 @@ func (s *Status) WatchForUpdate(url string) (wc *WatcherClient, e error) {
 	// Create the channel
 	notifyChannel := make(chan UrlMatches, 1)
 
-	w := &watcher{
+	// Add new watcher to Status.
+	s.watchers = append(s.watchers, &watcher{
 		watchUrl:      url,
 		lastSeen:      currentSeen,
 		updateChannel: notifyChannel,
-	}
+	})
 
-	wc = &WatcherClient{
-		w:       w,
-		Channel: notifyChannel,
-	}
-
-	// Add new watcher to Status.
-	s.watchers = append(s.watchers, w)
-	return wc, nil
+	return notifyChannel, nil
 }
 
-func (s *Status) ReleaseWatch(wc *WatcherClient) {
+func (s *Status) ReleaseWatch(wc <-chan UrlMatches) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	trimmedWatchers := make([]*watcher, 0, len(s.watchers))
 
 	for _, w := range s.watchers {
-		if wc.w != w {
+		if wc != w.updateChannel {
 			trimmedWatchers = append(trimmedWatchers, w)
 		}
 	}
