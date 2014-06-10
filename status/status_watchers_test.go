@@ -30,11 +30,11 @@ func compareUrlMatches(c *check.C, left, right UrlMatches) {
 }
 
 // Validate that a received notification matchers expectations.
-func checkPending(c *check.C, watchChan <-chan UrlMatches, expected UrlMatches) {
+func checkPending(c *check.C, wc *WatcherClient, expected UrlMatches) {
 	var received UrlMatches
 
 	select {
-	case received = <-watchChan:
+	case received = <-wc.Channel:
 		compareUrlMatches(c, received, expected)
 	default:
 		c.Fatal("Nothing received")
@@ -42,11 +42,11 @@ func checkPending(c *check.C, watchChan <-chan UrlMatches, expected UrlMatches) 
 }
 
 // Validate that no notification is pending.
-func checkNotPending(c *check.C, watchChan <-chan UrlMatches) {
+func checkNotPending(c *check.C, wc *WatcherClient) {
 	var received UrlMatches
 
 	select {
-	case received = <-watchChan:
+	case received = <-wc.Channel:
 		c.Fatal("Unexpected received: ", received)
 	default:
 	}
@@ -66,13 +66,22 @@ func (s *MySuite) TestWatchForUpdateSetup(c *check.C) {
 	c.Check(e, check.NotNil)
 
 	// Make sure we can watch good urls.
-	_, e = status.WatchForUpdate("status://")
+	root, e := status.WatchForUpdate("status://")
 	c.Check(e, check.IsNil)
 
-	_, e = status.WatchForUpdate("status://sub/*/int")
+	wild, e := status.WatchForUpdate("status://sub/*/int")
 	c.Check(e, check.IsNil)
 
-	c.Check(len(status.watchers), check.Equals, 2)
+	dup, e := status.WatchForUpdate("status://sub/*/int") // Same URL twice.
+	c.Check(e, check.IsNil)
+
+	c.Check(len(status.watchers), check.Equals, 3)
+
+	status.ReleaseWatch(root)
+	status.ReleaseWatch(wild)
+	status.ReleaseWatch(dup)
+
+	c.Check(len(status.watchers), check.Equals, 0)
 }
 
 // Create a root level watch, and verify correct behavior.
