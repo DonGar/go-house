@@ -34,8 +34,8 @@ type statusValue interface{}
 
 // This represents a single URL match after wildcards are expanded.
 type UrlMatch struct {
-	revision int
-	value    interface{}
+	Revision int
+	Value    interface{}
 }
 
 // This is a map of status URLs to values, used when wildcard URLs are expanded.
@@ -128,6 +128,15 @@ func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
 	return s.Set(url, value, revision)
 }
 
+// Does the URL contain wildcards?
+func CheckForWildcard(url string) (e error) {
+	if strings.Contains(url, "*") {
+		return fmt.Errorf("Status: Wildcards not allowed here: %s", url)
+	} else {
+		return nil
+	}
+}
+
 // Find all URLs that exist, which match a wildcard URL.
 //
 // A wildcard URL contains zero or more elements of '*' which match all
@@ -184,7 +193,7 @@ UnfinishedUrls:
 		if e != nil {
 			return nil, e
 		}
-		matches[joinUrl(urlPath)] = UrlMatch{revision: current.revision, value: value}
+		matches[joinUrl(urlPath)] = UrlMatch{Revision: current.revision, Value: value}
 	}
 
 	return matches, nil
@@ -236,10 +245,8 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 	}
 
 	// Check for wildcards.
-	for _, u := range urlPath {
-		if u == "*" {
-			return nil, fmt.Errorf("Status: Wildcards not allowed here: %s", url)
-		}
+	if e = CheckForWildcard(url); e != nil {
+		return nil, e
 	}
 
 	result = make([]*node, len(urlPath)+1)

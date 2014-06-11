@@ -13,14 +13,14 @@ func compareUrlMatches(c *check.C, left, right UrlMatches) {
 	for k, lValue := range left {
 		rValue, rPresent := right[k]
 		c.Assert(rPresent, check.Equals, true)
-		c.Assert(lValue.revision, check.Equals, rValue.revision)
+		c.Assert(lValue.Revision, check.Equals, rValue.Revision)
 
-		lJson, e := json.Marshal(lValue.value)
+		lJson, e := json.Marshal(lValue.Value)
 		if e != nil {
 			panic(e)
 		}
 
-		rJson, e := json.Marshal(rValue.value)
+		rJson, e := json.Marshal(rValue.Value)
 		if e != nil {
 			panic(e)
 		}
@@ -99,8 +99,7 @@ func (s *MySuite) TestWatchForUpdateRoot(c *check.C) {
 
 	// We expect to receive the initial match right away.
 	checkPending(c, watch,
-		UrlMatches{"status://": UrlMatch{
-			revision: 0, value: nil}})
+		UrlMatches{"status://": UrlMatch{}})
 
 	// Then have nothing pending, until we make a change.
 	checkNotPending(c, watch)
@@ -110,7 +109,7 @@ func (s *MySuite) TestWatchForUpdateRoot(c *check.C) {
 
 	checkPending(c, watch,
 		UrlMatches{"status://": UrlMatch{
-			revision: 1, value: map[string]interface{}{"foo": 1}}})
+			Revision: 1, Value: map[string]interface{}{"foo": 1}}})
 
 	// Verify the internal state of the watcher.
 	c.Check(
@@ -146,7 +145,7 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 
 	checkPending(c, watch,
 		UrlMatches{"status://sub/int": UrlMatch{
-			revision: 2, value: 1}})
+			Revision: 2, Value: 1}})
 	checkNotPending(c, watch)
 
 	// Create a different matching value, and make sure we are notified.
@@ -155,8 +154,8 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 
 	checkPending(c, watch,
 		UrlMatches{
-			"status://sub/int":  UrlMatch{revision: 2, value: 1},
-			"status://sub2/int": UrlMatch{revision: 3, value: 2},
+			"status://sub/int":  UrlMatch{Revision: 2, Value: 1},
+			"status://sub2/int": UrlMatch{Revision: 3, Value: 2},
 		})
 	checkNotPending(c, watch)
 
@@ -166,8 +165,8 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 
 	checkPending(c, watch,
 		UrlMatches{
-			"status://sub/int":  UrlMatch{revision: 4, value: 3},
-			"status://sub2/int": UrlMatch{revision: 3, value: 2},
+			"status://sub/int":  UrlMatch{Revision: 4, Value: 3},
+			"status://sub2/int": UrlMatch{Revision: 3, Value: 2},
 		})
 	checkNotPending(c, watch)
 
@@ -188,7 +187,7 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 
 	checkPending(c, watch,
 		UrlMatches{
-			"status://sub/int": UrlMatch{revision: 4, value: 3},
+			"status://sub/int": UrlMatch{Revision: 4, Value: 3},
 		})
 	checkNotPending(c, watch)
 }

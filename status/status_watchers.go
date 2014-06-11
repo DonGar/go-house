@@ -79,7 +79,7 @@ func (w *watcher) checkForUpdate(status *Status) {
 	currentSeen := map[string]int{}
 
 	for url, match := range matches {
-		currentSeen[url] = match.revision
+		currentSeen[url] = match.Revision
 	}
 
 	// If the list of seen values has changed,

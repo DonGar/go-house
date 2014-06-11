@@ -320,7 +320,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		UrlMatches{"status://sub1": {revision: 1, value: tree_value["sub1"]}})
+		UrlMatches{"status://sub1": {Revision: 1, Value: tree_value["sub1"]}})
 
 	// Test exact matching url to value.
 	found, e = status.getMatchingUrls("status://sub1/string")
@@ -328,7 +328,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		UrlMatches{"status://sub1/string": {revision: 1, value: "string value"}})
+		UrlMatches{"status://sub1/string": {Revision: 1, Value: "string value"}})
 
 	// Test wildcard matching url to single value.
 	found, e = status.getMatchingUrls("status://sub1/*/int")
@@ -336,7 +336,7 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	c.Check(
 		found,
 		check.DeepEquals,
-		UrlMatches{"status://sub1/sub2/int": {revision: 1, value: 5}})
+		UrlMatches{"status://sub1/sub2/int": {Revision: 1, Value: 5}})
 
 	// Test wildcard matching url to multiple values.
 	found, e = status.getMatchingUrls("status://sub1/*/*")
@@ -345,10 +345,10 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 		found,
 		check.DeepEquals,
 		UrlMatches{
-			"status://sub1/sub2/nested": {revision: 1, value: nested_value},
-			"status://sub1/sub2/array":  {revision: 1, value: []interface{}{1, "foo", 2.5}},
-			"status://sub1/sub2/float":  {revision: 1, value: 2.5},
-			"status://sub1/sub2/int":    {revision: 1, value: 5},
+			"status://sub1/sub2/nested": {Revision: 1, Value: nested_value},
+			"status://sub1/sub2/array":  {Revision: 1, Value: []interface{}{1, "foo", 2.5}},
+			"status://sub1/sub2/float":  {Revision: 1, Value: 2.5},
+			"status://sub1/sub2/int":    {Revision: 1, Value: 5},
 		})
 
 	// Test wildcard url to value children.
