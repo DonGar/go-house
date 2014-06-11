@@ -360,6 +360,21 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 		UrlMatches{})
 }
 
+func (s *MySuite) TestGetSetWildcardNotAllowed(c *check.C) {
+	status := Status{}
+
+	var e error
+
+	_, _, e = status.Get("status://*")
+	c.Check(e, check.NotNil)
+
+	e = status.Set("status://foo/*", 2, UNCHECKED_REVISION)
+	c.Check(e, check.NotNil)
+
+	// Ensure no changes were made to status.
+	CheckValue(c, &status, "status://", nil, 0)
+}
+
 func (s *MySuite) TestUrlPathToNodesNoFill(c *check.C) {
 	status := Status{}
 

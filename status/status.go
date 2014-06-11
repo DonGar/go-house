@@ -13,7 +13,7 @@ const UNCHECKED_REVISION = -1
 // The status structure.
 type Status struct {
 	node
-	lock sync.RWMutex
+	lock     sync.RWMutex
 	watchers []*watcher
 }
 
@@ -233,6 +233,13 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 	urlPath, e := parseUrl(url)
 	if e != nil {
 		return nil, e
+	}
+
+	// Check for wildcards.
+	for _, u := range urlPath {
+		if u == "*" {
+			return nil, fmt.Errorf("Status: Wildcards not allowed here: %s", url)
+		}
 	}
 
 	result = make([]*node, len(urlPath)+1)
