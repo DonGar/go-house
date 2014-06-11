@@ -97,7 +97,12 @@ func (s *MySuite) TestWatchForUpdateRoot(c *check.C) {
 		check.DeepEquals,
 		map[string]int{"status://": 0})
 
-	// Make sure no notifications before we make changes.
+	// We expect to receive the initial match right away.
+	checkPending(c, watch,
+		UrlMatches{"status://": UrlMatch{
+			revision: 0, value: nil}})
+
+	// Then have nothing pending, until we make a change.
 	checkNotPending(c, watch)
 
 	e = status.SetJson("status://foo", []byte("1"), UNCHECKED_REVISION)
@@ -124,7 +129,10 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 	watch, e := status.WatchForUpdate("status://*/int")
 	c.Check(e, check.IsNil)
 
-	// Make sure no notifications before we make changes.
+	// We expect to receive the initial match right away.
+	checkPending(c, watch, UrlMatches{})
+
+	// Then have nothing pending, until we make a change.
 	checkNotPending(c, watch)
 
 	e = status.SetJson("status://foo", []byte("1"), UNCHECKED_REVISION)
@@ -189,11 +197,8 @@ func (s *MySuite) TestWatchForUpdateWildcards(c *check.C) {
 func (s *MySuite) TestNoReadDeadlock(c *check.C) {
 	status := Status{}
 
-	watch, e := status.WatchForUpdate("status://")
+	_, e := status.WatchForUpdate("status://")
 	c.Check(e, check.IsNil)
-
-	// Make sure no notifications before we make changes.
-	checkNotPending(c, watch)
 
 	// By writing twice, we try to exaust the channel buffer.
 	e = status.SetJson("status://foo", []byte("1"), UNCHECKED_REVISION)
