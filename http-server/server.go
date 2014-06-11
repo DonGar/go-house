@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
@@ -21,21 +22,55 @@ func (s *StatusHandler) HandleGet(
 	w http.ResponseWriter, r *http.Request,
 	statusUrl string, revision int) {
 
-	// select {
-	// case <-nil:
-	// 	log.Println("Blocking with revision:", revision)
-	// case <-w.(http.CloseNotifier).CloseNotify():
-	// 	log.Println("Connection was closed.")
-	// }
-
-	json_value, revision, e := s.status.GetJson(statusUrl)
-	if e != nil {
-		// TODO: Produce other error codes as needed.
+	// Ensure the remote user only queries with a simple URL.
+	if e := status.CheckForWildcard(statusUrl); e != nil {
+		// TODO: Find better result code.
 		http.Error(w, e.Error(), http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"revision":%d,"status":%s}`, revision, json_value)
+
+	// Start watching for changes to the requested URL.
+	wc, e := s.status.WatchForUpdate(statusUrl)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusNotFound)
+		return
+	}
+	defer s.status.ReleaseWatch(wc)
+
+	for {
+		select {
+		case matches := <-wc:
+			match, ok := matches[statusUrl]
+			if !ok {
+				// If our URL isn't in the matches, it doesn't exist.
+				http.Error(w, "Status url not found: "+statusUrl, http.StatusNotFound)
+				return
+			}
+
+			if match.Revision == revision {
+				// The client already has our current revision. Block until a new
+				// revision is available.
+				continue
+			}
+
+			// We've found our result, convert to json.
+			valueJson, e := json.Marshal(match.Value)
+			if e != nil {
+				// TODO: Find better result code.
+				http.Error(w, e.Error(), http.StatusNotFound)
+				return
+			}
+
+			// Send final result.
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"revision":%d,"status":%s}`, match.Revision, valueJson)
+			return
+
+		case <-w.(http.CloseNotifier).CloseNotify():
+			log.Println("Connection was closed.")
+			return
+		}
+	}
 }
 
 // Handle a Status request. This parses arguments, then hands off to Method
