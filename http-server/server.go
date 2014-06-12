@@ -37,6 +37,12 @@ func (s *StatusHandler) HandleGet(
 	}
 	defer s.status.ReleaseWatch(wc)
 
+	// Fetch a close channel from http.ResponseWriter, if supported.
+	var closeChannel <-chan bool
+	if closeNotifier, ok := w.(http.CloseNotifier); ok {
+		closeChannel = closeNotifier.CloseNotify()
+	}
+
 	for {
 		select {
 		case matches := <-wc:
@@ -66,7 +72,7 @@ func (s *StatusHandler) HandleGet(
 			fmt.Fprintf(w, `{"revision":%d,"status":%s}`, match.Revision, valueJson)
 			return
 
-		case <-w.(http.CloseNotifier).CloseNotify():
+		case <-closeChannel:
 			log.Println("Connection was closed.")
 			return
 		}
