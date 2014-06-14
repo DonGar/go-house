@@ -18,7 +18,32 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
-// Test Good GET Requests
+func (suite *MySuite) TestUnknownMethod(c *check.C) {
+	statusHandler := StatusHandler{status: &status.Status{}}
+
+	request, e := http.NewRequest("FOO", "http://example.com/status/", nil)
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 405)
+	c.Check(
+		response.HeaderMap,
+		check.DeepEquals,
+		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(
+		response.Body.String(),
+		check.Equals,
+		"Method FOO no supported\n")
+}
+
+//
+// Test GET Requests
+//
 
 func (suite *MySuite) TestGetMinimal(c *check.C) {
 	statusHandler := StatusHandler{status: &status.Status{}}
@@ -96,8 +121,6 @@ func (suite *MySuite) TestGetRevisionMatch(c *check.C) {
 		`{"revision":1,"status":1}`)
 }
 
-// Test Bad Requests
-
 func (suite *MySuite) TestGetUnknownStatusPath(c *check.C) {
 	statusHandler := StatusHandler{status: &status.Status{}}
 
@@ -133,7 +156,7 @@ func (suite *MySuite) TestGetWildcardStatusPath(c *check.C) {
 	statusHandler.ServeHTTP(response, request)
 
 	// Validate the result.
-	c.Check(response.Code, check.Equals, 404)
+	c.Check(response.Code, check.Equals, 400)
 	c.Check(
 		response.HeaderMap,
 		check.DeepEquals,
@@ -143,6 +166,10 @@ func (suite *MySuite) TestGetWildcardStatusPath(c *check.C) {
 		check.Equals,
 		"Status: Wildcards not allowed here: status://foo/*\n")
 }
+
+//
+// Test POST  Requests
+//
 
 func (suite *MySuite) TestPostMinimal(c *check.C) {
 	statusHandler := StatusHandler{status: &status.Status{}}
@@ -215,4 +242,86 @@ func (suite *MySuite) TestPostUnknownStatusPath(c *check.C) {
 		response.Body.String(),
 		check.Equals,
 		"Status url not found: status://foo\n")
+}
+
+//
+// Test PUT  Requests
+//
+
+func (suite *MySuite) TestPutMinimal(c *check.C) {
+	statusHandler := StatusHandler{status: &status.Status{}}
+
+	request, e := http.NewRequest(
+		"PUT", "http://example.com/status/", strings.NewReader(`{"foo": "bar"}`))
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 200)
+	c.Check(response.HeaderMap, check.DeepEquals, http.Header{})
+	c.Check(response.Body.String(), check.Equals, "")
+}
+
+func (suite *MySuite) TestPutRevisionMismatch(c *check.C) {
+	statusHandler := StatusHandler{status: &status.Status{}}
+
+	request, e := http.NewRequest(
+		"PUT", "http://example.com/status/?revision=3", strings.NewReader(`{"foo": "bar"}`))
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 400)
+	c.Check(response.HeaderMap, check.DeepEquals, http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.Body.String(), check.Equals, "Status: Invalid Revision: 3 - status://. Expected 0\n")
+}
+
+func (suite *MySuite) TestPutRevisionMatchUrl(c *check.C) {
+	statusHandler := StatusHandler{status: &status.Status{}}
+
+	request, e := http.NewRequest(
+		"PUT", "http://example.com/status/?revision=0", strings.NewReader(`{"foo": "bar"}`))
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 200)
+	c.Check(response.HeaderMap, check.DeepEquals, http.Header{})
+	c.Check(response.Body.String(), check.Equals, "")
+}
+
+func (suite *MySuite) TestPutWildcardStatusPath(c *check.C) {
+	statusHandler := StatusHandler{status: &status.Status{}}
+
+	request, e := http.NewRequest(
+		"PUT", "http://example.com/status/*/foo", strings.NewReader(`{"foo": "bar"}`))
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 400)
+	c.Check(
+		response.HeaderMap,
+		check.DeepEquals,
+		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(
+		response.Body.String(),
+		check.Equals,
+		"Status: Wildcards not allowed here: status://*/foo\n")
 }

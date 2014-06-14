@@ -1,10 +1,12 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -21,13 +23,6 @@ type StatusHandler struct {
 func (s *StatusHandler) HandleGet(
 	w http.ResponseWriter, r *http.Request,
 	statusUrl string, revision int) {
-
-	// Ensure the remote user only queries with a simple URL.
-	if e := status.CheckForWildcard(statusUrl); e != nil {
-		// TODO: Find better result code.
-		http.Error(w, e.Error(), http.StatusNotFound)
-		return
-	}
 
 	// Start watching for changes to the requested URL.
 	wc, e := s.status.WatchForUpdate(statusUrl)
@@ -79,6 +74,28 @@ func (s *StatusHandler) HandleGet(
 	}
 }
 
+func (s *StatusHandler) HandlePut(
+	w http.ResponseWriter, r *http.Request,
+	statusUrl string, revision int) {
+
+	// TODO: Verify URL against web adapters.
+
+	// Read the body into memory.
+	body := bytes.NewBuffer(nil)
+	_, e := io.CopyN(body, r.Body, 1*1024*1024) // Limit read size to 1M
+	if e != io.EOF {
+		http.Error(w, e.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Put it into the status tree.
+	e = s.status.SetJson(statusUrl, body.Bytes(), revision)
+	if e != nil {
+		http.Error(w, e.Error(), http.StatusBadRequest)
+		return
+	}
+}
+
 // Handle a Status request. This parses arguments, then hands off to Method
 // specific handlers.
 func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +114,12 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Ensure the remote user only uses queries with a simple URL.
+	if e := status.CheckForWildcard(statusUrl); e != nil {
+		http.Error(w, e.Error(), http.StatusBadRequest)
+		return
+	}
+
 	log.Printf("Handling Status %s Rev: %d - Url: '%s'\n",
 		r.Method, revision, statusUrl)
 
@@ -104,6 +127,8 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET", "POST":
 		s.HandleGet(w, r, statusUrl, revision)
+	case "PUT":
+		s.HandlePut(w, r, statusUrl, revision)
 	default:
 		http.Error(w, fmt.Sprintf("Method %s no supported", r.Method),
 			http.StatusMethodNotAllowed)
