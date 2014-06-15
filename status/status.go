@@ -1,7 +1,6 @@
 package status
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -64,21 +63,6 @@ func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	return
 }
 
-// This is just like Get, except it returns the value in Json format.
-func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
-	value, revision, e := s.Get(url)
-	if e != nil {
-		return nil, 0, e
-	}
-
-	valueJson, e = json.Marshal(value)
-	if e != nil {
-		return nil, 0, e
-	}
-
-	return valueJson, revision, e
-}
-
 // Set a value from the status as described by the URL. Revision numbers are
 // updated as needed.
 func (s *Status) Set(url string, value interface{}, revision int) (e error) {
@@ -115,17 +99,6 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 
 	s.checkWatchers()
 	return nil
-}
-
-// This is just like Set, except it accepts the value to set in Json format.
-func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {
-	var value interface{}
-	e = json.Unmarshal(valueJson, &value)
-	if e != nil {
-		return e
-	}
-
-	return s.Set(url, value, revision)
 }
 
 // Does the URL contain wildcards?
