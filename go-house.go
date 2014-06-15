@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-func loadServerConfig(options options.Options, s *status.Status) (e error) {
+func loadServerConfig(options *options.Options, s *status.Status) (e error) {
 	configFile := filepath.Join(options.ConfigDir, "server.json")
 
 	rawJson, e := ioutil.ReadFile(configFile)

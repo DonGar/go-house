@@ -27,7 +27,7 @@ func (suite *MySuite) TestLoadServerConfig(c *check.C) {
 	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
 	c.Assert(e, check.IsNil)
 
-	options := options.Options{ConfigDir: tempDir}
+	options := &options.Options{ConfigDir: tempDir}
 	testStatus := status.Status{}
 
 	e = loadServerConfig(options, &testStatus)

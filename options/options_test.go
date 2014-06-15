@@ -13,7 +13,7 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 func (suite *MySuite) TestFindOptions(c *check.C) {
-	var options Options
+	var options *Options
 	var e error
 
 	options, e = FindOptions()

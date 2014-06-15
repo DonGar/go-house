@@ -10,15 +10,17 @@ type Options struct {
 	StaticDir string
 }
 
-func FindOptions() (options Options, e error) {
+func FindOptions() (options *Options, e error) {
 	execName, e := filepath.Abs(os.Args[0])
 	if e != nil {
-		return
+		return nil, e
 	}
 
 	// TODO: parse command args and make this configurable.
-	options.ConfigDir = filepath.Dir(execName)
-	options.StaticDir = "/home/dgarrett/Development/go-house/static"
+	options = &Options{
+		ConfigDir: filepath.Dir(execName),
+		StaticDir: "/home/dgarrett/Development/go-house/static",
+	}
 
-	return
+	return options, nil
 }
