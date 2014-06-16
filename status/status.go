@@ -244,7 +244,7 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 				current = &node{value: statusMap{}, revision: s.revision}
 				childMap[u] = current
 			} else {
-				return nil, fmt.Errorf("Status: Node does not have child: %s", u)
+				return nil, fmt.Errorf("Status: Node %s does not have child: %s", url, u)
 			}
 		}
 
