@@ -6,12 +6,16 @@ import (
 
 func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	o, s, e := setupTestStatusOptions(c)
+	c.Assert(e, check.IsNil)
+
+	config, _, e := s.GetSubStatus("status://server/adapters/TestWeb")
+	c.Assert(e, check.IsNil)
 
 	base := base{
 		status:     s,
 		options:    o,
-		configUrl:  "status://server/adapters/Test",
-		adapterUrl: "status://Test",
+		config:     config,
+		adapterUrl: "status://TestWeb",
 	}
 
 	// We need just enough of a manager to let WebAdapter register itself.
@@ -28,13 +32,16 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	c.Check(e, check.IsNil)
 
 	// Verify Manager registration.
-	c.Check(mgr.webUrls, check.DeepEquals, map[string]Adapter{"status://Test": a})
+	c.Check(
+		mgr.webUrls,
+		check.DeepEquals,
+		map[string]Adapter{"status://TestWeb": a})
 
 	// Verify Manager WebAdapterStatusUrls (really a manager test, handy here)
 	c.Check(
 		mgr.WebAdapterStatusUrls(),
 		check.DeepEquals,
-		[]string{"status://Test"})
+		[]string{"status://TestWeb"})
 
 	// Stop the web adapter.
 	e = a.Stop()

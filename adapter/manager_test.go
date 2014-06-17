@@ -39,16 +39,23 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 	c.Check(len(adapterMgr.adapters), check.Equals, 2)
 
 	// We verify their contents.
+
+	config1, _, e := s.GetSubStatus("status://server/adapters/TestBase")
+	c.Assert(e, check.IsNil)
+
+	config2, _, e := s.GetSubStatus("status://server/adapters/TestBase2")
+	c.Assert(e, check.IsNil)
+
 	c.Check(adapterMgr.adapters["TestBase"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
-		configUrl:  "status://server/adapters/TestBase",
+		config:     config1,
 		adapterUrl: "status://TestBase",
 	})
 	c.Check(adapterMgr.adapters["TestBase2"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
-		configUrl:  "status://server/adapters/TestBase2",
+		config:     config2,
 		adapterUrl: "status://TestBase2",
 	})
 }
@@ -56,6 +63,9 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 
 	o, s, e := setupTestStatusOptions(c)
+	c.Assert(e, check.IsNil)
+
+	config, _, e := s.GetSubStatus("status://server/adapters/TestBase")
 	c.Assert(e, check.IsNil)
 
 	// Create the manager.
@@ -70,7 +80,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Check(adapterMgr.adapters["TestBase"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
-		configUrl:  "status://server/adapters/TestBase",
+		config:     config,
 		adapterUrl: "status://TestBase",
 	})
 

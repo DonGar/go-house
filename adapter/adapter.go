@@ -17,7 +17,7 @@ type NewAdapter func(m *AdapterManager, base base) (a Adapter, e error)
 type base struct {
 	options    *options.Options
 	status     *status.Status
-	configUrl  string
+	config     *status.Status
 	adapterUrl string
 }
 

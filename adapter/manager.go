@@ -41,7 +41,12 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 		adapterConfigUrl := configUrl + "/" + name
 		adapterUrl := "status://" + name
 
-		adapterType, e := status.GetString(adapterConfigUrl + "/type")
+		adapterConfig, _, e := status.GetSubStatus(adapterConfigUrl)
+		if e != nil {
+			return nil, e
+		}
+
+		adapterType, e := adapterConfig.GetString("status://type")
 		if e != nil {
 			return nil, e
 		}
@@ -54,7 +59,7 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 		newAdapter, e := factory(adapterMgr, base{
 			options:    options,
 			status:     status,
-			configUrl:  adapterConfigUrl,
+			config:     adapterConfig,
 			adapterUrl: adapterUrl,
 		})
 		if e != nil {

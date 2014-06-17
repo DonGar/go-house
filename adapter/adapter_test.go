@@ -54,7 +54,7 @@ func (suite *MySuite) TestBaseStop(c *check.C) {
 	base := base{
 		status:     s,
 		options:    o,
-		configUrl:  "status://server/adapters/TestBase",
+		config:     &status.Status{},
 		adapterUrl: "status://TestBase",
 	}
 
