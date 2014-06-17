@@ -23,7 +23,10 @@ type base struct {
 
 // This is really only present for testing purposes.
 func NewBaseAdapter(base base) (a Adapter, e error) {
-	base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
+	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
+	if e != nil {
+		return nil, e
+	}
 	return &base, nil
 }
 
