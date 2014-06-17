@@ -8,7 +8,7 @@ import (
 
 type FileAdapter struct {
 	base
-	configFile string
+	filename string
 }
 
 func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
@@ -40,7 +40,7 @@ func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 }
 
 func (fa *FileAdapter) loadFile() (e error) {
-	rawJson, e := ioutil.ReadFile(fa.configFile)
+	rawJson, e := ioutil.ReadFile(fa.filename)
 	if e != nil {
 		return e
 	}
