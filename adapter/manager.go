@@ -33,7 +33,8 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 	// Look for adapter configs.
 	childNames, e := status.GetChildNames(configUrl)
 	if e != nil {
-		return nil, e
+		// If there are no adapters configured, just don't set any up.
+		childNames = []string{}
 	}
 
 	for _, name := range childNames {

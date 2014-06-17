@@ -4,6 +4,7 @@ import (
 	// "github.com/cpucycle/astrotime"
 	"log"
 	// "time"
+	"github.com/DonGar/go-house/adapter"
 	"github.com/DonGar/go-house/http-server"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
@@ -11,6 +12,7 @@ import (
 	"path/filepath"
 )
 
+// Load the initial server config into our status struct.
 func loadServerConfig(options *options.Options, s *status.Status) (e error) {
 	configFile := filepath.Join(options.ConfigDir, "server.json")
 
@@ -36,16 +38,18 @@ func main() {
 		panic(e)
 	}
 
-	status := status.Status{}
+	status := &status.Status{}
 
 	// Load the initial config.
-	e = loadServerConfig(options, &status)
+	e = loadServerConfig(options, status)
 	if e != nil {
 		panic(e)
 	}
 
 	// TODO: Start up the rules engine.
-	// TODO: Start up the adapters
 
-	server.RunHttpServerForever(options, &status)
+	// Start the AdapterManager.
+	adapterMgr, e := adapter.NewAdapterManager(options, status)
+
+	server.RunHttpServerForever(options, status, adapterMgr)
 }

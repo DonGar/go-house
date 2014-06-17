@@ -4,19 +4,22 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/DonGar/go-house/adapter"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 //
 // Define the type used to handle status requests.
 //
 type StatusHandler struct {
-	status *status.Status
+	status     *status.Status
+	adapterMgr *adapter.AdapterManager
 }
 
 // Handle Get/Post Status requests.
@@ -74,11 +77,26 @@ func (s *StatusHandler) HandleGet(
 	}
 }
 
+// Find out if the requested URL can be legally written too in this request.
+func (s *StatusHandler) VerfiyStatusUrlAgainstAdapters(statusUrl string) bool {
+	for _, u := range s.adapterMgr.WebAdapterStatusUrls() {
+		if statusUrl == u || strings.HasPrefix(statusUrl, u+"/") {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *StatusHandler) HandlePut(
 	w http.ResponseWriter, r *http.Request,
 	statusUrl string, revision int) {
 
 	// TODO: Verify URL against web adapters.
+	if !s.VerfiyStatusUrlAgainstAdapters(statusUrl) {
+		http.Error(w, fmt.Sprintf("No adapter for %s.", statusUrl), http.StatusBadRequest)
+		return
+	}
 
 	// Read the body into memory.
 	body := bytes.NewBuffer(nil)
@@ -137,9 +155,9 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // This method configures our HTTP Handlers, and runs the web server forever. It
 // does not return.
-func RunHttpServerForever(options *options.Options, status *status.Status) {
+func RunHttpServerForever(options *options.Options, status *status.Status, adapterMgr *adapter.AdapterManager) {
 	http.Handle("/", http.FileServer(http.Dir(options.StaticDir)))
-	http.Handle("/status/", &StatusHandler{status: status})
+	http.Handle("/status/", &StatusHandler{status: status, adapterMgr: adapterMgr})
 
 	log.Println("Starting web server.")
 	http.ListenAndServe(":8082", nil)

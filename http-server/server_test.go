@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/DonGar/go-house/adapter"
+	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"net/http"
@@ -18,8 +20,49 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
+func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
+	status := &status.Status{}
+	options := &options.Options{}
+
+	adapterMgr, e := adapter.NewAdapterManager(options, status)
+	c.Assert(e, check.IsNil)
+
+	return &StatusHandler{
+		status:     status,
+		adapterMgr: adapterMgr,
+	}
+}
+
+func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
+	status := &status.Status{}
+	options := &options.Options{}
+
+	// Add a web adapter.
+	e := status.SetJson("status://",
+		[]byte(`
+    {
+      "server": {
+        "adapters": {
+          "adapter": {
+            "type": "web"
+          }
+        }
+      }
+    }`),
+		0)
+	c.Assert(e, check.IsNil)
+
+	adapterMgr, e := adapter.NewAdapterManager(options, status)
+	c.Assert(e, check.IsNil)
+
+	return &StatusHandler{
+		status:     status,
+		adapterMgr: adapterMgr,
+	}
+}
+
 func (suite *MySuite) TestUnknownMethod(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("FOO", "http://example.com/status/", nil)
 	c.Assert(e, check.IsNil)
@@ -46,7 +89,7 @@ func (suite *MySuite) TestUnknownMethod(c *check.C) {
 //
 
 func (suite *MySuite) TestGetMinimal(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("GET", "http://example.com/status/", nil)
 	c.Assert(e, check.IsNil)
@@ -69,7 +112,7 @@ func (suite *MySuite) TestGetMinimal(c *check.C) {
 }
 
 func (suite *MySuite) TestGetRevisionMismatch(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("GET", "http://example.com/status/?revision=11", nil)
 	c.Assert(e, check.IsNil)
@@ -92,8 +135,7 @@ func (suite *MySuite) TestGetRevisionMismatch(c *check.C) {
 }
 
 func (suite *MySuite) TestGetRevisionMatch(c *check.C) {
-	status := status.Status{}
-	statusHandler := StatusHandler{status: &status}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("GET", "http://example.com/status/?revision=0", nil)
 	c.Assert(e, check.IsNil)
@@ -103,7 +145,7 @@ func (suite *MySuite) TestGetRevisionMatch(c *check.C) {
 	// Wake up after a while and cause a change to complete.
 	go func() {
 		time.Sleep(10 * time.Millisecond)
-		status.Set("status://", 1, 0)
+		statusHandler.status.Set("status://", 1, 0)
 	}()
 
 	// Perform the query
@@ -122,7 +164,7 @@ func (suite *MySuite) TestGetRevisionMatch(c *check.C) {
 }
 
 func (suite *MySuite) TestGetUnknownStatusPath(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("GET", "http://example.com/status/foo", nil)
 	c.Assert(e, check.IsNil)
@@ -145,7 +187,7 @@ func (suite *MySuite) TestGetUnknownStatusPath(c *check.C) {
 }
 
 func (suite *MySuite) TestGetWildcardStatusPath(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("GET", "http://example.com/status/foo/*", nil)
 	c.Assert(e, check.IsNil)
@@ -172,7 +214,7 @@ func (suite *MySuite) TestGetWildcardStatusPath(c *check.C) {
 //
 
 func (suite *MySuite) TestPostMinimal(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	requestData := url.Values{}
 	request, e := http.NewRequest("POST", "http://example.com/status/",
@@ -197,7 +239,7 @@ func (suite *MySuite) TestPostMinimal(c *check.C) {
 }
 
 func (suite *MySuite) TestPostRevisionMismatch(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	requestData := url.Values{"revision": []string{"11"}}
 	request, e := http.NewRequest("POST", "http://example.com/status/",
@@ -222,7 +264,7 @@ func (suite *MySuite) TestPostRevisionMismatch(c *check.C) {
 }
 
 func (suite *MySuite) TestPostUnknownStatusPath(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandler(c)
 
 	request, e := http.NewRequest("POST", "http://example.com/status/foo", nil)
 	c.Assert(e, check.IsNil)
@@ -249,10 +291,10 @@ func (suite *MySuite) TestPostUnknownStatusPath(c *check.C) {
 //
 
 func (suite *MySuite) TestPutMinimal(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandlerWithAdapter(c)
 
 	request, e := http.NewRequest(
-		"PUT", "http://example.com/status/", strings.NewReader(`{"foo": "bar"}`))
+		"PUT", "http://example.com/status/adapter/", strings.NewReader(`{"foo": "bar"}`))
 	c.Assert(e, check.IsNil)
 
 	response := httptest.NewRecorder()
@@ -267,10 +309,10 @@ func (suite *MySuite) TestPutMinimal(c *check.C) {
 }
 
 func (suite *MySuite) TestPutRevisionMismatch(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandlerWithAdapter(c)
 
 	request, e := http.NewRequest(
-		"PUT", "http://example.com/status/?revision=3", strings.NewReader(`{"foo": "bar"}`))
+		"PUT", "http://example.com/status/adapter?revision=33", strings.NewReader(`{"foo": "bar"}`))
 	c.Assert(e, check.IsNil)
 
 	response := httptest.NewRecorder()
@@ -281,14 +323,14 @@ func (suite *MySuite) TestPutRevisionMismatch(c *check.C) {
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 400)
 	c.Check(response.HeaderMap, check.DeepEquals, http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
-	c.Check(response.Body.String(), check.Equals, "Status: Invalid Revision: 3 - status://. Expected 0\n")
+	c.Check(response.Body.String(), check.Equals, "Status: Invalid Revision: 33 - status://adapter. Expected 2\n")
 }
 
 func (suite *MySuite) TestPutRevisionMatchUrl(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandlerWithAdapter(c)
 
 	request, e := http.NewRequest(
-		"PUT", "http://example.com/status/?revision=0", strings.NewReader(`{"foo": "bar"}`))
+		"PUT", "http://example.com/status/adapter?revision=2", strings.NewReader(`{"foo": "bar"}`))
 	c.Assert(e, check.IsNil)
 
 	response := httptest.NewRecorder()
@@ -303,10 +345,10 @@ func (suite *MySuite) TestPutRevisionMatchUrl(c *check.C) {
 }
 
 func (suite *MySuite) TestPutWildcardStatusPath(c *check.C) {
-	statusHandler := StatusHandler{status: &status.Status{}}
+	statusHandler := setupStatusHandlerWithAdapter(c)
 
 	request, e := http.NewRequest(
-		"PUT", "http://example.com/status/*/foo", strings.NewReader(`{"foo": "bar"}`))
+		"PUT", "http://example.com/status/adapter/*/foo", strings.NewReader(`{"foo": "bar"}`))
 	c.Assert(e, check.IsNil)
 
 	response := httptest.NewRecorder()
@@ -323,5 +365,29 @@ func (suite *MySuite) TestPutWildcardStatusPath(c *check.C) {
 	c.Check(
 		response.Body.String(),
 		check.Equals,
-		"Status: Wildcards not allowed here: status://*/foo\n")
+		"Status: Wildcards not allowed here: status://adapter/*/foo\n")
+}
+
+func (suite *MySuite) TestPutNoneAdapterPath(c *check.C) {
+	statusHandler := setupStatusHandlerWithAdapter(c)
+
+	request, e := http.NewRequest(
+		"PUT", "http://example.com/status/foo/", strings.NewReader(`{"foo": "bar"}`))
+	c.Assert(e, check.IsNil)
+
+	response := httptest.NewRecorder()
+
+	// Perform the query
+	statusHandler.ServeHTTP(response, request)
+
+	// Validate the result.
+	c.Check(response.Code, check.Equals, 400)
+	c.Check(
+		response.HeaderMap,
+		check.DeepEquals,
+		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(
+		response.Body.String(),
+		check.Equals,
+		"No adapter for status://foo/.\n")
 }
