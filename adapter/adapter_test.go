@@ -31,6 +31,9 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
           "TestFileSpecified": {
             "type": "file",
             "filename": "TestFile.json"
+          },
+          "TestWeb": {
+            "type": "web"
           }
         }
       }

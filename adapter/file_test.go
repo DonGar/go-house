@@ -1,8 +1,6 @@
 package adapter
 
 import (
-	// "github.com/DonGar/go-house/options"
-	// "github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 )
 
@@ -17,7 +15,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	}
 
 	// Create a file adapter.
-	fa, e := NewFileAdapter(base)
+	fa, e := NewFileAdapter(nil, base)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.
@@ -48,7 +46,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	}
 
 	// Create a file adapter.
-	fa, e := NewFileAdapter(base)
+	fa, e := NewFileAdapter(nil, base)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.

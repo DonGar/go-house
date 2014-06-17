@@ -11,7 +11,7 @@ type Adapter interface {
 }
 
 // All Adapters must implement a factory with this signature.
-type NewAdapter func(base base) (a Adapter, e error)
+type NewAdapter func(m *AdapterManager, base base) (a Adapter, e error)
 
 // All Adapters may compose this type for convenience.
 type base struct {
@@ -22,7 +22,7 @@ type base struct {
 }
 
 // This is really only present for testing purposes.
-func NewBaseAdapter(base base) (a Adapter, e error) {
+func NewBaseAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
 	if e != nil {
 		return nil, e

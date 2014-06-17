@@ -9,6 +9,7 @@ import (
 type AdapterManager struct {
 	status   *status.Status
 	adapters map[string]Adapter // Map configUrl to Adapter.
+	webUrls  map[string]Adapter // These are updated directly by WebAdapter.
 }
 
 var configUrl = "status://server/adapters"
@@ -17,17 +18,7 @@ var configUrl = "status://server/adapters"
 var adapterFactories = map[string]NewAdapter{
 	"base": NewBaseAdapter,
 	"file": NewFileAdapter,
-}
-
-func (am *AdapterManager) Stop() (e error) {
-	for k, v := range am.adapters {
-		e = v.Stop()
-		if e != nil {
-			return e
-		}
-		delete(am.adapters, k)
-	}
-	return nil
+	"web":  NewWebAdapter,
 }
 
 func NewAdapterManager(options *options.Options, status *status.Status) (adapterMgr *AdapterManager, e error) {
@@ -36,6 +27,7 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 	adapterMgr = &AdapterManager{
 		status:   status,
 		adapters: map[string]Adapter{},
+		webUrls:  map[string]Adapter{},
 	}
 
 	// Look for adapter configs.
@@ -58,7 +50,7 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 			return nil, fmt.Errorf("Adapter: Unknown type: %s.", adapterType)
 		}
 
-		newAdapter, e := factory(base{
+		newAdapter, e := factory(adapterMgr, base{
 			options:    options,
 			status:     status,
 			configUrl:  adapterConfigUrl,
@@ -72,4 +64,25 @@ func NewAdapterManager(options *options.Options, status *status.Status) (adapter
 	}
 
 	return adapterMgr, nil
+}
+
+func (m *AdapterManager) Stop() (e error) {
+	for k, v := range m.adapters {
+		e = v.Stop()
+		if e != nil {
+			return e
+		}
+		delete(m.adapters, k)
+	}
+	return nil
+}
+
+func (m *AdapterManager) WebAdapterStatusUrls() (result []string) {
+	result = []string{}
+
+	for k := range m.webUrls {
+		result = append(result, k)
+	}
+
+	return result
 }

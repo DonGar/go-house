@@ -64,7 +64,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
-	c.Check(len(adapterMgr.adapters), check.Equals, 3)
+	c.Check(len(adapterMgr.adapters), check.Equals, 4)
 
 	// We verify their contents.
 	c.Check(adapterMgr.adapters["TestBase"], check.DeepEquals, &base{
@@ -94,10 +94,12 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 					"TestFileSpecified": map[string]interface{}{
 						"type": "file", "filename": "TestFile.json",
 					},
+					"TestWeb": map[string]interface{}{"type": "web"},
 				},
 			},
 			"TestBase":          interface{}(nil),
 			"TestFile":          interface{}(nil),
 			"TestFileSpecified": interface{}(nil),
+			"TestWeb":           interface{}(nil),
 		})
 }

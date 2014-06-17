@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	//	"fmt"
 	"github.com/DonGar/go-house/status"
 	"io/ioutil"
 	"path/filepath"
@@ -12,7 +11,7 @@ type FileAdapter struct {
 	configFile string
 }
 
-func NewFileAdapter(base base) (a Adapter, e error) {
+func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 
 	filename, e := base.status.GetString(base.configUrl + "/filename")
 	// Todo: if an error is present, verify it's for filename not existing.
