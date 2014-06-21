@@ -4,19 +4,19 @@ import (
 	"github.com/DonGar/go-house/status"
 )
 
-type WebAdapter struct {
+type webAdapter struct {
 	base
 	adapterMgr *AdapterManager
 }
 
-func NewWebAdapter(m *AdapterManager, base base) (a Adapter, e error) {
+func newWebAdapter(m *AdapterManager, base base) (a adapter, e error) {
 
 	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
 	if e != nil {
 		return nil, e
 	}
 
-	a = &WebAdapter{base, m}
+	a = &webAdapter{base, m}
 
 	// Remember this adapter in the web URLs section.
 	m.webUrls[base.adapterUrl] = a
@@ -25,7 +25,7 @@ func NewWebAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 }
 
 // Remove this adapter from the web URLs section, the default Stop.
-func (a *WebAdapter) Stop() (e error) {
+func (a *webAdapter) Stop() (e error) {
 	delete(a.adapterMgr.webUrls, a.base.adapterUrl)
 	return a.base.Stop()
 }

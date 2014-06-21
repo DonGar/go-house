@@ -8,17 +8,17 @@ import (
 
 type AdapterManager struct {
 	status   *status.Status
-	adapters map[string]Adapter // Map configUrl to Adapter.
-	webUrls  map[string]Adapter // These are updated directly by WebAdapter.
+	adapters map[string]adapter // Map configUrl to Adapter.
+	webUrls  map[string]adapter // These are updated directly by WebAdapter.
 }
 
 var configUrl = "status://server/adapters"
 
 // Map type name to factory method.
-var adapterFactories = map[string]NewAdapter{
-	"base": NewBaseAdapter,
-	"file": NewFileAdapter,
-	"web":  NewWebAdapter,
+var adapterFactories = map[string]newAdapter{
+	"base": newBaseAdapter,
+	"file": newFileAdapter,
+	"web":  newWebAdapter,
 }
 
 func NewAdapterManager(options *options.Options, status *status.Status) (mgr *AdapterManager, e error) {
@@ -26,8 +26,8 @@ func NewAdapterManager(options *options.Options, status *status.Status) (mgr *Ad
 	// Create the new manager.
 	mgr = &AdapterManager{
 		status:   status,
-		adapters: map[string]Adapter{},
-		webUrls:  map[string]Adapter{},
+		adapters: map[string]adapter{},
+		webUrls:  map[string]adapter{},
 	}
 
 	// Look for adapter configs.

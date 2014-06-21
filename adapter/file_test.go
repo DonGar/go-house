@@ -19,7 +19,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	}
 
 	// Create a file adapter.
-	fa, e := NewFileAdapter(nil, base)
+	fa, e := newFileAdapter(nil, base)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.
@@ -54,7 +54,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	}
 
 	// Create a file adapter.
-	fa, e := NewFileAdapter(nil, base)
+	fa, e := newFileAdapter(nil, base)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.

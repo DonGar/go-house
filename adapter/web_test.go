@@ -19,10 +19,10 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	}
 
 	// We need just enough of a manager to let WebAdapter register itself.
-	mgr := &AdapterManager{webUrls: map[string]Adapter{}}
+	mgr := &AdapterManager{webUrls: map[string]adapter{}}
 
 	// Create a web adapter.
-	a, e := NewWebAdapter(mgr, base)
+	a, e := newWebAdapter(mgr, base)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.
@@ -35,7 +35,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	c.Check(
 		mgr.webUrls,
 		check.DeepEquals,
-		map[string]Adapter{"status://TestWeb": a})
+		map[string]adapter{"status://TestWeb": a})
 
 	// Verify Manager WebAdapterStatusUrls (really a manager test, handy here)
 	c.Check(
@@ -48,7 +48,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// Verify Manager removal.
-	c.Check(mgr.webUrls, check.DeepEquals, map[string]Adapter{})
+	c.Check(mgr.webUrls, check.DeepEquals, map[string]adapter{})
 
 	// Verify Status Contents.
 	v, r, e = s.Get(base.adapterUrl)

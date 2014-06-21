@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 )
 
-type FileAdapter struct {
+type fileAdapter struct {
 	base
 	filename string
 }
 
-func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
+func newFileAdapter(m *AdapterManager, base base) (a adapter, e error) {
 
 	filename, e := base.config.GetString("status://filename")
 	// Todo: if an error is present, verify it's for filename not existing.
@@ -27,7 +27,7 @@ func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 		return nil, e
 	}
 
-	fa := &FileAdapter{base, abs_name}
+	fa := &fileAdapter{base, abs_name}
 
 	e = fa.loadFile()
 	if e != nil {
@@ -39,7 +39,7 @@ func NewFileAdapter(m *AdapterManager, base base) (a Adapter, e error) {
 	return fa, nil
 }
 
-func (fa *FileAdapter) loadFile() (e error) {
+func (fa *fileAdapter) loadFile() (e error) {
 	rawJson, e := ioutil.ReadFile(fa.filename)
 	if e != nil {
 		return e

@@ -6,12 +6,12 @@ import (
 )
 
 // All Adapters must confirm to this interface.
-type Adapter interface {
+type adapter interface {
 	Stop() (e error)
 }
 
 // All Adapters must implement a factory with this signature.
-type NewAdapter func(m *AdapterManager, base base) (a Adapter, e error)
+type newAdapter func(m *AdapterManager, base base) (a adapter, e error)
 
 // All Adapters may compose this type for convenience.
 type base struct {
@@ -22,7 +22,7 @@ type base struct {
 }
 
 // This is really only present for testing purposes.
-func NewBaseAdapter(m *AdapterManager, base base) (a Adapter, e error) {
+func newBaseAdapter(m *AdapterManager, base base) (a adapter, e error) {
 	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
 	if e != nil {
 		return nil, e
