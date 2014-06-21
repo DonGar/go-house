@@ -14,11 +14,11 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
     {
       "server": {
         "adapters": {
-          "TestBase": {
-            "type": "base"
-          },
-          "TestBase2": {
-            "type": "base"
+          "base": {
+            "TestBase": {
+            },
+            "TestBase2": {
+            }
           }
         }
       }
@@ -31,28 +31,28 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 	}
 
 	// Create the manager.
-	var adapterMgr *AdapterManager
-	adapterMgr, e = NewAdapterManager(o, s)
+	var mgr *AdapterManager
+	mgr, e = NewAdapterManager(o, s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
-	c.Check(len(adapterMgr.adapters), check.Equals, 2)
+	c.Check(len(mgr.adapters), check.Equals, 2)
 
 	// We verify their contents.
 
-	config1, _, e := s.GetSubStatus("status://server/adapters/TestBase")
+	config1, _, e := s.GetSubStatus("status://server/adapters/base/TestBase")
 	c.Assert(e, check.IsNil)
 
-	config2, _, e := s.GetSubStatus("status://server/adapters/TestBase2")
+	config2, _, e := s.GetSubStatus("status://server/adapters/base/TestBase2")
 	c.Assert(e, check.IsNil)
 
-	c.Check(adapterMgr.adapters["TestBase"], check.DeepEquals, &base{
+	c.Check(mgr.adapters["TestBase"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
 		config:     config1,
 		adapterUrl: "status://TestBase",
 	})
-	c.Check(adapterMgr.adapters["TestBase2"], check.DeepEquals, &base{
+	c.Check(mgr.adapters["TestBase2"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
 		config:     config2,
@@ -65,30 +65,30 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	o, s, e := setupTestStatusOptions(c)
 	c.Assert(e, check.IsNil)
 
-	config, _, e := s.GetSubStatus("status://server/adapters/TestBase")
+	config, _, e := s.GetSubStatus("status://server/adapters/base/TestBase")
 	c.Assert(e, check.IsNil)
 
 	// Create the manager.
-	var adapterMgr *AdapterManager
-	adapterMgr, e = NewAdapterManager(o, s)
+	var mgr *AdapterManager
+	mgr, e = NewAdapterManager(o, s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
-	c.Check(len(adapterMgr.adapters), check.Equals, 4)
+	c.Check(len(mgr.adapters), check.Equals, 4)
 
 	// We verify their contents.
-	c.Check(adapterMgr.adapters["TestBase"], check.DeepEquals, &base{
+	c.Check(mgr.adapters["TestBase"], check.DeepEquals, &base{
 		options:    o,
 		status:     s,
 		config:     config,
 		adapterUrl: "status://TestBase",
 	})
 
-	e = adapterMgr.Stop()
+	e = mgr.Stop()
 	c.Check(e, check.IsNil)
 
 	// We removed all adapters.
-	c.Check(len(adapterMgr.adapters), check.Equals, 0)
+	c.Check(len(mgr.adapters), check.Equals, 0)
 
 	// Verify Status Contents
 	v, _, e := s.Get("status://")
@@ -99,12 +99,18 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 		map[string]interface{}{
 			"server": map[string]interface{}{
 				"adapters": map[string]interface{}{
-					"TestBase": map[string]interface{}{"type": "base"},
-					"TestFile": map[string]interface{}{"type": "file"},
-					"TestFileSpecified": map[string]interface{}{
-						"type": "file", "filename": "TestFile.json",
+					"base": map[string]interface{}{
+						"TestBase": map[string]interface{}{},
 					},
-					"TestWeb": map[string]interface{}{"type": "web"},
+					"file": map[string]interface{}{
+						"TestFile": map[string]interface{}{},
+						"TestFileSpecified": map[string]interface{}{
+							"filename": "TestFile.json",
+						},
+					},
+					"web": map[string]interface{}{
+						"TestWeb": map[string]interface{}{},
+					},
 				},
 			},
 			"TestBase":          interface{}(nil),

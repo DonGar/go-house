@@ -8,7 +8,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	o, s, e := setupTestStatusOptions(c)
 	c.Assert(e, check.IsNil)
 
-	config, _, e := s.GetSubStatus("status://server/adapters/TestFile")
+	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFile")
 	c.Assert(e, check.IsNil)
 
 	base := base{
@@ -43,7 +43,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	o, s, e := setupTestStatusOptions(c)
 	c.Assert(e, check.IsNil)
 
-	config, _, e := s.GetSubStatus("status://server/adapters/TestFileSpecified")
+	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFileSpecified")
 	c.Assert(e, check.IsNil)
 
 	base := base{

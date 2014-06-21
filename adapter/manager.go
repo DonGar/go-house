@@ -21,55 +21,60 @@ var adapterFactories = map[string]NewAdapter{
 	"web":  NewWebAdapter,
 }
 
-func NewAdapterManager(options *options.Options, status *status.Status) (adapterMgr *AdapterManager, e error) {
+func NewAdapterManager(options *options.Options, status *status.Status) (mgr *AdapterManager, e error) {
 
 	// Create the new manager.
-	adapterMgr = &AdapterManager{
+	mgr = &AdapterManager{
 		status:   status,
 		adapters: map[string]Adapter{},
 		webUrls:  map[string]Adapter{},
 	}
 
 	// Look for adapter configs.
-	childNames, e := status.GetChildNames(configUrl)
+	adapterTypes, e := status.GetChildNames(configUrl)
 	if e != nil {
 		// If there are no adapters configured, just don't set any up.
-		childNames = []string{}
+		adapterTypes = []string{}
 	}
 
-	for _, name := range childNames {
-		adapterConfigUrl := configUrl + "/" + name
-		adapterUrl := "status://" + name
-
-		adapterConfig, _, e := status.GetSubStatus(adapterConfigUrl)
-		if e != nil {
-			return nil, e
-		}
-
-		adapterType, e := adapterConfig.GetString("status://type")
-		if e != nil {
-			return nil, e
-		}
+	// Loop through the types of adapters.
+	for _, adapterType := range adapterTypes {
 
 		factory, ok := adapterFactories[adapterType]
 		if !ok {
 			return nil, fmt.Errorf("Adapter: Unknown type: %s.", adapterType)
 		}
 
-		newAdapter, e := factory(adapterMgr, base{
-			options:    options,
-			status:     status,
-			config:     adapterConfig,
-			adapterUrl: adapterUrl,
-		})
+		adapterNames, e := status.GetChildNames(configUrl + "/" + adapterType)
 		if e != nil {
 			return nil, e
 		}
 
-		adapterMgr.adapters[name] = newAdapter
+		// Loop through the adapters of a given type.
+		for _, name := range adapterNames {
+			adapterConfigUrl := configUrl + "/" + adapterType + "/" + name
+			adapterUrl := "status://" + name
+
+			adapterConfig, _, e := status.GetSubStatus(adapterConfigUrl)
+			if e != nil {
+				return nil, e
+			}
+
+			newAdapter, e := factory(mgr, base{
+				options:    options,
+				status:     status,
+				config:     adapterConfig,
+				adapterUrl: adapterUrl,
+			})
+			if e != nil {
+				return nil, e
+			}
+
+			mgr.adapters[name] = newAdapter
+		}
 	}
 
-	return adapterMgr, nil
+	return mgr, nil
 }
 
 func (m *AdapterManager) Stop() (e error) {

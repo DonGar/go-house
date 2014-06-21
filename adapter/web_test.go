@@ -8,7 +8,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	o, s, e := setupTestStatusOptions(c)
 	c.Assert(e, check.IsNil)
 
-	config, _, e := s.GetSubStatus("status://server/adapters/TestWeb")
+	config, _, e := s.GetSubStatus("status://server/adapters/web/TestWeb")
 	c.Assert(e, check.IsNil)
 
 	base := base{

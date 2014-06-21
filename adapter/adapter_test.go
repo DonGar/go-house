@@ -22,18 +22,20 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
     {
       "server": {
         "adapters": {
-          "TestBase": {
-            "type": "base"
+          "base": {
+            "TestBase": {
+            }
           },
-          "TestFile": {
-            "type": "file"
+          "file": {
+            "TestFile": {
+            },
+            "TestFileSpecified": {
+              "filename": "TestFile.json"
+            }
           },
-          "TestFileSpecified": {
-            "type": "file",
-            "filename": "TestFile.json"
-          },
-          "TestWeb": {
-            "type": "web"
+          "web": {
+            "TestWeb": {
+            }
           }
         }
       }

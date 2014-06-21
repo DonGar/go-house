@@ -43,8 +43,8 @@ func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
     {
       "server": {
         "adapters": {
-          "adapter": {
-            "type": "web"
+          "web": {
+            "adapter": {}
           }
         }
       }
