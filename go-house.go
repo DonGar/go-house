@@ -7,6 +7,7 @@ import (
 	"github.com/DonGar/go-house/adapter"
 	"github.com/DonGar/go-house/http-server"
 	"github.com/DonGar/go-house/options"
+	"github.com/DonGar/go-house/rules"
 	"github.com/DonGar/go-house/status"
 	"io/ioutil"
 	"path/filepath"
@@ -46,13 +47,11 @@ func main() {
 		panic(e)
 	}
 
-	// Start the ActionManager
-	//rulesMgr, e := rules.NewManager(options, status)
+	// Start the rules manager
+	rulesMgr, e := rules.NewManager(status)
 
 	// Start the AdapterManager.
 	adapterMgr, e := adapter.NewManager(options, status)
-
-	// TODO: Start up the rules engine.
 
 	server.RunHttpServerForever(options, status, adapterMgr)
 }
