@@ -31,8 +31,8 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 	}
 
 	// Create the manager.
-	var mgr *AdapterManager
-	mgr, e = NewAdapterManager(o, s)
+	var mgr *Manager
+	mgr, e = NewManager(o, s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
@@ -69,8 +69,8 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// Create the manager.
-	var mgr *AdapterManager
-	mgr, e = NewAdapterManager(o, s)
+	var mgr *Manager
+	mgr, e = NewManager(o, s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.

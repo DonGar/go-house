@@ -46,10 +46,13 @@ func main() {
 		panic(e)
 	}
 
-	// TODO: Start up the rules engine.
+	// Start the ActionManager
+	//rulesMgr, e := rules.NewManager(options, status)
 
 	// Start the AdapterManager.
-	adapterMgr, e := adapter.NewAdapterManager(options, status)
+	adapterMgr, e := adapter.NewManager(options, status)
+
+	// TODO: Start up the rules engine.
 
 	server.RunHttpServerForever(options, status, adapterMgr)
 }

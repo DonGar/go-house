@@ -6,7 +6,7 @@ import (
 	"github.com/DonGar/go-house/status"
 )
 
-type AdapterManager struct {
+type Manager struct {
 	status   *status.Status
 	adapters map[string]adapter // Map configUrl to Adapter.
 	webUrls  map[string]adapter // These are updated directly by WebAdapter.
@@ -21,10 +21,10 @@ var adapterFactories = map[string]newAdapter{
 	"web":  newWebAdapter,
 }
 
-func NewAdapterManager(options *options.Options, status *status.Status) (mgr *AdapterManager, e error) {
+func NewManager(options *options.Options, status *status.Status) (mgr *Manager, e error) {
 
 	// Create the new manager.
-	mgr = &AdapterManager{
+	mgr = &Manager{
 		status:   status,
 		adapters: map[string]adapter{},
 		webUrls:  map[string]adapter{},
@@ -77,7 +77,7 @@ func NewAdapterManager(options *options.Options, status *status.Status) (mgr *Ad
 	return mgr, nil
 }
 
-func (m *AdapterManager) Stop() (e error) {
+func (m *Manager) Stop() (e error) {
 	for k, v := range m.adapters {
 		e = v.Stop()
 		if e != nil {
@@ -88,7 +88,7 @@ func (m *AdapterManager) Stop() (e error) {
 	return nil
 }
 
-func (m *AdapterManager) WebAdapterStatusUrls() (result []string) {
+func (m *Manager) WebAdapterStatusUrls() (result []string) {
 	result = []string{}
 
 	for k := range m.webUrls {

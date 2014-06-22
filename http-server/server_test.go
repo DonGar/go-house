@@ -24,7 +24,7 @@ func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
 	options := &options.Options{}
 
-	adapterMgr, e := adapter.NewAdapterManager(options, status)
+	adapterMgr, e := adapter.NewManager(options, status)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{
@@ -52,7 +52,7 @@ func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	adapterMgr, e := adapter.NewAdapterManager(options, status)
+	adapterMgr, e := adapter.NewManager(options, status)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{

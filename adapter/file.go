@@ -11,7 +11,7 @@ type fileAdapter struct {
 	filename string
 }
 
-func newFileAdapter(m *AdapterManager, base base) (a adapter, e error) {
+func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 
 	filename, e := base.config.GetString("status://filename")
 	// Todo: if an error is present, verify it's for filename not existing.

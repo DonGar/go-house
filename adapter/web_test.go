@@ -19,7 +19,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	}
 
 	// We need just enough of a manager to let WebAdapter register itself.
-	mgr := &AdapterManager{webUrls: map[string]adapter{}}
+	mgr := &Manager{webUrls: map[string]adapter{}}
 
 	// Create a web adapter.
 	a, e := newWebAdapter(mgr, base)

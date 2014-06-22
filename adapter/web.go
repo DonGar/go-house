@@ -6,10 +6,10 @@ import (
 
 type webAdapter struct {
 	base
-	adapterMgr *AdapterManager
+	adapterMgr *Manager
 }
 
-func newWebAdapter(m *AdapterManager, base base) (a adapter, e error) {
+func newWebAdapter(m *Manager, base base) (a adapter, e error) {
 
 	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
 	if e != nil {

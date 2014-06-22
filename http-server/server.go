@@ -19,7 +19,7 @@ import (
 //
 type StatusHandler struct {
 	status     *status.Status
-	adapterMgr *adapter.AdapterManager
+	adapterMgr *adapter.Manager
 }
 
 // Handle Get/Post Status requests.
@@ -155,7 +155,7 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // This method configures our HTTP Handlers, and runs the web server forever. It
 // does not return.
-func RunHttpServerForever(options *options.Options, status *status.Status, adapterMgr *adapter.AdapterManager) {
+func RunHttpServerForever(options *options.Options, status *status.Status, adapterMgr *adapter.Manager) {
 	http.Handle("/", http.FileServer(http.Dir(options.StaticDir)))
 	http.Handle("/status/", &StatusHandler{status: status, adapterMgr: adapterMgr})
 
