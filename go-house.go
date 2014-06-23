@@ -54,4 +54,8 @@ func main() {
 	adapterMgr, e := adapter.NewManager(options, status)
 
 	server.RunHttpServerForever(options, status, adapterMgr)
+
+	// We never reach this point, but this is how to do a clean shutdown.
+	adapterMgr.Stop()
+	rulesMgr.Stop()
 }
