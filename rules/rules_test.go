@@ -22,6 +22,16 @@ func setupTestStatusOptions(c *check.C) (s *status.Status, e error) {
       "server": {
         "adapters": {
         }
+      },
+      "testAdapter": {
+      	"rules": {
+      		"periodic": {
+      			"TestIntervalRule": {
+							"target": "target",
+							"every": "every"
+						}
+      		}
+      	}
       }
     }`),
 		0)
