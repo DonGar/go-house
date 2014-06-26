@@ -1,26 +1,31 @@
 package rules
 
 import (
-	"fmt"
+	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"strings"
 	"time"
 )
 
 type Manager struct {
-	status      *status.Status
+	// These value are intended for rules to access as well as local use.
+	options *options.Options
+	status  *status.Status
+
+	// These are only intended for internal use.
 	actions     map[string]Action  // Action name to fuction to perform action.
-	ruleFactory map[string]NewRule // Rule type to rele factory method.
+	ruleFactory map[string]newRule // Rule type to rele factory method.
 	rulesWatch  <-chan status.UrlMatches
-	rules       map[string]Rule // URL of Rule definition to rule instance.
+	rules       map[string]rule // URL of Rule definition to rule instance.
 }
 
-func NewManager(status *status.Status) (mgr *Manager, e error) {
+func NewManager(options *options.Options, status *status.Status) (mgr *Manager, e error) {
 	mgr = &Manager{
+		options:     options,
 		status:      status,
 		actions:     map[string]Action{},
-		ruleFactory: map[string]NewRule{},
-		rules:       map[string]Rule{},
+		ruleFactory: map[string]newRule{},
+		rules:       map[string]rule{},
 	}
 
 	// Register the builtin actions.
@@ -30,6 +35,7 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr.RegisterAction("fetch", actionFetch)
 	mgr.RegisterAction("email;", actionEmail)
 
+	mgr.ruleFactory["periodic"] = newPeriodicRule
 	mgr.ruleFactory["periodic"] = newPeriodicRule
 	mgr.ruleFactory["conditional"] = newConditionalRule
 	mgr.ruleFactory["status"] = newStatusRule
@@ -59,10 +65,7 @@ func (m *Manager) RegisterAction(name string, action Action) {
 
 // This is our back ground process for noticing rules updates.
 func (m *Manager) rulesWatchReader() {
-	for {
-		ruleMatches := <-m.rulesWatch
-		fmt.Println("Recieved.", ruleMatches)
-
+	for ruleMatches := range m.rulesWatch {
 		// First remove rules that were removed or updated.
 		m.removeOutdatedRules(ruleMatches)
 
@@ -110,7 +113,14 @@ func (m *Manager) createUpdatedRules(ruleMatches status.UrlMatches) {
 			panic("Unknown rule type: " + ruleType)
 		}
 
-		newRule, e := factory(m.status, m, ruleName, ruleBody)
+		base := base{
+			manager:  m,
+			name:     ruleName,
+			revision: match.Revision,
+			body:     ruleBody,
+		}
+
+		newRule, e := factory(base)
 		if e != nil {
 			// TODO: Log error and continue, not panic.
 			panic(e)

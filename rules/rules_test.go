@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"testing"
@@ -14,7 +15,11 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 // This creates standard status/options objects used by most Adapters tests.
-func setupTestStatusOptions(c *check.C) (s *status.Status, e error) {
+func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e error) {
+	o = &options.Options{
+		ConfigDir: "./testdata",
+	}
+
 	s = &status.Status{}
 	e = s.SetJson("status://",
 		[]byte(`
@@ -28,7 +33,7 @@ func setupTestStatusOptions(c *check.C) (s *status.Status, e error) {
       		"periodic": {
       			"TestIntervalRule": {
 							"target": "target",
-							"every": "every"
+							"interval": "1s"
 						}
       		}
       	}
@@ -37,5 +42,5 @@ func setupTestStatusOptions(c *check.C) (s *status.Status, e error) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	return s, nil
+	return o, s, nil
 }

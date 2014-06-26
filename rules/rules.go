@@ -4,60 +4,42 @@ import (
 	// "github.com/cpucycle/astrotime"
 	"fmt"
 	"github.com/DonGar/go-house/status"
+	"time"
 )
 
-type Rule interface {
+type rule interface {
 	Stop() error
 	Revision() int
 }
 
-type NewRule func(
-	s *status.Status,
-	m *Manager,
-	name string,
-	body *status.Status) (r Rule, e error)
+type newRule func(base base) (r rule, e error)
 
 type base struct {
-	revision int    // Status revision of the rule definition.
-	target   string // Status url of target component (wildcards allowed)
-	action   string
+	manager  *Manager
+	name     string         // Name of this rule.
+	revision int            // Status revision of the rule definition.
+	body     *status.Status // Substatus of the rule definition.
 }
 
 func (b *base) Revision() int {
 	return b.revision
 }
 
-func (b *base) Stop() {
+func (b *base) Stop() error {
+	return nil
 }
 
 // Called when the rule decides to fire it's action.
 func (b *base) fire() error {
-	fmt.Println("Fire: ", b.target, " ", b.action)
+	fmt.Println("Fire: ", b.name, " ", time.Now())
 	return nil
-}
-
-type periodicRule struct {
-	base
-	period string // how often is rule fired in seconds.
-}
-
-func newPeriodicRule(
-	s *status.Status,
-	m *Manager,
-	name string,
-	body *status.Status) (r Rule, e error) {
-	return nil, nil
 }
 
 type conditionalRule struct {
 	base
 }
 
-func newConditionalRule(
-	s *status.Status,
-	m *Manager,
-	name string,
-	body *status.Status) (r Rule, e error) {
+func newConditionalRule(base base) (r rule, e error) {
 	return nil, nil
 }
 
@@ -65,10 +47,6 @@ type statusRule struct {
 	base
 }
 
-func newStatusRule(
-	s *status.Status,
-	m *Manager,
-	name string,
-	body *status.Status) (r Rule, e error) {
+func newStatusRule(base base) (r rule, e error) {
 	return nil, nil
 }

@@ -6,12 +6,13 @@ import (
 
 func (suite *MySuite) TestMgrStartStop(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
-	s, e := setupTestStatusOptions(c)
+	o, s, e := setupTestStatusOptions(c)
 	c.Assert(e, check.IsNil)
 
 	// Create the manager.
 	var mgr *Manager
-	mgr, e = NewManager(s)
+
+	mgr, e = NewManager(o, s)
 	c.Assert(e, check.IsNil)
 
 	// Stop it.

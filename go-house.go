@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// Start the rules manager
-	rulesMgr, e := rules.NewManager(status)
+	rulesMgr, e := rules.NewManager(options, status)
 
 	// Start the AdapterManager.
 	adapterMgr, e := adapter.NewManager(options, status)
