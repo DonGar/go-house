@@ -47,7 +47,12 @@ func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	nodes, e := s.urlPathToNodes(url, false)
+	pathParts, e := parseUrl(url)
+	if e != nil {
+		return nil, 0, e
+	}
+
+	nodes, e := s.urlPathToNodes(pathParts, false)
 	if e != nil {
 		return nil, 0, e
 	}
@@ -69,11 +74,16 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if e := s.validRevision(url, revision); e != nil {
+	pathParts, e := parseUrl(url)
+	if e != nil {
 		return e
 	}
 
-	nodes, e := s.urlPathToNodes(url, true)
+	if e := s.validRevision(pathParts, revision); e != nil {
+		return e
+	}
+
+	nodes, e := s.urlPathToNodes(pathParts, true)
 	if e != nil {
 		return e
 	}
@@ -102,12 +112,13 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 }
 
 // Does the URL contain wildcards?
-func CheckForWildcard(url string) (e error) {
-	if strings.Contains(url, "*") {
-		return fmt.Errorf("Status: Wildcards not allowed here: %s", url)
-	} else {
-		return nil
+func CheckForWildcard(urlPath []string) (e error) {
+	for _, url := range urlPath {
+		if url == "*" {
+			return fmt.Errorf("Status: Wildcards not allowed here: %s", url)
+		}
 	}
+	return nil
 }
 
 // Find all URLs that exist, which match a wildcard URL.
@@ -210,15 +221,10 @@ func joinUrl(pathParts []string) (url string) {
 // Given a status URL, return a slice of *Status to each of the nodes referenced
 // by the URL. If fillInMissing is true, create missing nodes as needed to do
 // this.
-func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node, e error) {
-
-	urlPath, e := parseUrl(url)
-	if e != nil {
-		return nil, e
-	}
+func (s *Status) urlPathToNodes(urlPath []string, fillInMissing bool) (result []*node, e error) {
 
 	// Check for wildcards.
-	if e = CheckForWildcard(url); e != nil {
+	if e = CheckForWildcard(urlPath); e != nil {
 		return nil, e
 	}
 
@@ -244,7 +250,7 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 				current = &node{value: statusMap{}, revision: s.revision}
 				childMap[u] = current
 			} else {
-				return nil, fmt.Errorf("Status: Node %s does not exist.", url)
+				return nil, fmt.Errorf("Status: Node %s does not exist.", joinUrl(urlPath))
 			}
 		}
 
@@ -254,16 +260,11 @@ func (s *Status) urlPathToNodes(url string, fillInMissing bool) (result []*node,
 	return result, nil
 }
 
-func (s *Status) validRevision(url string, revision int) (e error) {
+func (s *Status) validRevision(urlPath []string, revision int) (e error) {
 
 	// UNCHECKED_REVISION is always a valid revision. It means don't test.
 	if revision == UNCHECKED_REVISION {
 		return nil
-	}
-
-	urlPath, e := parseUrl(url)
-	if e != nil {
-		return e
 	}
 
 	current := &s.node
@@ -294,7 +295,7 @@ func (s *Status) validRevision(url string, revision int) (e error) {
 
 	return fmt.Errorf(
 		"Status: Invalid Revision: %d - %s. Expected %d",
-		revision, url, current.revision)
+		revision, joinUrl(urlPath), current.revision)
 }
 
 // Convert an external value (matching a JSON structure), to the internal

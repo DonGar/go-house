@@ -79,16 +79,16 @@ func (suite *MySuite) TestUrlPathToNodes(c *check.C) {
 	status := Status{node: node{value: statusMap{}}}
 
 	// Verify not creating children.
-	nodes, e := status.urlPathToNodes("status://", false)
+	nodes, e := status.urlPathToNodes([]string{}, false)
 	c.Check(nodes, check.DeepEquals, []*node{&status.node})
 	c.Check(e, check.IsNil)
 
 	// Verify creating children.
-	nodes, e = status.urlPathToNodes("status://", true)
+	nodes, e = status.urlPathToNodes([]string{}, true)
 	c.Check(nodes, check.DeepEquals, []*node{&status.node})
 	c.Check(e, check.IsNil)
 
-	nodes, e = status.urlPathToNodes("status://foo/bar", true)
+	nodes, e = status.urlPathToNodes([]string{"foo", "bar"}, true)
 	c.Check(nodes[0], check.Equals, &status.node)
 	c.Check(nodes[1], check.Equals, nodes[0].value.(statusMap)["foo"])
 	c.Check(nodes[2], check.Equals, nodes[1].value.(statusMap)["bar"])
@@ -352,14 +352,14 @@ func (s *MySuite) TestUrlPathToNodesNoFill(c *check.C) {
 	c.Check(status.value, check.DeepEquals, nil)
 
 	// Ensure we don't mofify an empty node.
-	nodes, e := status.urlPathToNodes("status://", false)
+	nodes, e := status.urlPathToNodes([]string{}, false)
 	c.Check(nodes, check.DeepEquals, []*node{&status.node})
 	c.Check(e, check.IsNil)
 
 	c.Check(status.value, check.DeepEquals, nil)
 
 	// Ensure we don't modify an empty node with a long path.
-	nodes, e = status.urlPathToNodes("status://foo/bar", false)
+	nodes, e = status.urlPathToNodes([]string{"foo", "bar"}, false)
 	c.Check(nodes, check.DeepEquals, []*node(nil))
 	c.Check(e, check.NotNil)
 
@@ -394,18 +394,21 @@ func (s *MySuite) TestValidRevision(c *check.C) {
 	var e error
 
 	validInvalid := func(url string, valid []int, invalid []int) {
-		e = status.validRevision(url, UNCHECKED_REVISION)
+		urlPath, e := parseUrl(url)
+		c.Check(e, check.IsNil)
+
+		e = status.validRevision(urlPath, UNCHECKED_REVISION)
 		c.Check(e, check.IsNil)
 
 		// Check valids
 		for _, v := range valid {
-			e = status.validRevision(url, v)
+			e = status.validRevision(urlPath, v)
 			c.Check(e, check.IsNil)
 		}
 
 		// Check invalids
 		for _, v := range invalid {
-			e = status.validRevision(url, v)
+			e = status.validRevision(urlPath, v)
 			c.Check(e, check.NotNil)
 		}
 	}
