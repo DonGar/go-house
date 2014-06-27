@@ -152,11 +152,9 @@ func (s *Status) Remove(url string, revision int) (e error) {
 }
 
 // Does the URL contain wildcards?
-func CheckForWildcard(urlPath []string) (e error) {
-	for _, url := range urlPath {
-		if url == "*" {
-			return fmt.Errorf("Status: Wildcards not allowed here: %s", url)
-		}
+func CheckForWildcard(url string) (e error) {
+	if strings.Contains(url, "*") {
+		return fmt.Errorf("Status: Wildcards not allowed here: %s", url)
 	}
 	return nil
 }
@@ -264,7 +262,7 @@ func joinUrl(pathParts []string) (url string) {
 func (s *Status) urlPathToNodes(urlPath []string, fillInMissing bool) (result []*node, e error) {
 
 	// Check for wildcards.
-	if e = CheckForWildcard(urlPath); e != nil {
+	if e = CheckForWildcard(joinUrl(urlPath)); e != nil {
 		return nil, e
 	}
 
