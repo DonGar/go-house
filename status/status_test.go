@@ -439,3 +439,52 @@ func (s *MySuite) TestValidRevision(c *check.C) {
 	validInvalid("status://sub/two", []int{2, 3}, []int{0, 1, 4, 5, 55})
 	validInvalid("status://diff", []int{3}, []int{0, 1, 2, 4, 5, 55})
 }
+
+func (s *MySuite) TestRemove(c *check.C) {
+	var e error
+
+	status := Status{}
+
+	e = status.SetJson("status://", []byte(`
+		{
+			"sub": null,
+      "sub2": {	"foo": "bar" },
+      "sub3": {	"foo1": "bar", "foo2": "bar" }
+		}
+		`), UNCHECKED_REVISION)
+	c.Check(e, check.IsNil)
+
+	// Try to remove an invalid path.
+	e = status.Remove("status://foo/bar", UNCHECKED_REVISION)
+	c.Check(e, check.NotNil)
+
+	// Try to remove an invalid path.
+	e = status.Remove("status://foo/bar", 1)
+	c.Check(e, check.NotNil)
+
+	// Try to remove a valid path with bad revision.
+	e = status.Remove("status://sub3", 22)
+	c.Check(e, check.NotNil)
+
+	// Try to remove a top level path.
+	e = status.Remove("status://sub", 1)
+	c.Check(e, check.IsNil)
+
+	// Try to remove a valid path with root nodes revision.
+	e = status.Remove("status://sub3/foo1", 2)
+	c.Check(e, check.IsNil)
+
+	// Try to remove a valid path with leaf nodes revision.
+	e = status.Remove("status://sub3/foo2", 1)
+	c.Check(e, check.IsNil)
+
+	// Validate the remaining tree.
+	CheckValue(c, &status, "status://",
+		map[string]interface{}{
+			"sub2": map[string]interface{}{
+				"foo": "bar"},
+			"sub3": map[string]interface{}{},
+		},
+		4)
+
+}

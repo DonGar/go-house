@@ -111,6 +111,46 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	return nil
 }
 
+// Remove a named child from a node.
+func (s *Status) Remove(url string, revision int) (e error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	pathParts, e := parseUrl(url)
+	if e != nil {
+		return e
+	}
+
+	if e := s.validRevision(pathParts, revision); e != nil {
+		return e
+	}
+
+	// urlPathToNodes proves that the node we wish to remove exists.
+	nodes, e := s.urlPathToNodes(pathParts, false)
+	if e != nil {
+		return e
+	}
+
+	// Look up the new revision to update.
+	newRevision := nodes[0].revision + 1
+
+	// The final node is no longer relevant, since we are about to remove it.
+	nodes = nodes[:len(nodes)-1]
+
+	// Discover the map in the parent node.
+	parentMap := nodes[len(nodes)-1].value.(statusMap)
+
+	delete(parentMap, pathParts[len(pathParts)-1])
+
+	// Update the revision for all affected nodes.
+	for _, v := range nodes {
+		v.revision = newRevision
+	}
+
+	s.checkWatchers()
+	return nil
+}
+
 // Does the URL contain wildcards?
 func CheckForWildcard(urlPath []string) (e error) {
 	for _, url := range urlPath {
