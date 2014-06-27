@@ -41,6 +41,7 @@ func (r *periodicRule) handleTicks() {
 			r.fire()
 		case <-r.stop:
 			ticker.Stop()
+			r.stop <- true
 			return
 		}
 	}
@@ -49,5 +50,6 @@ func (r *periodicRule) handleTicks() {
 
 func (r *periodicRule) Stop() error {
 	r.stop <- true
+	<-r.stop
 	return r.base.Stop()
 }

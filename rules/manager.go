@@ -4,7 +4,6 @@ import (
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"strings"
-	"time"
 )
 
 type Manager struct {
@@ -15,8 +14,8 @@ type Manager struct {
 	// These are only intended for internal use.
 	actions     map[string]Action  // Action name to fuction to perform action.
 	ruleFactory map[string]newRule // Rule type to rele factory method.
-	rulesWatch  <-chan status.UrlMatches
-	rules       map[string]rule // URL of Rule definition to rule instance.
+	rules       map[string]rule    // URL of Rule definition to rule instance.
+	stop        chan bool
 }
 
 func NewManager(options *options.Options, status *status.Status) (mgr *Manager, e error) {
@@ -26,6 +25,7 @@ func NewManager(options *options.Options, status *status.Status) (mgr *Manager, 
 		actions:     map[string]Action{},
 		ruleFactory: map[string]newRule{},
 		rules:       map[string]rule{},
+		stop:        make(chan bool),
 	}
 
 	// Register the builtin actions.
@@ -35,15 +35,10 @@ func NewManager(options *options.Options, status *status.Status) (mgr *Manager, 
 	mgr.RegisterAction("fetch", actionFetch)
 	mgr.RegisterAction("email;", actionEmail)
 
-	mgr.ruleFactory["periodic"] = newPeriodicRule
+	mgr.ruleFactory["base"] = newBaseRule
 	mgr.ruleFactory["periodic"] = newPeriodicRule
 	mgr.ruleFactory["conditional"] = newConditionalRule
 	mgr.ruleFactory["status"] = newStatusRule
-
-	mgr.rulesWatch, e = mgr.status.WatchForUpdate("status://*/rules/*/*")
-	if e != nil {
-		return nil, e
-	}
 
 	// Start watching the status for rules updates.
 	go mgr.rulesWatchReader()
@@ -52,8 +47,8 @@ func NewManager(options *options.Options, status *status.Status) (mgr *Manager, 
 }
 
 func (m *Manager) Stop() (e error) {
-	m.status.ReleaseWatch(m.rulesWatch)
-	time.Sleep(100 * time.Millisecond)
+	m.stop <- true
+	<-m.stop
 	return nil
 }
 
@@ -65,18 +60,29 @@ func (m *Manager) RegisterAction(name string, action Action) {
 
 // This is our back ground process for noticing rules updates.
 func (m *Manager) rulesWatchReader() {
-	for ruleMatches := range m.rulesWatch {
-		// First remove rules that were removed or updated.
-		m.removeOutdatedRules(ruleMatches)
+	rulesWatch, e := m.status.WatchForUpdate("status://*/rules/*/*")
+	if e != nil {
+		panic("Failure should not be possible.")
+	}
 
-		// Add rules that aren't already present.
-		m.createUpdatedRules(ruleMatches)
-
+	for {
+		select {
+		case ruleMatches := <-rulesWatch:
+			// First remove rules that were removed or updated.
+			m.updateRules(ruleMatches)
+		case <-m.stop:
+			// Stop watching for changes, remove all existing rules, and signal done.
+			m.status.ReleaseWatch(rulesWatch)
+			m.updateRules(status.UrlMatches{})
+			m.stop <- true
+			return
+		}
 	}
 }
 
 // Remove any rules that have been removed, or updated.
-func (m *Manager) removeOutdatedRules(ruleMatches status.UrlMatches) {
+func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
+	// Remove all rules that no longer exist, or which have been updated.
 	for url, rule := range m.rules {
 		match, ok := ruleMatches[url]
 		if !ok || match.Revision != rule.Revision() {
@@ -85,10 +91,8 @@ func (m *Manager) removeOutdatedRules(ruleMatches status.UrlMatches) {
 			delete(m.rules, url)
 		}
 	}
-}
 
-// Remove any rules that have been removed, or updated.
-func (m *Manager) createUpdatedRules(ruleMatches status.UrlMatches) {
+	// Create all rules that don't exist in our manager.
 	for url, match := range ruleMatches {
 
 		// If the rule already exists, leave it alone.

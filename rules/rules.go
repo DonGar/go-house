@@ -21,6 +21,10 @@ type base struct {
 	body     *status.Status // Substatus of the rule definition.
 }
 
+func newBaseRule(base base) (rule, error) {
+	return &base, nil
+}
+
 func (b *base) Revision() int {
 	return b.revision
 }
