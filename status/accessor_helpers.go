@@ -57,7 +57,7 @@ func (s *Status) GetChildNames(url string) (names []string, e error) {
 
 	childMap, ok := value.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Status: Node is not a map")
+		return nil, fmt.Errorf("Status: Node is %T not a map", value)
 	}
 
 	names = make([]string, 0, len(childMap))
@@ -77,7 +77,22 @@ func (s *Status) GetString(url string) (value string, e error) {
 
 	value, ok := rawValue.(string)
 	if !ok {
-		return "", fmt.Errorf("Status: %s is not a string.", url)
+		return "", fmt.Errorf("Status: %s is %T not string.", url, rawValue)
+	}
+
+	return value, nil
+}
+
+// Extract a string value.
+func (s *Status) GetFloat(url string) (value float64, e error) {
+	rawValue, _, e := s.Get(url)
+	if e != nil {
+		return 0, e
+	}
+
+	value, ok := rawValue.(float64)
+	if !ok {
+		return 0, fmt.Errorf("Status: %s is %T not float64.", url, rawValue)
 	}
 
 	return value, nil
