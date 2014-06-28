@@ -37,6 +37,7 @@ func NewManager(options *options.Options, status *status.Status) (mgr *Manager, 
 
 	mgr.ruleFactory["base"] = newBaseRule
 	mgr.ruleFactory["periodic"] = newPeriodicRule
+	mgr.ruleFactory["daily"] = newDailyRule
 	mgr.ruleFactory["conditional"] = newConditionalRule
 	mgr.ruleFactory["status"] = newStatusRule
 

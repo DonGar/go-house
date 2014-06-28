@@ -11,7 +11,6 @@ func (suite *MySuite) TestPeriodicStartStop(c *check.C) {
 	e := body.SetJson("status://",
 		[]byte(`
     {
-			"target": "target",
 			"interval": "1s"
     }`),
 		0)
@@ -31,7 +30,6 @@ func (suite *MySuite) TestPeriodicFire(c *check.C) {
 	e := body.SetJson("status://",
 		[]byte(`
     {
-			"target": "target",
 			"interval": "2ms"
     }`),
 		0)
