@@ -13,6 +13,7 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 		[]byte(`
     {
       "server": {
+      	"config": "./testdata",
         "adapters": {
           "base": {
             "TestBase": {
@@ -26,9 +27,8 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	o := &options.Options{
-		ConfigDir: "./testdata",
-	}
+	o, e := options.NewOptions(s)
+	c.Assert(e, check.IsNil)
 
 	// Create the manager.
 	var mgr *Manager
@@ -98,15 +98,15 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 		check.DeepEquals,
 		map[string]interface{}{
 			"server": map[string]interface{}{
+				"config": "./testdata",
 				"adapters": map[string]interface{}{
 					"base": map[string]interface{}{
 						"TestBase": map[string]interface{}{},
 					},
 					"file": map[string]interface{}{
-						"TestFile": map[string]interface{}{},
 						"TestFileSpecified": map[string]interface{}{
-							"filename": "TestFile.json",
-						},
+							"filename": "TestFile.json"},
+						"TestFile": map[string]interface{}{},
 					},
 					"web": map[string]interface{}{
 						"TestWeb": map[string]interface{}{},
@@ -116,6 +116,5 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 			"TestBase":          interface{}(nil),
 			"TestFile":          interface{}(nil),
 			"TestFileSpecified": interface{}(nil),
-			"TestWeb":           interface{}(nil),
-		})
+			"TestWeb":           interface{}(nil)})
 }

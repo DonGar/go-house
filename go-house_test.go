@@ -27,13 +27,17 @@ func (suite *MySuite) TestLoadServerConfig(c *check.C) {
 	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
 	c.Assert(e, check.IsNil)
 
-	options := &options.Options{ConfigDir: tempDir}
-	testStatus := status.Status{}
-
-	e = loadServerConfig(options, &testStatus)
+	s := &status.Status{}
+	e = s.Set("status://server/config", tempDir, 0)
 	c.Assert(e, check.IsNil)
 
-	serverValueJson, _, e := testStatus.GetJson("status://server")
+	o, e := options.NewOptions(s)
+	c.Assert(e, check.IsNil)
+
+	e = loadServerConfig(o, s)
+	c.Assert(e, check.IsNil)
+
+	serverValueJson, _, e := s.GetJson("status://server")
 
 	// And the value we pulled out of the Status matches the file contents.
 	c.Assert(string(serverValueJson), check.Equals, `{"foo":"bar"}`)

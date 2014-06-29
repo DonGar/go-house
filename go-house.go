@@ -15,7 +15,12 @@ import (
 
 // Load the initial server config into our status struct.
 func loadServerConfig(options *options.Options, s *status.Status) (e error) {
-	configFile := filepath.Join(options.ConfigDir, "server.json")
+	cd, e := options.ConfigDir()
+	if e != nil {
+		return e
+	}
+
+	configFile := filepath.Join(cd, "server.json")
 
 	rawJson, e := ioutil.ReadFile(configFile)
 	if e != nil {
@@ -31,31 +36,47 @@ func loadServerConfig(options *options.Options, s *status.Status) (e error) {
 	return nil
 }
 
-func main() {
+func mainWork() error {
 	log.Println("Starting up.")
 
-	options, e := options.FindOptions()
-	if e != nil {
-		panic(e)
-	}
-
 	status := &status.Status{}
+
+	options, e := options.NewOptions(status)
+	if e != nil {
+		return e
+	}
 
 	// Load the initial config.
 	e = loadServerConfig(options, status)
 	if e != nil {
-		panic(e)
+		return e
 	}
 
 	// Start the rules manager
 	rulesMgr, e := rules.NewManager(options, status)
+	if e != nil {
+		return e
+	}
+	defer rulesMgr.Stop()
 
 	// Start the AdapterManager.
 	adapterMgr, e := adapter.NewManager(options, status)
-
-	server.RunHttpServerForever(options, status, adapterMgr)
-
-	// We never reach this point, but this is how to do a clean shutdown.
+	if e != nil {
+		return e
+	}
 	adapterMgr.Stop()
-	rulesMgr.Stop()
+
+	e = server.RunHttpServerForever(options, status, adapterMgr)
+	if e != nil {
+		return e
+	}
+
+	return nil
+}
+
+func main() {
+	e := mainWork()
+	if e != nil {
+		panic(e)
+	}
 }

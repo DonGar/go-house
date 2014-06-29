@@ -9,9 +9,6 @@ import (
 
 // This creates standard status/options objects used by most Adapters tests.
 func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e error) {
-	o = &options.Options{
-		ConfigDir: "./testdata",
-	}
 
 	s = &status.Status{}
 	e = s.SetJson("status://",
@@ -33,6 +30,9 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
       }
     }`),
 		0)
+	c.Assert(e, check.IsNil)
+
+	o, e = options.NewOptions(s)
 	c.Assert(e, check.IsNil)
 
 	return o, s, nil

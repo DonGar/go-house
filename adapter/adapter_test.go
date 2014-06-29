@@ -21,6 +21,7 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
 		[]byte(`
     {
       "server": {
+      	"config": "./testdata",
         "adapters": {
           "base": {
             "TestBase": {
@@ -43,9 +44,8 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
 		0)
 	c.Assert(e, check.IsNil)
 
-	o = &options.Options{
-		ConfigDir: "./testdata",
-	}
+	o, e = options.NewOptions(s)
+	c.Assert(e, check.IsNil)
 
 	return o, s, nil
 }

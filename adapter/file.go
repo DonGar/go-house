@@ -21,7 +21,12 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 		filename = filepath.Base(base.adapterUrl) + ".json"
 	}
 
-	relative_name := filepath.Join(base.options.ConfigDir, filename)
+	configDir, e := base.options.ConfigDir()
+	if e != nil {
+		return nil, e
+	}
+
+	relative_name := filepath.Join(configDir, filename)
 	abs_name, e := filepath.Abs(relative_name)
 	if e != nil {
 		return nil, e
