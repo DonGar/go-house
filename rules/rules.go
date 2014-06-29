@@ -2,23 +2,28 @@ package rules
 
 import (
 	// "github.com/cpucycle/astrotime"
-	"fmt"
 	"github.com/DonGar/go-house/status"
-	"time"
 )
 
+// An interface all rules are expected to implement.
 type rule interface {
 	Stop() error
 	Revision() int
 }
 
+// A constructor interface all rules are expected to implement.
 type newRule func(base base) (r rule, e error)
 
+// An interface for firing actions that should be provided to all rules.
+type actionHelper func(action *status.Status)
+
+// The base type all rules should compose with.
 type base struct {
-	manager  *Manager
-	name     string         // Name of this rule.
-	revision int            // Status revision of the rule definition.
-	body     *status.Status // Substatus of the rule definition.
+	status       *status.Status
+	actionHelper actionHelper
+	name         string         // Name of this rule.
+	revision     int            // Status revision of the rule definition.
+	body         *status.Status // Substatus of the rule definition.
 }
 
 func newBaseRule(base base) (rule, error) {
@@ -34,23 +39,10 @@ func (b *base) Stop() error {
 }
 
 // Called when the rule decides to fire it's action.
-func (b *base) fire() error {
-	fmt.Println("Fire: ", b.name, " ", time.Now())
-	return nil
-}
+func (b *base) fire() {
+	// If the rule has no action, we'll look up a nil.
+	action, _, _ := b.body.GetSubStatus("status://action")
 
-type conditionalRule struct {
-	base
-}
-
-func newConditionalRule(base base) (r rule, e error) {
-	return nil, nil
-}
-
-type statusRule struct {
-	base
-}
-
-func newStatusRule(base base) (r rule, e error) {
-	return nil, nil
+	// Perform the action.
+	b.actionHelper(action)
 }

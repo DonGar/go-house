@@ -6,22 +6,31 @@ import (
 	"time"
 )
 
-func setupTimeRule(c *check.C, time string) rule {
+func setupTimeRule(c *check.C, time string) (rule, *mockActionHelper) {
+	mockAh := &mockActionHelper{}
+
+	s := &status.Status{}
+
 	body := &status.Status{}
 	e := body.Set("status://", map[string]interface{}{"time": time}, 0)
 	c.Assert(e, check.IsNil)
-	b := base{nil, "TestDailyRuleStartStop", 3, body}
+
+	b := base{s, mockAh.helper, "TestDailyRuleStartStop", 3, body}
 
 	r, e := newDailyRule(b)
 	c.Assert(e, check.IsNil)
 
-	return r
+	return r, mockAh
 }
 
 func (suite *MySuite) TestDailyStartStop(c *check.C) {
-	r := setupTimeRule(c, "12:00")
+	r, mockAh := setupTimeRule(c, "12:00")
+
 	e := r.Stop()
-	c.Assert(e, check.IsNil)
+	c.Check(e, check.IsNil)
+
+	// The rule shouldn't have fired.
+	c.Check(mockAh.fireCount, check.Equals, 0)
 }
 
 func (suite *MySuite) TestDailyParseTime(c *check.C) {
@@ -88,7 +97,8 @@ func (suite *MySuite) TestDailyParseTime(c *check.C) {
 }
 
 func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
-	r := setupTimeRule(c, "sunrise").(*dailyRule)
+	rule, _ := setupTimeRule(c, "sunrise")
+	r := rule.(*dailyRule)
 
 	sunriseToday := time.Date(2014, time.June, 12, 05, 47, 00, 0, time.Local)
 	sunriseTomorrow := time.Date(2014, time.June, 13, 05, 46, 58, 0, time.Local)
@@ -114,11 +124,12 @@ func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
 	c.Check(fireTime, check.Equals, sunriseTomorrow)
 
 	e := r.Stop()
-	c.Assert(e, check.IsNil)
+	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
-	r := setupTimeRule(c, "sunset").(*dailyRule)
+	rule, _ := setupTimeRule(c, "sunset")
+	r := rule.(*dailyRule)
 
 	sunsetToday := time.Date(2014, time.June, 12, 20, 29, 33, 0, time.Local)
 	sunsetTomorrow := time.Date(2014, time.June, 13, 20, 30, 00, 0, time.Local)
@@ -143,7 +154,8 @@ func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
 }
 
 func (suite *MySuite) TestFixedFindFireDelay(c *check.C) {
-	r := setupTimeRule(c, "11:00").(*dailyRule)
+	rule, _ := setupTimeRule(c, "11:00")
+	r := rule.(*dailyRule)
 
 	fixedToday := time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
 	fixedTomorrow := time.Date(2014, time.June, 13, 11, 00, 00, 0, time.Local)

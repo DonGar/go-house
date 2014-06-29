@@ -15,11 +15,11 @@ type Manager struct {
 
 func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr = &Manager{
-		status:      status,
-		actions:     map[string]Action{},
-		ruleFactory: map[string]newRule{},
-		rules:       map[string]rule{},
-		stop:        make(chan bool),
+		status,
+		map[string]Action{},
+		map[string]newRule{},
+		map[string]rule{},
+		make(chan bool),
 	}
 
 	// Register the builtin actions.
@@ -32,8 +32,6 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr.ruleFactory["base"] = newBaseRule
 	mgr.ruleFactory["periodic"] = newPeriodicRule
 	mgr.ruleFactory["daily"] = newDailyRule
-	mgr.ruleFactory["conditional"] = newConditionalRule
-	mgr.ruleFactory["status"] = newStatusRule
 
 	// Start watching the status for rules updates.
 	go mgr.rulesWatchReader()
@@ -113,10 +111,11 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 		}
 
 		base := base{
-			manager:  m,
-			name:     ruleName,
-			revision: match.Revision,
-			body:     ruleBody,
+			m.status,
+			m.actionHelper,
+			ruleName,
+			match.Revision,
+			ruleBody,
 		}
 
 		newRule, e := factory(base)
@@ -127,4 +126,10 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 
 		m.rules[url] = newRule
 	}
+}
+
+func (m *Manager) actionHelper(action *status.Status) {
+	// if e != nil {
+	// 	log.Println("Fire Error: ", e)
+	// }
 }
