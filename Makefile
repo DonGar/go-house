@@ -10,5 +10,3 @@ test:
 
 clean:
 	go clean
-	rm -rf /tmp/check-*
-	rm -rf /tmp/tmp*
