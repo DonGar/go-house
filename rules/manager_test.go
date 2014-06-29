@@ -1,14 +1,13 @@
 package rules
 
 import (
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"time"
 )
 
 // This creates standard status/options objects used by most Adapters tests.
-func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e error) {
+func setupTestStatus(c *check.C) (s *status.Status, e error) {
 
 	s = &status.Status{}
 	e = s.SetJson("status://",
@@ -32,21 +31,18 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
 		0)
 	c.Assert(e, check.IsNil)
 
-	o, e = options.NewOptions(s)
-	c.Assert(e, check.IsNil)
-
-	return o, s, nil
+	return s, nil
 }
 
 func (suite *MySuite) TestMgrStartEditStop(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 	c.Assert(e, check.IsNil)
 
 	// Create the manager.
 	var mgr *Manager
 
-	mgr, e = NewManager(o, s)
+	mgr, e = NewManager(s)
 	c.Assert(e, check.IsNil)
 
 	// We give the rules manager a little time for a delayed update.

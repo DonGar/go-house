@@ -155,8 +155,8 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // This method configures our HTTP Handlers, and runs the web server forever. It
 // does not return.
-func RunHttpServerForever(options *options.Options, status *status.Status, adapterMgr *adapter.Manager) error {
-	staticDir, e := options.StaticDir()
+func RunHttpServerForever(status *status.Status, adapterMgr *adapter.Manager) error {
+	staticDir, e := status.GetString(options.STATIC_DIR)
 	if e != nil {
 		return e
 	}

@@ -1,26 +1,20 @@
 package rules
 
 import (
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"strings"
 )
 
 type Manager struct {
-	// These value are intended for rules to access as well as local use.
-	options *options.Options
-	status  *status.Status
-
-	// These are only intended for internal use.
+	status      *status.Status
 	actions     map[string]Action  // Action name to fuction to perform action.
 	ruleFactory map[string]newRule // Rule type to rele factory method.
 	rules       map[string]rule    // URL of Rule definition to rule instance.
 	stop        chan bool
 }
 
-func NewManager(options *options.Options, status *status.Status) (mgr *Manager, e error) {
+func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr = &Manager{
-		options:     options,
 		status:      status,
 		actions:     map[string]Action{},
 		ruleFactory: map[string]newRule{},

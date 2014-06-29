@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/DonGar/go-house/adapter"
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"net/http"
@@ -22,9 +21,8 @@ var _ = check.Suite(&MySuite{})
 
 func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
-	options := &options.Options{}
 
-	adapterMgr, e := adapter.NewManager(options, status)
+	adapterMgr, e := adapter.NewManager(status)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{
@@ -35,7 +33,6 @@ func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 
 func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
-	options := &options.Options{}
 
 	// Add a web adapter.
 	e := status.SetJson("status://",
@@ -52,7 +49,7 @@ func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	adapterMgr, e := adapter.NewManager(options, status)
+	adapterMgr, e := adapter.NewManager(status)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{

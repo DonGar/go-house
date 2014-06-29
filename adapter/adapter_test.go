@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"testing"
@@ -15,7 +14,7 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 // This creates standard status/options objects used by most Adapters tests.
-func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e error) {
+func setupTestStatus(c *check.C) (s *status.Status, e error) {
 	s = &status.Status{}
 	e = s.SetJson("status://",
 		[]byte(`
@@ -44,18 +43,14 @@ func setupTestStatusOptions(c *check.C) (o *options.Options, s *status.Status, e
 		0)
 	c.Assert(e, check.IsNil)
 
-	o, e = options.NewOptions(s)
-	c.Assert(e, check.IsNil)
-
-	return o, s, nil
+	return s, nil
 }
 
 func (suite *MySuite) TestBaseStop(c *check.C) {
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 
 	base := base{
 		status:     s,
-		options:    o,
 		config:     &status.Status{},
 		adapterUrl: "status://TestBase",
 	}

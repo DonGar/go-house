@@ -12,7 +12,7 @@ type Manager struct {
 	webUrls  map[string]adapter // These are updated directly by WebAdapter.
 }
 
-var configUrl = "status://server/adapters"
+var configUrl = options.ADAPTERS
 
 // Map type name to factory method.
 var adapterFactories = map[string]newAdapter{
@@ -21,7 +21,7 @@ var adapterFactories = map[string]newAdapter{
 	"web":  newWebAdapter,
 }
 
-func NewManager(options *options.Options, status *status.Status) (mgr *Manager, e error) {
+func NewManager(status *status.Status) (mgr *Manager, e error) {
 
 	// Create the new manager.
 	mgr = &Manager{
@@ -61,7 +61,6 @@ func NewManager(options *options.Options, status *status.Status) (mgr *Manager, 
 			}
 
 			newAdapter, e := factory(mgr, base{
-				options:    options,
 				status:     status,
 				config:     adapterConfig,
 				adapterUrl: adapterUrl,

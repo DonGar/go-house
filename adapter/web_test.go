@@ -5,7 +5,7 @@ import (
 )
 
 func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 	c.Assert(e, check.IsNil)
 
 	config, _, e := s.GetSubStatus("status://server/adapters/web/TestWeb")
@@ -13,7 +13,6 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 
 	base := base{
 		status:     s,
-		options:    o,
 		config:     config,
 		adapterUrl: "status://TestWeb",
 	}

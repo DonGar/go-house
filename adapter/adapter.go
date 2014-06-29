@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 )
 
@@ -15,7 +14,6 @@ type newAdapter func(m *Manager, base base) (a adapter, e error)
 
 // All Adapters may compose this type for convenience.
 type base struct {
-	options    *options.Options
 	status     *status.Status
 	config     *status.Status
 	adapterUrl string

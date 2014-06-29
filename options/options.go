@@ -2,48 +2,83 @@ package options
 
 import (
 	"github.com/DonGar/go-house/status"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
 
-type Options struct {
-	status *status.Status
-}
+const (
+	CONFIG_DIR    = "status://server/config"
+	STATIC_DIR    = "status://server/static"
+	DOWNLOADS_DIR = "status://server/downloads"
+	LATITUDE      = "status://server/latitude"
+	LONGITUDE     = "status://server/longitude"
+	ADAPTERS      = "status://server/adapters"
+)
 
-func NewOptions(s *status.Status) (options *Options, e error) {
-	// TODO: parse command args and such.
-	return &Options{status: s}, nil
-}
+const fixedStaticDir = "/home/dgarrett/Development/go-house/static"
 
-func (o *Options) ConfigDir() (v string, e error) {
-	// Look it up from the config. This is useful in test code
-	// that manually setup status, and need a known config dir.
-	v, e = o.status.GetString("status://server/config")
+// Load the initial server config into our status struct.
+func LoadServerConfig(s *status.Status) (e error) {
 
+	// Figure out where the server config files are.
+	configDir, e := s.GetString(CONFIG_DIR)
 	if e != nil {
-		execName, e := filepath.Abs(os.Args[0])
+		configDir, e = defaultConfigDir()
 		if e != nil {
-			return "", e
+			return e
 		}
-
-		return filepath.Dir(execName), nil
 	}
 
-	return v, e
+	// Load our main config file into status://server.
+	configFile := filepath.Join(configDir, "server.json")
+	rawJson, e := ioutil.ReadFile(configFile)
+	if e != nil {
+		return e
+	}
+
+	e = s.SetJson("status://server", rawJson, status.UNCHECKED_REVISION)
+	if e != nil {
+		return e
+	}
+
+	e = setDefaults(s, configDir)
+	if e != nil {
+		return e
+	}
+
+	// Success!
+	return nil
 }
 
-func (o *Options) StaticDir() (string, error) {
-	return "/home/dgarrett/Development/go-house/static", nil
+func defaultConfigDir() (v string, e error) {
+	execName, e := filepath.Abs(os.Args[0])
+	if e != nil {
+		return "", e
+	}
+
+	return filepath.Dir(execName), nil
 }
 
-func (o *Options) Latitude() (float64, error) {
-	return o.status.GetFloat("status://server/latitude")
-}
+func setDefaults(s *status.Status, configDir string) error {
+	defaults := map[string]interface{}{
+		CONFIG_DIR:    configDir,
+		STATIC_DIR:    fixedStaticDir,
+		DOWNLOADS_DIR: "/tmp/Downloads",
+		LATITUDE:      0.0,
+		LONGITUDE:     0.0,
+	}
 
-func (o *Options) Longitude() (float64, error) {
-	return o.status.GetFloat("status://server/longitude")
-}
+	for u, v := range defaults {
+		_, _, e := s.Get(u)
 
-func (o *Options) DownloadDir() (string, error) {
-	return o.status.GetString("status://server/downloads")
+		if e != nil {
+			e = s.Set(u, v, status.UNCHECKED_REVISION)
+			if e != nil {
+				return e
+			}
+		}
+	}
+
+	return nil
 }

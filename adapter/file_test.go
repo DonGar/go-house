@@ -5,7 +5,7 @@ import (
 )
 
 func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 	c.Assert(e, check.IsNil)
 
 	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFile")
@@ -13,7 +13,6 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 
 	base := base{
 		status:     s,
-		options:    o,
 		config:     config,
 		adapterUrl: "status://TestFile",
 	}
@@ -40,7 +39,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 }
 
 func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 	c.Assert(e, check.IsNil)
 
 	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFileSpecified")
@@ -48,7 +47,6 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 
 	base := base{
 		status:     s,
-		options:    o,
 		config:     config,
 		adapterUrl: "status://TestFileSpecified",
 	}

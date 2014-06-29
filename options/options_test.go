@@ -3,6 +3,9 @@ package options
 import (
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -13,80 +16,111 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
-func (suite *MySuite) TestOptionsDefaults(c *check.C) {
-	var options *Options
+func (suite *MySuite) TestLoadServerConfig(c *check.C) {
+	tempDir := c.MkDir()
+
 	var e error
+
+	// Write out a test server config file.
+	serverFile := filepath.Join(tempDir, "server.json")
+	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
+	c.Assert(e, check.IsNil)
 
 	s := &status.Status{}
-	options, e = NewOptions(s)
+	e = s.Set(CONFIG_DIR, tempDir, 0)
+	c.Assert(e, check.IsNil)
+
+	e = LoadServerConfig(s)
 	c.Check(e, check.IsNil)
 
-	// ConfigDir should be based on executable location.
-	cd, e := options.ConfigDir()
+	serverValue, _, e := s.Get("status://server")
 	c.Check(e, check.IsNil)
-	c.Check(cd, check.Matches, ".*github.com/DonGar/go-house/options/_test")
-
-	// Currently hard coded.
-	sd, e := options.StaticDir()
-	c.Check(e, check.IsNil)
-	c.Check(sd, check.Equals, "/home/dgarrett/Development/go-house/static")
-
-	// The remaining values don't have defaults.
-	la, e := options.Latitude()
-	c.Check(e, check.NotNil)
-	c.Check(la, check.Equals, 0.0)
-
-	lo, e := options.Longitude()
-	c.Check(e, check.NotNil)
-	c.Check(lo, check.Equals, 0.0)
-
-	dd, e := options.DownloadDir()
-	c.Check(e, check.NotNil)
-	c.Check(dd, check.Equals, "")
+	c.Check(
+		serverValue,
+		check.DeepEquals,
+		map[string]interface{}{
+			"longitude": 0.0,
+			"foo":       "bar",
+			"config":    tempDir,
+			"static":    "/home/dgarrett/Development/go-house/static",
+			"downloads": "/tmp/Downloads",
+			"latitude":  0.0,
+		})
 }
 
-func (suite *MySuite) TestOptionsExplict(c *check.C) {
-	var options *Options
+func (suite *MySuite) TestSetDefaultsEmptyStatus(c *check.C) {
 	var e error
+	var v interface{}
+
+	s := &status.Status{}
+
+	e = setDefaults(s, "config/dir")
+	c.Check(e, check.IsNil)
+
+	v, _, e = s.Get(CONFIG_DIR)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Equals, "config/dir")
+
+	v, _, e = s.Get(STATIC_DIR)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Equals, "/home/dgarrett/Development/go-house/static")
+
+	v, _, e = s.Get(DOWNLOADS_DIR)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Equals, "/tmp/Downloads")
+
+	v, _, e = s.Get(LATITUDE)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Equals, 0.0)
+
+	v, _, e = s.Get(LONGITUDE)
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Equals, 0.0)
+}
+
+func (suite *MySuite) TestSetDefaultsPopulatedStatus(c *check.C) {
+	var e error
+	var v interface{}
 
 	s := &status.Status{}
 	e = s.SetJson("status://server",
 		[]byte(`
 		{
-		  "port": 8081,
-
-		  "config": "/tmp/Configs",
-		  "downloads": "/tmp/Downloads",
-
-		  "latitude": 37.3861,
-		  "longitude": 122.0839
+		  "config": "foo_config",
+		  "static": "foo_static",
+		  "downloads": "foo_downloads",
+		  "latitude": 1.2,
+		  "longitude": 3.4
 		}`),
 		0)
 	c.Assert(e, check.IsNil)
 
-	options, e = NewOptions(s)
+	e = setDefaults(s, "config/dir")
 	c.Check(e, check.IsNil)
 
-	// ConfigDir should be based on executable location.
-	cd, e := options.ConfigDir()
+	v, _, e = s.Get(CONFIG_DIR)
 	c.Check(e, check.IsNil)
-	c.Check(cd, check.Matches, "/tmp/Configs")
+	c.Check(v, check.Equals, "foo_config")
 
-	// Currently hard coded.
-	sd, e := options.StaticDir()
+	v, _, e = s.Get(STATIC_DIR)
 	c.Check(e, check.IsNil)
-	c.Check(sd, check.Equals, "/home/dgarrett/Development/go-house/static")
+	c.Check(v, check.Equals, "foo_static")
 
-	// The remaining values don't have defaults.
-	la, e := options.Latitude()
+	v, _, e = s.Get(DOWNLOADS_DIR)
 	c.Check(e, check.IsNil)
-	c.Check(la, check.Equals, 37.3861)
+	c.Check(v, check.Equals, "foo_downloads")
 
-	lo, e := options.Longitude()
+	v, _, e = s.Get(LATITUDE)
 	c.Check(e, check.IsNil)
-	c.Check(lo, check.Equals, 122.0839)
+	c.Check(v, check.Equals, 1.2)
 
-	dd, e := options.DownloadDir()
+	v, _, e = s.Get(LONGITUDE)
 	c.Check(e, check.IsNil)
-	c.Check(dd, check.Equals, "/tmp/Downloads")
+	c.Check(v, check.Equals, 3.4)
+}
+
+func (suite *MySuite) TestDefaultConfigDir(c *check.C) {
+	v, e := defaultConfigDir()
+	c.Check(e, check.IsNil)
+	c.Check(v, check.Matches, ".*github.com/DonGar/go-house/options/_test")
 }

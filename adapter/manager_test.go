@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 )
@@ -27,12 +26,9 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	o, e := options.NewOptions(s)
-	c.Assert(e, check.IsNil)
-
 	// Create the manager.
 	var mgr *Manager
-	mgr, e = NewManager(o, s)
+	mgr, e = NewManager(s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
@@ -47,13 +43,11 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	c.Check(mgr.adapters["TestBase"], check.DeepEquals, &base{
-		options:    o,
 		status:     s,
 		config:     config1,
 		adapterUrl: "status://TestBase",
 	})
 	c.Check(mgr.adapters["TestBase2"], check.DeepEquals, &base{
-		options:    o,
 		status:     s,
 		config:     config2,
 		adapterUrl: "status://TestBase2",
@@ -62,7 +56,7 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 
 func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 
-	o, s, e := setupTestStatusOptions(c)
+	s, e := setupTestStatus(c)
 	c.Assert(e, check.IsNil)
 
 	config, _, e := s.GetSubStatus("status://server/adapters/base/TestBase")
@@ -70,7 +64,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 
 	// Create the manager.
 	var mgr *Manager
-	mgr, e = NewManager(o, s)
+	mgr, e = NewManager(s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
@@ -78,7 +72,6 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 
 	// We verify their contents.
 	c.Check(mgr.adapters["TestBase"], check.DeepEquals, &base{
-		options:    o,
 		status:     s,
 		config:     config,
 		adapterUrl: "status://TestBase",

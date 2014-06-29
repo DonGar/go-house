@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"io/ioutil"
 	"path/filepath"
@@ -21,7 +22,7 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 		filename = filepath.Base(base.adapterUrl) + ".json"
 	}
 
-	configDir, e := base.options.ConfigDir()
+	configDir, e := base.status.GetString(options.CONFIG_DIR)
 	if e != nil {
 		return nil, e
 	}
