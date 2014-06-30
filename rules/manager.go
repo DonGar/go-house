@@ -2,6 +2,7 @@ package rules
 
 import (
 	"github.com/DonGar/go-house/status"
+	"log"
 	"strings"
 )
 
@@ -49,6 +50,11 @@ func (m *Manager) Stop() (e error) {
 // adapters.
 func (m *Manager) RegisterAction(name string, action Action) {
 	m.actions[name] = action
+}
+
+func (m *Manager) LookupAction(name string) (action Action, ok bool) {
+	a, ok := m.actions[name]
+	return a, ok
 }
 
 // This is our back ground process for noticing rules updates.
@@ -128,8 +134,12 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 	}
 }
 
+// This method implements the function signature needed by rules to fire
+// actions. It understands how to fire them, and how to handle errors (rules
+// don't).
 func (m *Manager) actionHelper(action *status.Status) {
-	// if e != nil {
-	// 	log.Println("Fire Error: ", e)
-	// }
+	e := fireAction(m, m.status, action)
+	if e != nil {
+		log.Println("Fire Error: ", e)
+	}
 }

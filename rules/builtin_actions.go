@@ -1,6 +1,8 @@
 package rules
 
-import ()
+import (
+	"github.com/DonGar/go-house/status"
+)
 
 // Actions do something. They normally do something to a specific type
 //   of component.
@@ -24,7 +26,7 @@ import ()
 //     * download_name - Name to download and attach as. Follows same rules as fetch_url:download_name.
 //     * preserve - optional flag to keep in downloads directory.
 
-func actionSet(actionUrl, componentUrl string) (e error) {
+func actionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 
 	// dest string
 	// Value interface{}
@@ -34,7 +36,7 @@ func actionSet(actionUrl, componentUrl string) (e error) {
 
 // Send a Wake On Lan request to a component. The component must have a "mac"
 // value defined with is the components network mac address.
-func actionWol(actionUrl, componentUrl string) (e error) {
+func actionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	// mac string
 
 	return nil
@@ -43,7 +45,7 @@ func actionWol(actionUrl, componentUrl string) (e error) {
 // Ping a component, and set the "up" value on component to true or false. The
 // name of the component is the name to ping. The "up" value is updated in the
 // background after an arbitrary delay, not right away.
-func actionPing(actionUrl, componentUrl string) (e error) {
+func actionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	// Component Name
 
 	// Component Up
@@ -55,14 +57,14 @@ func actionPing(actionUrl, componentUrl string) (e error) {
 // otherwise,
 // Happens ansynronously.
 // Does not require a component to fire.
-func actionFetch(actionUrl, componentUrl string) (e error) {
+func actionFetch(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	// Url          string
 	// DownloadName string
 
 	return nil
 }
 
-func actionEmail(actionUrl, componentUrl string) (e error) {
+func actionEmail(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	//   * to - Address to send email too.
 	//   * subject - Optional subject string.
 	//   * body - Optional body string.
