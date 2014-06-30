@@ -151,6 +151,14 @@ func (s *Status) Remove(url string, revision int) (e error) {
 	return nil
 }
 
+// The exported version of GetMatchingUrls requires locking.
+func (s *Status) GetMatchingUrls(url string) (matches UrlMatches, e error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	return s.getMatchingUrls(url)
+}
+
 // Does the URL contain wildcards?
 func CheckForWildcard(url string) (e error) {
 	if strings.Contains(url, "*") {

@@ -238,7 +238,6 @@ func (s *MySuite) TestIdentity(c *check.C) {
 func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 	status := Status{}
 
-	var found UrlMatches
 	var e error
 
 	nested_value := map[string]interface{}{
@@ -260,75 +259,58 @@ func (s *MySuite) TestGetMatchingUrls(c *check.C) {
 		0)
 	c.Check(e, check.IsNil)
 
+	validate := func(url string, expected UrlMatches) {
+		// We have internal an external versions of the same method. Prove they
+		// behave the same.
+		found, e := status.getMatchingUrls(url)
+		foundP, eP := status.GetMatchingUrls(url)
+
+		c.Check(e, check.DeepEquals, eP)
+		c.Check(found, check.DeepEquals, foundP)
+
+		if expected != nil {
+			c.Check(e, check.IsNil)
+		} else {
+			c.Check(e, check.NotNil)
+		}
+
+		c.Check(found, check.DeepEquals, expected)
+	}
+
 	// Test bad URL.
-	found, e = status.getMatchingUrls("")
-	c.Check(e, check.NotNil)
+	validate("", nil)
 
 	// Test base url.
-	found, e = status.getMatchingUrls("status://")
-	c.Check(found, check.DeepEquals, UrlMatches{"status://": {1, tree_value}})
-	c.Check(e, check.IsNil)
+	validate("status://", UrlMatches{"status://": {1, tree_value}})
 
 	// Test non-existent url.
-	found, e = status.getMatchingUrls("status://bogus")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{})
+	validate("status://bogus", UrlMatches{})
 
 	// Test non-existent wildcard.
-	found, e = status.getMatchingUrls("status://bogus/*")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{})
+	validate("status://bogus/*", UrlMatches{})
 
 	// Test exact matching url to map.
-	found, e = status.getMatchingUrls("status://sub1")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{"status://sub1": {Revision: 1, Value: tree_value["sub1"]}})
+	validate("status://sub1", UrlMatches{
+		"status://sub1": {Revision: 1, Value: tree_value["sub1"]}})
 
 	// Test exact matching url to value.
-	found, e = status.getMatchingUrls("status://sub1/string")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{"status://sub1/string": {Revision: 1, Value: "string value"}})
+	validate("status://sub1/string", UrlMatches{
+		"status://sub1/string": {Revision: 1, Value: "string value"}})
 
 	// Test wildcard matching url to single value.
-	found, e = status.getMatchingUrls("status://sub1/*/int")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{"status://sub1/sub2/int": {Revision: 1, Value: 5}})
+	validate("status://sub1/*/int", UrlMatches{
+		"status://sub1/sub2/int": {Revision: 1, Value: 5}})
 
 	// Test wildcard matching url to multiple values.
-	found, e = status.getMatchingUrls("status://sub1/*/*")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{
-			"status://sub1/sub2/nested": {Revision: 1, Value: nested_value},
-			"status://sub1/sub2/array":  {Revision: 1, Value: []interface{}{1, "foo", 2.5}},
-			"status://sub1/sub2/float":  {Revision: 1, Value: 2.5},
-			"status://sub1/sub2/int":    {Revision: 1, Value: 5},
-		})
+	validate("status://sub1/*/*", UrlMatches{
+		"status://sub1/sub2/nested": {Revision: 1, Value: nested_value},
+		"status://sub1/sub2/array":  {Revision: 1, Value: []interface{}{1, "foo", 2.5}},
+		"status://sub1/sub2/float":  {Revision: 1, Value: 2.5},
+		"status://sub1/sub2/int":    {Revision: 1, Value: 5},
+	})
 
 	// Test wildcard url to value children.
-	found, e = status.getMatchingUrls("status://sub1/sub2/array/*")
-	c.Check(e, check.IsNil)
-	c.Check(
-		found,
-		check.DeepEquals,
-		UrlMatches{})
+	validate("status://sub1/sub2/array/*", UrlMatches{})
 }
 
 func (s *MySuite) TestGetSetWildcardNotAllowed(c *check.C) {
