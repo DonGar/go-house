@@ -1,4 +1,4 @@
-package rules
+package actions
 
 import (
 	"github.com/DonGar/go-house/status"
@@ -39,7 +39,7 @@ func (suite *MySuite) TestSet(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := actionSet(r, s, a)
+	e := ActionSet(r, s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -69,7 +69,7 @@ func (suite *MySuite) TestSetBadComponent(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := actionSet(r, s, a)
+	e := ActionSet(r, s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -96,7 +96,7 @@ func (suite *MySuite) TestWol(c *check.C) {
 		"component": "status://adapter/host/*",
 	}, 0)
 
-	e := actionWol(r, s, a)
+	e := ActionWol(r, s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -108,7 +108,7 @@ func (suite *MySuite) TestPing(c *check.C) {
 		"component": "status://adapter/host/*",
 	}, 0)
 
-	e := actionPing(r, s, a)
+	e := ActionPing(r, s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -120,7 +120,7 @@ func (suite *MySuite) TestFetch(c *check.C) {
 		"url":    "http://www.google.com/",
 	}, 0)
 
-	e := actionFetch(r, s, a)
+	e := ActionFetch(r, s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -133,7 +133,7 @@ func (suite *MySuite) TestFetchDownload(c *check.C) {
 		"download_name": "foo.{time}.bar",
 	}, 0)
 
-	e := actionFetch(r, s, a)
+	e := ActionFetch(r, s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -167,7 +167,7 @@ func (suite *MySuite) TestEmail(c *check.C) {
 		"body":    "Test Body",
 	}, 0)
 
-	e := actionEmail(r, s, a)
+	e := ActionEmail(r, s, a)
 
 	c.Check(e, check.IsNil)
 }

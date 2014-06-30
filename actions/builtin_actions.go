@@ -1,4 +1,4 @@
-package rules
+package actions
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 // weird with wildcards.
 
 // Implement the "set" action.
-func actionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func ActionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -59,7 +59,7 @@ func actionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 
 // Send a Wake On Lan request to a component. The component must have a "mac"
 // value defined with is the components network mac address.
-func actionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -96,7 +96,7 @@ func actionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 // Ping a component, and set the "up" value on component to true or false. The
 // name of the component is the name to ping. The "up" value is updated in the
 // background after an arbitrary delay, not right away.
-func actionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func ActionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -131,7 +131,7 @@ func actionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e e
 // otherwise,
 // Happens ansynronously.
 // Does not require a component to fire.
-func actionFetch(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func ActionFetch(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	// "url"
 	// "download_name"
 
@@ -195,7 +195,7 @@ func actionFetchExpandFileName(s *status.Status, fileName string) string {
 	return fileName
 }
 
-func actionEmail(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func ActionEmail(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	//   * to - Address to send email too.
 	//   * subject - Optional subject string.
 	//   * body - Optional body string.

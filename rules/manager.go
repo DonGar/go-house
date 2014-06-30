@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"github.com/DonGar/go-house/actions"
 	"github.com/DonGar/go-house/status"
 	"log"
 	"strings"
@@ -8,27 +9,27 @@ import (
 
 type Manager struct {
 	status      *status.Status
-	actions     map[string]Action  // Action name to fuction to perform action.
-	ruleFactory map[string]newRule // Rule type to rele factory method.
-	rules       map[string]rule    // URL of Rule definition to rule instance.
+	actions     map[string]actions.Action // Action name to fuction to perform action.
+	ruleFactory map[string]newRule        // Rule type to rele factory method.
+	rules       map[string]rule           // URL of Rule definition to rule instance.
 	stop        chan bool
 }
 
 func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr = &Manager{
 		status,
-		map[string]Action{},
+		map[string]actions.Action{},
 		map[string]newRule{},
 		map[string]rule{},
 		make(chan bool),
 	}
 
 	// Register the builtin actions.
-	mgr.RegisterAction("set", actionSet)
-	mgr.RegisterAction("wol", actionWol)
-	mgr.RegisterAction("ping", actionPing)
-	mgr.RegisterAction("fetch", actionFetch)
-	mgr.RegisterAction("email;", actionEmail)
+	mgr.RegisterAction("set", actions.ActionSet)
+	mgr.RegisterAction("wol", actions.ActionWol)
+	mgr.RegisterAction("ping", actions.ActionPing)
+	mgr.RegisterAction("fetch", actions.ActionFetch)
+	mgr.RegisterAction("email;", actions.ActionEmail)
 
 	mgr.ruleFactory["base"] = newBaseRule
 	mgr.ruleFactory["periodic"] = newPeriodicRule
@@ -48,11 +49,11 @@ func (m *Manager) Stop() (e error) {
 
 // Register additional actions for rules to perform. This is normally done by
 // adapters.
-func (m *Manager) RegisterAction(name string, action Action) {
+func (m *Manager) RegisterAction(name string, action actions.Action) {
 	m.actions[name] = action
 }
 
-func (m *Manager) LookupAction(name string) (action Action, ok bool) {
+func (m *Manager) LookupAction(name string) (action actions.Action, ok bool) {
 	a, ok := m.actions[name]
 	return a, ok
 }
@@ -138,7 +139,7 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 // actions. It understands how to fire them, and how to handle errors (rules
 // don't).
 func (m *Manager) actionHelper(action *status.Status) {
-	e := fireAction(m, m.status, action)
+	e := actions.FireAction(m, m.status, action)
 	if e != nil {
 		log.Println("Fire Error: ", e)
 	}

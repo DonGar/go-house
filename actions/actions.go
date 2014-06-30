@@ -1,4 +1,4 @@
-package rules
+package actions
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ type ActionRegistrar interface {
 
 // This method understands all high level action behaviors, and will
 // dispatch typed actions as needed.
-func fireAction(r ActionRegistrar, s *status.Status, action *status.Status) error {
+func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) error {
 	actionValue, _, e := action.Get("status://")
 	if e != nil {
 		return e
@@ -38,7 +38,7 @@ func fireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 				fetchStatus.Set("status://url", typedAction, 1)
 
 				// Recurse. This let's us lookup and fire the fetch action normally.
-				return fireAction(r, s, fetchStatus)
+				return FireAction(r, s, fetchStatus)
 			}
 
 			// Some other error, probably that the status URL doesn't exist.
@@ -46,7 +46,7 @@ func fireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 		}
 
 		// We found it, fire it off!
-		return fireAction(r, s, redirectAction)
+		return FireAction(r, s, redirectAction)
 
 	case []interface{}:
 		// An array of actions means fire each one in order.
@@ -54,7 +54,7 @@ func fireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 			subActionStatus := &status.Status{}
 			subActionStatus.Set("status://", subActionValue, 0)
 
-			e = fireAction(r, s, subActionStatus)
+			e = FireAction(r, s, subActionStatus)
 			if e != nil {
 				return e
 			}
