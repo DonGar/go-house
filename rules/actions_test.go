@@ -6,7 +6,7 @@ import (
 	"gopkg.in/check.v1"
 )
 
-type MockActionRegistrar struct {
+type mockActionRegistrar struct {
 	successCalls int
 	failCalls    int
 	httpCalls    int
@@ -16,7 +16,7 @@ type MockActionRegistrar struct {
 const MOCK_FAILURE_MSG = "Mock Action Failed."
 
 // Look up success or fail actions as needed.
-func (m *MockActionRegistrar) LookupAction(name string) (action Action, ok bool) {
+func (m *mockActionRegistrar) LookupAction(name string) (action Action, ok bool) {
 	switch name {
 	case "success":
 		return func(r ActionRegistrar, s *status.Status, action *status.Status) error {
@@ -44,8 +44,8 @@ func (m *MockActionRegistrar) LookupAction(name string) (action Action, ok bool)
 	}
 }
 
-func setupTestActionEnv(c *check.C) (r *MockActionRegistrar, s *status.Status, a *status.Status) {
-	r = &MockActionRegistrar{}
+func setupTestActionEnv(c *check.C) (r *mockActionRegistrar, s *status.Status, a *status.Status) {
+	r = &mockActionRegistrar{}
 	s = &status.Status{}
 	a = &status.Status{}
 

@@ -204,15 +204,14 @@ There are many types of actions:
      * url - Url to fetch.
      * download_name - Optional field. Name of file inside system downloads directy in which to store the downloaded value. '{time}' in the name will be filled in with a unique time based number.
    * set - Set a status URI with a value.
-     * dest - Status Uri to write value into.
+     * component - Component to update.
+     * dest - key to write the value into.
      * src - Optional, src URI to read value from.
      * value - Optional, value to write into dest.
-   * increment - Increment a status URI by 1.
-     * dest - Status URI to increment by 1. Creates as '1' if non-existent.
    * wol - Issue a Wake On Lan request.
-     * mac - Mac address to attempt to wake.
-   * ping - Ping a host, and store result.
-     * host - Status URI of the host component to ping. Result stored in <host>/up as a boolean. The result is NOT immediately available. Host can contain wildcards in it's path.
+     * component - Host component to wake (must have "mac" value).
+   * ping - Ping a host, and store result. Update "up" on component.
+     * component - Host component to ping. (component name is DNS name).
    * email - Send email.
      * to - Address to send email too.
      * subject - Optional subject string.
