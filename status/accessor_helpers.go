@@ -97,3 +97,15 @@ func (s *Status) GetFloat(url string) (value float64, e error) {
 
 	return value, nil
 }
+
+func (s *Status) GetStrings(urls []string) (values []string, e error) {
+	values = make([]string, len(urls))
+	for i, url := range urls {
+		values[i], e = s.GetString(url)
+		if e != nil {
+			return nil, e
+		}
+	}
+
+	return values, nil
+}
