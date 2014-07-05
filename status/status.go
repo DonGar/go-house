@@ -287,7 +287,8 @@ func (s *Status) urlPathToNodes(urlPath []string, fillInMissing bool) (result []
 
 		childMap, ok := current.value.(statusMap)
 		if !ok {
-			return nil, fmt.Errorf("Status: Node is not a map")
+			return nil, fmt.Errorf(
+				"Status: Node %s of %s is not a map", joinUrl(urlPath[:i+1]), joinUrl(urlPath))
 		}
 
 		current, ok = childMap[u]
@@ -296,7 +297,8 @@ func (s *Status) urlPathToNodes(urlPath []string, fillInMissing bool) (result []
 				current = &node{value: statusMap{}, revision: s.revision}
 				childMap[u] = current
 			} else {
-				return nil, fmt.Errorf("Status: Node %s does not exist.", joinUrl(urlPath))
+				return nil, fmt.Errorf(
+					"Status: Node %s of %s does not exist.", joinUrl(urlPath[:i+1]), joinUrl(urlPath))
 			}
 		}
 
@@ -356,7 +358,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 		// Verify the array only contains supported values.
 		for _, v := range t {
 			switch element := v.(type) {
-			case bool, float64, int, int64, string, nil:
+			case bool, float64, int, int64, string, nil, []interface{}, map[string]interface{}:
 			default:
 				return nil, fmt.Errorf("Status: Illegal type: %T in Status array.", element)
 			}

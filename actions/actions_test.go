@@ -112,7 +112,7 @@ func (suite *MySuite) TestFireActionStringRedirectBadLocation(c *check.C) {
 
 	e := FireAction(r, s, a)
 
-	c.Check(e, check.ErrorMatches, "Status: Node status://bogus/redirect does not exist.")
+	c.Check(e, check.ErrorMatches, "Status: Node status://bogus of status://bogus/redirect does not exist.")
 	c.Check(r.successCalls, check.Equals, 0)
 	c.Check(r.failCalls, check.Equals, 0)
 	c.Check(r.httpCalls, check.Equals, 0)
