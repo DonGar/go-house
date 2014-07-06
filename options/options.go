@@ -1,35 +1,50 @@
 package options
 
 import (
+	"flag"
 	"github.com/DonGar/go-house/status"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 )
 
 const (
+	PORT          = "status://server/port"
 	CONFIG_DIR    = "status://server/config"
 	STATIC_DIR    = "status://server/static"
 	DOWNLOADS_DIR = "status://server/downloads"
-	LATITUDE      = "status://server/latitude"
-	LONGITUDE     = "status://server/longitude"
 	ADAPTERS      = "status://server/adapters"
 )
 
-const fixedStaticDir = "/home/dgarrett/Development/go-house/static"
-
 // Load the initial server config into our status struct.
-func LoadServerConfig(s *status.Status) (e error) {
+func IntializeServerConfig(s *status.Status, arguments []string) (e error) {
 
-	// Figure out where the server config files are.
-	configDir, e := s.GetString(CONFIG_DIR)
+	configDir, e := parseFlags(s, arguments)
 	if e != nil {
-		configDir, e = defaultConfigDir()
-		if e != nil {
-			return e
-		}
+		return e
 	}
 
+	if e = loadServerConfig(s, configDir); e != nil {
+		return e
+	}
+
+	if _, e := parseFlags(s, arguments); e != nil {
+		return e
+	}
+
+	// Success!
+	return nil
+}
+
+func defaultConfigDir(arguments []string) (v string, e error) {
+	execName, e := filepath.Abs(arguments[0])
+	if e != nil {
+		return "", e
+	}
+
+	return filepath.Join(filepath.Dir(execName), "config"), nil
+}
+
+func loadServerConfig(s *status.Status, configDir string) error {
 	// Load our main config file into status://server.
 	configFile := filepath.Join(configDir, "server.json")
 	rawJson, e := ioutil.ReadFile(configFile)
@@ -42,43 +57,54 @@ func LoadServerConfig(s *status.Status) (e error) {
 		return e
 	}
 
-	e = setDefaults(s, configDir)
-	if e != nil {
-		return e
-	}
-
-	// Success!
 	return nil
 }
 
-func defaultConfigDir() (v string, e error) {
-	execName, e := filepath.Abs(os.Args[0])
+func parseFlags(s *status.Status, arguments []string) (configDir string, e error) {
+	// Figure out where the server config files are.
+	configDir, e = defaultConfigDir(arguments)
 	if e != nil {
 		return "", e
 	}
 
-	return filepath.Dir(execName), nil
-}
+	flagSet := flag.NewFlagSet("go-house flags", flag.ExitOnError)
 
-func setDefaults(s *status.Status, configDir string) error {
-	defaults := map[string]interface{}{
-		CONFIG_DIR:    configDir,
-		STATIC_DIR:    fixedStaticDir,
-		DOWNLOADS_DIR: "/tmp/Downloads",
-		LATITUDE:      0.0,
-		LONGITUDE:     0.0,
+	// Set our default values, and let command line arguments override them as
+	// needed.
+
+	port := s.GetIntWithDefault(PORT, 80)
+	configDir = s.GetStringWithDefault(CONFIG_DIR, configDir)
+	staticDir := s.GetStringWithDefault(STATIC_DIR, filepath.Join(filepath.Dir(configDir), "static"))
+	downloadsDir := s.GetStringWithDefault(DOWNLOADS_DIR, "/tmp/Downloads")
+
+	flagSet.IntVar(&port, "port", port,
+		"Port number for the go-house webserver.")
+
+	flagSet.StringVar(&configDir, "config_dir", configDir,
+		"Directory that holds configuration files, especially server.json.")
+
+	flagSet.StringVar(&staticDir, "static_dir", staticDir,
+		"Directory that holds static website contents.")
+
+	flagSet.StringVar(&downloadsDir, "downloads_dir", downloadsDir,
+		"Directory in which fetched files are stored.")
+
+	if e = flagSet.Parse(arguments[1:]); e != nil {
+		return "", e
 	}
 
-	for u, v := range defaults {
-		_, _, e := s.Get(u)
+	resultsSet := map[string]interface{}{
+		PORT:          port,
+		CONFIG_DIR:    configDir,
+		STATIC_DIR:    staticDir,
+		DOWNLOADS_DIR: downloadsDir,
+	}
 
-		if e != nil {
-			e = s.Set(u, v, status.UNCHECKED_REVISION)
-			if e != nil {
-				return e
-			}
+	for url, value := range resultsSet {
+		if e = s.Set(url, value, status.UNCHECKED_REVISION); e != nil {
+			return "", e
 		}
 	}
 
-	return nil
+	return configDir, nil
 }

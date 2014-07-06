@@ -9,6 +9,7 @@ import (
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/rules"
 	"github.com/DonGar/go-house/status"
+	"os"
 )
 
 func mainWork() error {
@@ -16,8 +17,8 @@ func mainWork() error {
 
 	status := &status.Status{}
 
-	// Load the initial config.
-	e := options.LoadServerConfig(status)
+	// Load the initial config. All settings are stored in status://server.
+	e := options.IntializeServerConfig(status, os.Args)
 	if e != nil {
 		return e
 	}
@@ -36,12 +37,8 @@ func mainWork() error {
 	}
 	adapterMgr.Stop()
 
-	e = server.RunHttpServerForever(status, adapterMgr)
-	if e != nil {
-		return e
-	}
-
-	return nil
+	// Run the web server. This normally never returns.
+	return server.RunHttpServerForever(status, adapterMgr)
 }
 
 func main() {

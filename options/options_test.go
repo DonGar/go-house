@@ -16,111 +16,162 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
-func (suite *MySuite) TestLoadServerConfig(c *check.C) {
+// End to end test that mixed config file settings, command line arguments, and
+// default values.
+func (suite *MySuite) TestIntializeServerConfig(c *check.C) {
 	tempDir := c.MkDir()
 
 	var e error
 
+	configDir := filepath.Join(tempDir, "config")
+	e = os.Mkdir(configDir, os.ModePerm)
+	c.Assert(e, check.IsNil)
+
 	// Write out a test server config file.
-	serverFile := filepath.Join(tempDir, "server.json")
-	e = ioutil.WriteFile(serverFile, []byte(`{"foo": "bar"}`), os.ModePerm)
+	serverFile := filepath.Join(configDir, "server.json")
+	e = ioutil.WriteFile(serverFile, []byte(`
+		{
+			"foo": "bar",
+			"port": 1701
+		}`), os.ModePerm)
 	c.Assert(e, check.IsNil)
 
 	s := &status.Status{}
-	e = s.Set(CONFIG_DIR, tempDir, 0)
+	e = s.Set(CONFIG_DIR, configDir, 0)
 	c.Assert(e, check.IsNil)
 
-	e = LoadServerConfig(s)
+	execName := filepath.Join(tempDir, "fake_exec")
+
+	e = IntializeServerConfig(s, []string{
+		execName, "--static_dir", "/args/static"})
 	c.Check(e, check.IsNil)
 
-	serverValue, _, e := s.Get("status://server")
+	retrievedValues, _, e := s.Get("status://server")
 	c.Check(e, check.IsNil)
 	c.Check(
-		serverValue,
+		retrievedValues,
 		check.DeepEquals,
 		map[string]interface{}{
-			"longitude": 0.0,
-			"foo":       "bar",
-			"config":    tempDir,
-			"static":    "/home/dgarrett/Development/go-house/static",
+			"port":      1701,
+			"config":    configDir,
+			"static":    "/args/static",
 			"downloads": "/tmp/Downloads",
-			"latitude":  0.0,
+			"foo":       "bar",
 		})
 }
 
-func (suite *MySuite) TestSetDefaultsEmptyStatus(c *check.C) {
-	var e error
-	var v interface{}
-
+// Test parseFlags when all values are unspecified (pure defaults)
+func (suite *MySuite) TestParseFlagsEmpty(c *check.C) {
 	s := &status.Status{}
 
-	e = setDefaults(s, "config/dir")
+	configDir, e := parseFlags(s, []string{"/path/exec"})
 	c.Check(e, check.IsNil)
+	c.Check(configDir, check.Equals, "/path/config")
 
-	v, _, e = s.Get(CONFIG_DIR)
+	retrievedValues, _, e := s.Get("status://server")
 	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "config/dir")
-
-	v, _, e = s.Get(STATIC_DIR)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "/home/dgarrett/Development/go-house/static")
-
-	v, _, e = s.Get(DOWNLOADS_DIR)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "/tmp/Downloads")
-
-	v, _, e = s.Get(LATITUDE)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, 0.0)
-
-	v, _, e = s.Get(LONGITUDE)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, 0.0)
+	c.Check(
+		retrievedValues,
+		check.DeepEquals,
+		map[string]interface{}{
+			"port":      80,
+			"config":    "/path/config",
+			"static":    "/path/static",
+			"downloads": "/tmp/Downloads",
+		})
 }
 
-func (suite *MySuite) TestSetDefaultsPopulatedStatus(c *check.C) {
-	var e error
-	var v interface{}
-
+// Test parseFlags when values are set, only in the command line.
+func (suite *MySuite) TestParseFlagsArgs(c *check.C) {
 	s := &status.Status{}
-	e = s.SetJson("status://server",
-		[]byte(`
-		{
-		  "config": "foo_config",
-		  "static": "foo_static",
-		  "downloads": "foo_downloads",
-		  "latitude": 1.2,
-		  "longitude": 3.4
-		}`),
+
+	configDir, e := parseFlags(s, []string{
+		"/path/exec",
+		"--port", "1702",
+		"--config_dir", "/args/config",
+		"--static_dir", "/args/static",
+		"--downloads_dir", "/args/downloads",
+	})
+	c.Check(e, check.IsNil)
+	c.Check(configDir, check.Equals, "/args/config")
+
+	retrievedValues, _, e := s.Get("status://server")
+	c.Check(e, check.IsNil)
+	c.Check(
+		retrievedValues,
+		check.DeepEquals,
+		map[string]interface{}{
+			"port":      1702,
+			"config":    "/args/config",
+			"static":    "/args/static",
+			"downloads": "/args/downloads",
+		})
+}
+
+// Test parseFlags when values are set in the config, not the command line.
+func (suite *MySuite) TestParseFlagsConfigSet(c *check.C) {
+	s := &status.Status{}
+	e := s.Set(
+		"status://server",
+		map[string]interface{}{
+			"port":      2014,
+			"static":    "/status/static",
+			"downloads": "/status/downloads",
+		},
 		0)
-	c.Assert(e, check.IsNil)
-
-	e = setDefaults(s, "config/dir")
 	c.Check(e, check.IsNil)
 
-	v, _, e = s.Get(CONFIG_DIR)
+	configDir, e := parseFlags(s, []string{"/path/exec"})
 	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "foo_config")
+	c.Check(configDir, check.Equals, "/path/config")
 
-	v, _, e = s.Get(STATIC_DIR)
+	retrievedValues, _, e := s.Get("status://server")
 	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "foo_static")
-
-	v, _, e = s.Get(DOWNLOADS_DIR)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, "foo_downloads")
-
-	v, _, e = s.Get(LATITUDE)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, 1.2)
-
-	v, _, e = s.Get(LONGITUDE)
-	c.Check(e, check.IsNil)
-	c.Check(v, check.Equals, 3.4)
+	c.Check(
+		retrievedValues,
+		check.DeepEquals,
+		map[string]interface{}{
+			"port":      2014,
+			"config":    "/path/config",
+			"static":    "/status/static",
+			"downloads": "/status/downloads",
+		})
 }
 
-func (suite *MySuite) TestDefaultConfigDir(c *check.C) {
-	v, e := defaultConfigDir()
+// Test parseFlags when values are set in both the config, and the command line.
+func (suite *MySuite) TestParseFlagsConfigSetArgs(c *check.C) {
+	s := &status.Status{}
+	e := s.Set(
+		"status://server",
+		map[string]interface{}{
+			"port":      2014,
+			"static":    "/status/static",
+			"downloads": "/status/downloads",
+			"foo":       "bar",
+		},
+		0)
 	c.Check(e, check.IsNil)
-	c.Check(v, check.Matches, ".*github.com/DonGar/go-house/options/_test")
+
+	configDir, e := parseFlags(s, []string{
+		"/path/exec",
+		"--port", "1702",
+		"--config_dir", "/args/config",
+		"--static_dir", "/args/static",
+		"--downloads_dir", "/args/downloads",
+	})
+	c.Check(e, check.IsNil)
+	c.Check(configDir, check.Equals, "/args/config")
+
+	retrievedValues, _, e := s.Get("status://server")
+	c.Check(e, check.IsNil)
+	c.Check(
+		retrievedValues,
+		check.DeepEquals,
+		map[string]interface{}{
+			"port":      1702,
+			"config":    "/args/config",
+			"static":    "/args/static",
+			"downloads": "/args/downloads",
+			"foo":       "bar",
+		})
 }
