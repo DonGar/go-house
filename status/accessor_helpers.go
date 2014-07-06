@@ -83,6 +83,40 @@ func (s *Status) GetString(url string) (value string, e error) {
 	return value, nil
 }
 
+func (s *Status) GetStringWithDefault(url string, defaultValue string) (value string) {
+	v, e := s.GetString(url)
+	if e == nil {
+		return v
+	} else {
+		return defaultValue
+	}
+}
+
+func (s *Status) GetInt(url string) (value int, e error) {
+	rawValue, _, e := s.Get(url)
+	if e != nil {
+		return 0, e
+	}
+
+	switch t := rawValue.(type) {
+	case int:
+		return t, nil
+	case float64:
+		return int(t), nil
+	default:
+		return 0, fmt.Errorf("Status: %s is %T not int.", url, rawValue)
+	}
+}
+
+func (s *Status) GetIntWithDefault(url string, defaultValue int) (value int) {
+	v, e := s.GetInt(url)
+	if e == nil {
+		return v
+	} else {
+		return defaultValue
+	}
+}
+
 // Extract a string value.
 func (s *Status) GetFloat(url string) (value float64, e error) {
 	rawValue, _, e := s.Get(url)
