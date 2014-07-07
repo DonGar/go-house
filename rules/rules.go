@@ -3,6 +3,7 @@ package rules
 import (
 	// "github.com/cpucycle/astrotime"
 	"github.com/DonGar/go-house/status"
+	"log"
 )
 
 // An interface all rules are expected to implement.
@@ -40,6 +41,8 @@ func (b *base) Stop() error {
 
 // Called when the rule decides to fire it's action.
 func (b *base) fire() {
+	log.Println("Firing rule: ", b.name)
+
 	// If the rule has no action, we'll look up a nil.
 	action, _, _ := b.body.GetSubStatus("status://action")
 

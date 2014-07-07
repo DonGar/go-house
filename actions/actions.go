@@ -15,8 +15,7 @@ type ActionRegistrar interface {
 	LookupAction(name string) (action Action, ok bool)
 }
 
-// This method understands all high level action behaviors, and will
-// dispatch typed actions as needed.
+// This method should always be used to fire any action.
 func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) error {
 	actionValue, _, e := action.Get("status://")
 	if e != nil {
