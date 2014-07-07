@@ -35,6 +35,7 @@ func RunHttpServerForever(status *status.Status, adapterMgr *adapter.Manager) er
 
 	http.Handle("/", http.FileServer(http.Dir(staticDir)))
 	http.Handle("/status/", &StatusHandler{status: status, adapterMgr: adapterMgr})
+	http.Handle("/log/", &LogHandler{})
 
 	log.Printf("Starting web server on %d.", port)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), Log(http.DefaultServeMux))
