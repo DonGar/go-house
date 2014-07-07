@@ -66,8 +66,7 @@ func (s *StatusHandler) HandleGet(
 			// We've found our result, convert to json.
 			valueJson, e := json.MarshalIndent(wrapperValue, "", "  ")
 			if e != nil {
-				// TODO: Find better result code.
-				logAndHttpError(w, e.Error(), http.StatusNotFound)
+				logAndHttpError(w, e.Error(), http.StatusInternalServerError)
 				return
 			}
 
@@ -98,7 +97,7 @@ func (s *StatusHandler) HandlePut(
 	w http.ResponseWriter, r *http.Request,
 	statusUrl string, revision int) {
 
-	// TODO: Verify URL against web adapters.
+	// Verify URL against web adapters.
 	if !s.VerfiyStatusUrlAgainstAdapters(statusUrl) {
 		logAndHttpError(w, fmt.Sprintf("No adapter for %s.", statusUrl), http.StatusBadRequest)
 		return
@@ -132,7 +131,6 @@ func (s *StatusHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var e error
 		revision, e = strconv.Atoi(revision_str)
 		if e != nil {
-			// TODO: Produce other error codes as needed.
 			logAndHttpError(w, e.Error(), http.StatusBadRequest)
 			return
 		}
