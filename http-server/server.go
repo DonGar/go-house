@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/DonGar/go-house/adapter"
+	"github.com/DonGar/go-house/logging"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"log"
@@ -25,7 +26,11 @@ func logAndHttpError(w http.ResponseWriter, error string, code int) {
 
 // This method configures our HTTP Handlers, and runs the web server forever. It
 // does not return.
-func RunHttpServerForever(status *status.Status, adapterMgr *adapter.Manager) error {
+func RunHttpServerForever(
+	status *status.Status,
+	adapterMgr *adapter.Manager,
+	cachedLogging *logging.CachedLogging) error {
+
 	staticDir, e := status.GetString(options.STATIC_DIR)
 	if e != nil {
 		return e
@@ -35,7 +40,7 @@ func RunHttpServerForever(status *status.Status, adapterMgr *adapter.Manager) er
 
 	http.Handle("/", http.FileServer(http.Dir(staticDir)))
 	http.Handle("/status/", &StatusHandler{status: status, adapterMgr: adapterMgr})
-	http.Handle("/log/", &LogHandler{})
+	http.Handle("/log/", &LogHandler{cachedLogging})
 
 	log.Printf("Starting web server on %d.", port)
 	http.ListenAndServe(fmt.Sprintf(":%d", port), Log(http.DefaultServeMux))
