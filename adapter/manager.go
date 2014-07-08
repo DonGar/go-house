@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
+	"log"
 )
 
 type Manager struct {
@@ -60,6 +61,7 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 				return nil, e
 			}
 
+			log.Printf("Create Adapter: %s", name)
 			newAdapter, e := factory(mgr, base{
 				status:     status,
 				config:     adapterConfig,
@@ -77,12 +79,13 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 }
 
 func (m *Manager) Stop() (e error) {
-	for k, v := range m.adapters {
-		e = v.Stop()
+	for name, adapter := range m.adapters {
+		log.Printf("Stop Adapter: %s", name)
+		e = adapter.Stop()
 		if e != nil {
 			return e
 		}
-		delete(m.adapters, k)
+		delete(m.adapters, name)
 	}
 	return nil
 }
