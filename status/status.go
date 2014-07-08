@@ -83,13 +83,8 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 		return e
 	}
 
-	nodes, e := s.urlPathToNodes(pathParts, true)
-	if e != nil {
-		return e
-	}
-
 	// Look up the new revision to update.
-	newRevision := nodes[0].revision + 1
+	newRevision := s.revision + 1
 
 	// Covert the new value into internal format.
 	newValue, e := valueToStatusValue(value, newRevision)
@@ -98,6 +93,11 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 	}
 
 	// TODO: Verify the value is different from the old value.
+
+	nodes, e := s.urlPathToNodes(pathParts, true)
+	if e != nil {
+		return e
+	}
 
 	// Set the new value to the last node found.
 	nodes[len(nodes)-1].value = newValue

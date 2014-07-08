@@ -31,6 +31,20 @@ func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
 	return valueJson, revision, e
 }
 
+func (s *Status) PrettyDump(url string) string {
+	value, _, e := s.Get(url)
+	if e != nil {
+		panic(e)
+	}
+
+	valueJson, e := json.MarshalIndent(value, "", "    ")
+	if e != nil {
+		panic(e)
+	}
+
+	return string(valueJson)
+}
+
 // Returns a copy of a sub-tree as a new Status object.
 // Useful if you need a sub-tree that's frozen with friendly accessors.
 func (s *Status) GetSubStatus(url string) (contents *Status, revision int, e error) {

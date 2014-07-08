@@ -181,6 +181,19 @@ func (s *MySuite) TestGetSet(c *check.C) {
 		10)
 }
 
+func (s *MySuite) TestSetInvalidValue(c *check.C) {
+	status := Status{}
+
+	type InvalidValue struct{}
+
+	e := status.Set("status://foo/bar", InvalidValue{}, 0)
+	c.Check(e, check.NotNil)
+
+	// Make sure nothing about the status state was modified.
+	c.Check(status.revision, check.Equals, 0)
+	c.Check(status.value, check.Equals, nil)
+}
+
 func (s *MySuite) TestIdentity(c *check.C) {
 
 	verifyIdentity := func(value interface{}) {
