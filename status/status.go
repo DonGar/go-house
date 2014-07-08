@@ -92,11 +92,16 @@ func (s *Status) Set(url string, value interface{}, revision int) (e error) {
 		return e
 	}
 
-	// TODO: Verify the value is different from the old value.
-
+	// Locate/Create the parent nodes. THIS IS FIRST TREE MODIFICATION.
 	nodes, e := s.urlPathToNodes(pathParts, true)
 	if e != nil {
 		return e
+	}
+
+	// TODO: Handle complex values correctly.
+	// If the value isn't changing, no need to update revisions.
+	if value == nodes[len(nodes)-1].value {
+		return nil
 	}
 
 	// Set the new value to the last node found.

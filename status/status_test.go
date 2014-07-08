@@ -148,9 +148,9 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	e = status.Set("status://unchecked_rev", "value", UNCHECKED_REVISION)
 	c.Check(e, check.IsNil)
 
-	// TODO: Broken behavior.
-	// // Set a value to the matching value. Ensure the revision doesn't change.
-	// e = status.Set("status://sub1/sub2/int", 5, 10)
+	// Set a value to the matching value. Ensure the revision doesn't change.
+	e = status.Set("status://sub1/sub2/int", 5, 10)
+	// TODO: Test complex type (will break today)
 
 	CheckGetFailure(c, &status, "status://foo")
 
