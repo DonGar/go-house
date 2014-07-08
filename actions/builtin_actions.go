@@ -68,7 +68,7 @@ func ActionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 // Send a Wake On Lan request to a component. The component must have a "mac"
 // value defined with is the components network mac address.
 func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
-	componentUrl, e := action.GetString("status://component")
+	componentUrl, e := action.GetString("status://host")
 	if e != nil {
 		return e
 	}
@@ -90,7 +90,7 @@ func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 		}
 
 		// Send the WOL Packet out.
-		go errorHandler(wol.MagicWake(mac, "255.255.255.255"))
+		go func() { errorHandler(wol.MagicWake(mac, "255.255.255.255")) }()
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 // name of the component is the name to ping. The "up" value is updated in the
 // background after an arbitrary delay, not right away.
 func ActionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
-	componentUrl, e := action.GetString("status://component")
+	componentUrl, e := action.GetString("status://host")
 	if e != nil {
 		return e
 	}
@@ -118,7 +118,7 @@ func ActionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e e
 		url_parts := strings.Split(cUrl, "/")
 		hostname := url_parts[len(url_parts)-1]
 
-		go errorHandler(performPing(s, hostname, resultUrl))
+		go func() { errorHandler(performPing(s, hostname, resultUrl)) }()
 	}
 
 	return nil

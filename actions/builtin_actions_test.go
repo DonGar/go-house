@@ -146,8 +146,8 @@ func (suite *MySuite) TestWol(c *check.C) {
 
 	r, s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
-		"action":    "wol",
-		"component": "status://adapter/host/*",
+		"action": "wol",
+		"host":   "status://adapter/host/*",
 	}, 0)
 
 	e := ActionWol(r, s, a)
@@ -160,8 +160,8 @@ func (suite *MySuite) TestPing(c *check.C) {
 
 	r, s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
-		"action":    "ping",
-		"component": "status://adapter/host/*",
+		"action": "ping",
+		"host":   "status://adapter/host/*",
 	}, 0)
 
 	e := ActionPing(r, s, a)
