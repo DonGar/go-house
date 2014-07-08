@@ -18,7 +18,7 @@ func setupTestStatus(c *check.C) (s *status.Status, e error) {
         }
       },
       "testAdapter": {
-      	"rules": {
+      	"rule": {
       		"base": {
       			"BasicOne": {
 						},
@@ -50,7 +50,7 @@ func (suite *MySuite) TestMgrStartEditStop(c *check.C) {
 	time.Sleep(2 * time.Millisecond)
 	c.Check(len(mgr.rules), check.Equals, 2)
 
-	e = s.SetJson("status://testAdapter/rules/base/BasicThree", []byte(`{}`), 1)
+	e = s.SetJson("status://testAdapter/rule/base/BasicThree", []byte(`{}`), 1)
 	c.Assert(e, check.IsNil)
 
 	// We give the rules manager a little time to finish initializing.
@@ -58,7 +58,7 @@ func (suite *MySuite) TestMgrStartEditStop(c *check.C) {
 	time.Sleep(2 * time.Millisecond)
 	c.Check(len(mgr.rules), check.Equals, 3)
 
-	e = s.Remove("status://testAdapter/rules/base/BasicTwo", 2)
+	e = s.Remove("status://testAdapter/rule/base/BasicTwo", 2)
 	c.Assert(e, check.IsNil)
 
 	// We give the rules manager a little time for a delayed update.

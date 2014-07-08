@@ -60,7 +60,7 @@ func (m *Manager) LookupAction(name string) (action actions.Action, ok bool) {
 
 // This is our back ground process for noticing rules updates.
 func (m *Manager) rulesWatchReader() {
-	rulesWatch, e := m.status.WatchForUpdate("status://*/rules/*/*")
+	rulesWatch, e := m.status.WatchForUpdate("status://*/rule/*/*")
 	if e != nil {
 		panic("Failure should not be possible.")
 	}
@@ -87,6 +87,7 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 		match, ok := ruleMatches[url]
 		if !ok || match.Revision != rule.Revision() {
 			// It's no longer valid, remove it.
+			log.Printf("Stop rule: %s: %s", rule.Name(), url)
 			rule.Stop()
 			delete(m.rules, url)
 		}
@@ -125,6 +126,7 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 			ruleBody,
 		}
 
+		log.Printf("Start rule: %s: %s", ruleName, url)
 		newRule, e := factory(base)
 		if e != nil {
 			// TODO: Log error and continue, not panic.

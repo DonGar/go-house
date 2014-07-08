@@ -9,6 +9,7 @@ import (
 // An interface all rules are expected to implement.
 type rule interface {
 	Stop() error
+	Name() string
 	Revision() int
 }
 
@@ -29,6 +30,10 @@ type base struct {
 
 func newBaseRule(base base) (rule, error) {
 	return &base, nil
+}
+
+func (b *base) Name() string {
+	return b.name
 }
 
 func (b *base) Revision() int {
