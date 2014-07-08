@@ -42,7 +42,7 @@ func mainWork() error {
 	if e != nil {
 		return e
 	}
-	adapterMgr.Stop()
+	defer adapterMgr.Stop()
 
 	// Run the web server. This normally never returns.
 	return server.RunHttpServerForever(status, adapterMgr, cachedLogging)
