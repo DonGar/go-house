@@ -1,7 +1,7 @@
 package rules
 
 import (
-	"github.com/DonGar/go-house/actions"
+	"github.com/DonGar/go-house/rules/actions"
 	"github.com/DonGar/go-house/status"
 	"log"
 	"strings"
