@@ -71,3 +71,6 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	c.Check(r, check.Equals, 3)
 	c.Check(e, check.IsNil)
 }
+
+// TODO: Write test case where the config file is modified to test file
+// watching.
