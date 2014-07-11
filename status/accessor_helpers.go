@@ -131,7 +131,6 @@ func (s *Status) GetIntWithDefault(url string, defaultValue int) (value int) {
 	}
 }
 
-// Extract a string value.
 func (s *Status) GetFloat(url string) (value float64, e error) {
 	rawValue, _, e := s.Get(url)
 	if e != nil {
@@ -144,6 +143,15 @@ func (s *Status) GetFloat(url string) (value float64, e error) {
 	}
 
 	return value, nil
+}
+
+func (s *Status) GetFloatWithDefault(url string, defaultValue float64) (value float64) {
+	v, e := s.GetFloat(url)
+	if e == nil {
+		return v
+	} else {
+		return defaultValue
+	}
 }
 
 func (s *Status) GetStrings(urls []string) (values []string, e error) {
