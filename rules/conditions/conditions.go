@@ -39,6 +39,8 @@ func NewCondition(
 		return newDailyCondition(s, body)
 	case "periodic":
 		return newPeriodicCondition(body)
+	case "watch":
+		return newWatchCondition(s, body)
 	default:
 		return nil, fmt.Errorf("Condition: No known type: %s", conditionName)
 	}

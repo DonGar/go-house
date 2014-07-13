@@ -13,6 +13,23 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
+// Helpers for all condition test code.
+func validateChannelRead(c *check.C, cond Condition, expected bool) {
+	result, ok := <-cond.Result()
+
+	c.Check(ok, check.Equals, true)
+	c.Check(result, check.Equals, expected)
+}
+
+func validateChannelEmpty(c *check.C, cond Condition) {
+	select {
+	case result := <-cond.Result():
+		c.Error("Got unexpected result: ", result)
+	default:
+	}
+}
+
+// Base condition tests.
 func (suite *MySuite) TestBaseConditionStartStop(c *check.C) {
 	s := &status.Status{}
 

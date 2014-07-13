@@ -28,22 +28,17 @@ func (suite *MySuite) TestPeriodicFire(c *check.C) {
 
 	cond := setupPeriodicRule(c, "2ms")
 
-	// We should see the condition turn true, then turn false again.
-	fire := <-cond.Result()
-	c.Check(fire, check.Equals, true)
-
-	fire = <-cond.Result()
-	c.Check(fire, check.Equals, false)
+	validateChannelRead(c, cond, true)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 
 	// We've seen the end of a 2 ms periodic cycle.
 	duration := time.Since(start)
 	c.Check(duration < 3*time.Millisecond, check.Equals, true)
 
-	fire = <-cond.Result()
-	c.Check(fire, check.Equals, true)
-
-	fire = <-cond.Result()
-	c.Check(fire, check.Equals, false)
+	validateChannelRead(c, cond, true)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 
 	// We've seen the end of a second 2 ms periodic cycle.
 	duration = time.Since(start)
