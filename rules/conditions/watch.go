@@ -2,10 +2,14 @@ package conditions
 
 import (
 	"github.com/DonGar/go-house/status"
+	"reflect"
 )
 
 type watchCondition struct {
 	base
+
+	hasTrigger bool
+	trigger    interface{}
 
 	status    *status.Status
 	watchChan <-chan status.UrlMatches
@@ -18,6 +22,10 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 		return nil, e
 	}
 
+	// Look up the trigger value, if present.
+	trigger, _, e := body.Get("status://trigger")
+	hasTrigger := e == nil
+
 	// Start watching for updates.
 	watchChan, e := s.WatchForUpdate(watchUrl)
 	if e != nil {
@@ -28,7 +36,7 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 	<-watchChan
 
 	// Create our condition.
-	c := &watchCondition{base{make(chan bool), make(chan bool)}, s, watchChan}
+	c := &watchCondition{base{make(chan bool), make(chan bool)}, hasTrigger, trigger, s, watchChan}
 
 	// Start it's goroutine.
 	go c.handleWatch()
@@ -36,14 +44,34 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 	return c, nil
 }
 
+func (c *watchCondition) triggerInMatches(matches status.UrlMatches) bool {
+	for _, match := range matches {
+		if reflect.DeepEqual(match.Value, c.trigger) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *watchCondition) handleWatch() {
+
+	currentResult := false
 
 	for {
 		select {
-		case <-c.watchChan:
-			// We got an update... notify our rule!
-			c.result <- true
-			c.result <- false
+		case matches := <-c.watchChan:
+			if c.hasTrigger {
+				triggered := c.triggerInMatches(matches)
+				if currentResult != triggered {
+					currentResult = triggered
+					c.result <- triggered
+				}
+			} else {
+				// We got an update... notify our rule!
+				c.result <- true
+				c.result <- false
+			}
 
 		case <-c.stop:
 			c.status.ReleaseWatch(c.watchChan)

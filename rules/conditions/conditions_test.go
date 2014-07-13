@@ -17,14 +17,14 @@ var _ = check.Suite(&MySuite{})
 func validateChannelRead(c *check.C, cond Condition, expected bool) {
 	result, ok := <-cond.Result()
 
-	c.Check(ok, check.Equals, true)
-	c.Check(result, check.Equals, expected)
+	c.Assert(ok, check.Equals, true)
+	c.Assert(result, check.Equals, expected)
 }
 
 func validateChannelEmpty(c *check.C, cond Condition) {
 	select {
 	case result := <-cond.Result():
-		c.Error("Got unexpected result: ", result)
+		c.Fatal("Result() channel not empty: ", result)
 	default:
 	}
 }
