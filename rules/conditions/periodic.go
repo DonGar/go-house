@@ -6,9 +6,9 @@ import (
 )
 
 type periodicCondition struct {
+	base
+
 	period time.Duration
-	result chan bool
-	stop   chan bool
 }
 
 func newPeriodicCondition(body *status.Status) (*periodicCondition, error) {
@@ -24,7 +24,7 @@ func newPeriodicCondition(body *status.Status) (*periodicCondition, error) {
 	}
 
 	// Create the condition.
-	c := &periodicCondition{period, make(chan bool), make(chan bool)}
+	c := &periodicCondition{base{make(chan bool), make(chan bool)}, period}
 
 	// Start it processing.
 	go c.handleTicks()
@@ -46,14 +46,4 @@ func (c *periodicCondition) handleTicks() {
 			return
 		}
 	}
-
-}
-
-func (c *periodicCondition) Result() <-chan bool {
-	return c.result
-}
-
-func (c *periodicCondition) Stop() {
-	c.stop <- true
-	<-c.stop
 }

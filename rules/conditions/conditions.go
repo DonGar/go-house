@@ -49,6 +49,7 @@ func NewCondition(
 // The base type all rules should compose with.
 type base struct {
 	result chan bool // This will be sent on all condition result transitions.
+	stop   chan bool
 }
 
 func (b *base) Result() <-chan bool {
@@ -56,8 +57,26 @@ func (b *base) Result() <-chan bool {
 }
 
 func (b *base) Stop() {
+	b.stop <- true
+	<-b.stop
 }
 
+// This only exists for testing, it should not be used by classes that compose
+// base.
 func newBaseCondition() Condition {
-	return &base{make(chan bool)}
+	c := &base{make(chan bool), make(chan bool)}
+	go c.handleEvents()
+
+	return c
+}
+
+func (c *base) handleEvents() {
+
+	for {
+		select {
+		case <-c.stop:
+			c.stop <- true
+			return
+		}
+	}
 }

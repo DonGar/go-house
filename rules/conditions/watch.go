@@ -5,11 +5,10 @@ import (
 )
 
 type watchCondition struct {
+	base
+
 	status    *status.Status
 	watchChan <-chan status.UrlMatches
-
-	result chan bool
-	stop   chan bool
 }
 
 func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, error) {
@@ -29,7 +28,7 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 	<-watchChan
 
 	// Create our condition.
-	c := &watchCondition{s, watchChan, make(chan bool), make(chan bool)}
+	c := &watchCondition{base{make(chan bool), make(chan bool)}, s, watchChan}
 
 	// Start it's goroutine.
 	go c.handleWatch()
@@ -52,13 +51,4 @@ func (c *watchCondition) handleWatch() {
 			return
 		}
 	}
-}
-
-func (c *watchCondition) Result() <-chan bool {
-	return c.result
-}
-
-func (c *watchCondition) Stop() {
-	c.stop <- true
-	<-c.stop
 }

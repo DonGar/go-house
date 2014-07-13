@@ -16,12 +16,12 @@ const (
 )
 
 type dailyCondition struct {
+	base
+
 	latitude    float64
 	longitude   float64
 	timeType    timeType      // sunset, sunrise, or fixed.
 	fixedOffset time.Duration // If fixed, how long after midnight until we fire?
-	result      chan bool
-	stop        chan bool
 }
 
 func newDailyCondition(status *status.Status, body *status.Status) (*dailyCondition, error) {
@@ -40,7 +40,7 @@ func newDailyCondition(status *status.Status, body *status.Status) (*dailyCondit
 		return nil, e
 	}
 
-	c := &dailyCondition{latitude, longitude, timeType, fixedOffset, make(chan bool), make(chan bool)}
+	c := &dailyCondition{base{make(chan bool), make(chan bool)}, latitude, longitude, timeType, fixedOffset}
 
 	// Start it's goroutine.
 	go c.handleTimer()
@@ -143,13 +143,4 @@ func (c *dailyCondition) handleTimer() {
 			return
 		}
 	}
-}
-
-func (c *dailyCondition) Result() <-chan bool {
-	return c.result
-}
-
-func (c *dailyCondition) Stop() {
-	c.stop <- true
-	<-c.stop
 }
