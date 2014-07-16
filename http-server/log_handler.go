@@ -40,6 +40,11 @@ func (l *LogHandler) HandleGet(w http.ResponseWriter, r *http.Request, revision 
 				continue
 			}
 
+			// Reverse the order of logUpdate so the newest logs come first.
+			for i, j := 0, len(logUpdate.Logs)-1; i < j; i, j = i+1, j-1 {
+				logUpdate.Logs[i], logUpdate.Logs[j] = logUpdate.Logs[j], logUpdate.Logs[i]
+			}
+
 			// Create Json mapping.
 			jsonLogs := map[string]interface{}{
 				"revision": logUpdate.Revision,
