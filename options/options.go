@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/DonGar/go-house/status"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 )
 
@@ -31,6 +32,20 @@ func IntializeServerConfig(s *status.Status, arguments []string) (e error) {
 		return e
 	}
 
+	staticDir, e := s.GetString(STATIC_DIR)
+	if e != nil {
+		return e
+	}
+
+	downloadsDir, e := s.GetString(DOWNLOADS_DIR)
+	if e != nil {
+		return e
+	}
+
+	log.Println("Config dir:    ", configDir)
+	log.Println("Static dir:    ", staticDir)
+	log.Println("Downloads dir: ", downloadsDir)
+
 	// Success!
 	return nil
 }
@@ -52,9 +67,12 @@ func loadServerConfig(s *status.Status, configDir string) error {
 		return e
 	}
 
-	e = s.SetJson("status://server", rawJson, status.UNCHECKED_REVISION)
-	if e != nil {
+	if e = s.SetJson("status://server", rawJson, status.UNCHECKED_REVISION); e != nil {
 		return e
+	}
+
+	// Preserve the config dir, so it'll be the default during second parseFlags pass.
+	if e = s.Set(CONFIG_DIR, configDir, status.UNCHECKED_REVISION); e != nil {
 	}
 
 	return nil
