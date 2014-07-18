@@ -318,7 +318,11 @@ func sendEmail(
 
 	m := email.NewMessage(subject, body)
 	m.From = from
-	m.To = []string{to}
+	m.To = strings.Split(to, ",")
+
+	for i := range m.To {
+		m.To[i] = strings.TrimSpace(m.To[i])
+	}
 
 	for _, attachment := range attachments {
 		if e := m.Attach(attachment); e != nil {
@@ -326,6 +330,7 @@ func sendEmail(
 		}
 	}
 
+	log.Printf("Sending Email '%s' to '%s'", subject, to)
 	return email.Send(relayServer,
 		smtp.PlainAuth("", relayUser, relayPassword, relayIdServer),
 		m)

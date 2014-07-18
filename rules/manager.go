@@ -31,7 +31,7 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 	mgr.RegisterAction("wol", actions.ActionWol)
 	mgr.RegisterAction("ping", actions.ActionPing)
 	mgr.RegisterAction("fetch", actions.ActionFetch)
-	mgr.RegisterAction("email;", actions.ActionEmail)
+	mgr.RegisterAction("email", actions.ActionEmail)
 
 	// Start watching the status for rules updates.
 	go mgr.rulesWatchReader()
