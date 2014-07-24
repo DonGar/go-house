@@ -1,9 +1,7 @@
 package rules
 
 import (
-	"fmt"
 	"github.com/DonGar/go-house/rules/actions"
-	"github.com/DonGar/go-house/rules/conditions"
 	"github.com/DonGar/go-house/status"
 	"log"
 	"strings"
@@ -122,24 +120,10 @@ func (m *Manager) AddRule(url string, match status.UrlMatch) error {
 		log.Panic(e) // This is supposed to be impossible.
 	}
 
-	// Find the sub-expression contents.
-	conditionBody, _, e := ruleBody.GetSubStatus("status://condition")
-	if e != nil {
-		return fmt.Errorf("No 'condition' section.")
-	}
-
-	actionBody, _, e := ruleBody.GetSubStatus("status://action")
-	if e != nil {
-		return fmt.Errorf("No 'action' section.")
-	}
-
-	// Create the condition (last, because it needs Stopping on failure).
-	condition, e := conditions.NewCondition(m.status, conditionBody)
+	newRule, e := newRule(m.status, m.actionHelper, ruleName, match.Revision, ruleBody)
 	if e != nil {
 		return e
 	}
-
-	newRule := newRule(m.actionHelper, ruleName, match.Revision, actionBody, condition)
 
 	log.Printf("Start rule: %s: %s", ruleName, url)
 	m.rules[url] = newRule

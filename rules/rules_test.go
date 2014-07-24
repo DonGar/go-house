@@ -41,11 +41,23 @@ func (m *mockCondition) Stop() {
 // Tests
 
 func (suite *MySuite) TestRuleStartStop(c *check.C) {
+	mockStatus := &status.Status{}
 	mockAH := &mockActionHelper{}
-	actionBody := &status.Status{}
-	mockCondition := &mockCondition{}
+	ruleBody := &status.Status{}
 
-	rule := newRule(mockAH.helper, "Test Rule", 23, actionBody, mockCondition)
+	e := ruleBody.SetJson(
+		"status://",
+		[]byte(`{
+			"condition": {
+				"test": "base"
+			},
+			"action": null
+		}`),
+		status.UNCHECKED_REVISION)
+	c.Assert(e, check.IsNil)
+
+	rule, e := newRule(mockStatus, mockAH.helper, "Test Rule", 23, ruleBody)
+	c.Assert(e, check.IsNil)
 
 	rule.Stop()
 
@@ -57,7 +69,14 @@ func (suite *MySuite) TestRuleFireSingle(c *check.C) {
 	actionBody := &status.Status{}
 	mockCondition := &mockCondition{make(chan bool)}
 
-	rule := newRule(mockAH.helper, "Test Rule", 23, actionBody, mockCondition)
+	rule := &rule{
+		mockAH.helper,
+		"Test Rule", 23,
+		mockCondition,
+		actionBody,
+		make(chan bool)}
+
+	rule.start()
 
 	mockCondition.result <- true
 
@@ -72,7 +91,14 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 	actionBody := &status.Status{}
 	mockCondition := &mockCondition{make(chan bool)}
 
-	rule := newRule(mockAH.helper, "Test Rule", 23, actionBody, mockCondition)
+	rule := &rule{
+		mockAH.helper,
+		"Test Rule", 23,
+		mockCondition,
+		actionBody,
+		make(chan bool)}
+
+	rule.start()
 
 	// Send several patterns of true/false since conditions are not required
 	// to toggle rationally.

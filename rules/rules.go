@@ -1,6 +1,7 @@
 package rules
 
 import (
+	"fmt"
 	"github.com/DonGar/go-house/rules/conditions"
 	"github.com/DonGar/go-house/status"
 	"log"
@@ -20,23 +21,44 @@ type rule struct {
 }
 
 func newRule(
+	status *status.Status,
 	actionHelper actionHelper,
 	name string,
 	revision int,
-	action *status.Status,
-	condition conditions.Condition) *rule {
+	ruleBody *status.Status) (*rule, error) {
+
+	// Find the sub-expression contents.
+	conditionBody, _, e := ruleBody.GetSubStatus("status://condition")
+	if e != nil {
+		return nil, fmt.Errorf("No 'condition' section.")
+	}
+
+	actionBody, _, e := ruleBody.GetSubStatus("status://action")
+	if e != nil {
+		return nil, fmt.Errorf("No 'action' section.")
+	}
+
+	// Create the condition (last, because it needs Stopping on failure).
+	condition, e := conditions.NewCondition(status, conditionBody)
+	if e != nil {
+		return nil, e
+	}
 
 	result := &rule{
 		actionHelper,
 		name,
 		revision,
 		condition,
-		action,
+		actionBody,
 		make(chan bool)}
 
-	go result.watchConditionResults()
+	result.start()
 
-	return result
+	return result, nil
+}
+
+func (r *rule) start() {
+	go r.watchConditionResults()
 }
 
 func (r *rule) Stop() {
