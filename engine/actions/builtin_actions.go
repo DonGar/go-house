@@ -26,7 +26,7 @@ func errorHandler(e error) {
 // weird with wildcards.
 
 // Implement the "set" action.
-func ActionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func actionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -67,7 +67,7 @@ func ActionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 
 // Send a Wake On Lan request to a component. The component must have a "mac"
 // value defined with is the components network mac address.
-func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func actionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -99,7 +99,7 @@ func ActionWol(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 // Ping a component, and set the "up" value on component to true or false. The
 // name of the component is the name to ping. The "up" value is updated in the
 // background after an arbitrary delay, not right away.
-func ActionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func actionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	componentUrl, e := action.GetString("status://component")
 	if e != nil {
 		return e
@@ -144,7 +144,7 @@ func performPing(s *status.Status, hostname, resultUrl string) error {
 // otherwise,
 // Happens ansynronously.
 // Does not require a component to fire.
-func ActionFetch(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func actionFetch(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	// "url"
 	// "download_name"
 
@@ -197,7 +197,7 @@ type attachemetDesc struct {
 	filename string
 }
 
-func ActionEmail(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func actionEmail(r ActionRegistrar, s *status.Status, action *status.Status) (e error) {
 	//   * to - Address to send email too.
 	//   * subject - Optional subject string.
 	//   * body - Optional body string.

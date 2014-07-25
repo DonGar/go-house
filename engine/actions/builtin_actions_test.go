@@ -5,8 +5,8 @@ import (
 	"gopkg.in/check.v1"
 )
 
-func setupTestBuiltinActionEnv(c *check.C) (r *mockActionRegistrar, s *status.Status, a *status.Status) {
-	r = &mockActionRegistrar{}
+func setupTestBuiltinActionEnv(c *check.C) (r *mockActionResults, s *status.Status, a *status.Status) {
+	r = &mockActionResults{}
 	s = &status.Status{}
 	a = &status.Status{}
 
@@ -44,7 +44,7 @@ func (suite *MySuite) TestSet(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := ActionSet(r, s, a)
+	e := actionSet(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -79,7 +79,7 @@ func (suite *MySuite) TestSetWildcard(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := ActionSet(r, s, a)
+	e := actionSet(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -116,7 +116,7 @@ func (suite *MySuite) TestSetBadComponent(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := ActionSet(r, s, a)
+	e := actionSet(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -150,7 +150,7 @@ func (suite *MySuite) TestWol(c *check.C) {
 		"host":   "status://adapter/host/*",
 	}, 0)
 
-	e := ActionWol(r, s, a)
+	e := actionWol(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -164,7 +164,7 @@ func (suite *MySuite) TestPing(c *check.C) {
 		"host":   "status://adapter/host/*",
 	}, 0)
 
-	e := ActionPing(r, s, a)
+	e := actionPing(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -178,7 +178,7 @@ func (suite *MySuite) TestFetch(c *check.C) {
 		"url":    "http://www.google.com/",
 	}, 0)
 
-	e := ActionFetch(r, s, a)
+	e := actionFetch(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -197,7 +197,7 @@ func (suite *MySuite) TestFetchDownload(c *check.C) {
 		"download_name": "foo.{time}.bar",
 	}, 0)
 
-	e := ActionFetch(r, s, a)
+	e := actionFetch(r.registrar(), s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -234,7 +234,7 @@ func (suite *MySuite) TestEmail(c *check.C) {
 	}, 0)
 	c.Assert(e, check.IsNil)
 
-	e = ActionEmail(r, s, a)
+	e = actionEmail(r.registrar(), s, a)
 	c.Check(e, check.IsNil)
 }
 
@@ -260,6 +260,6 @@ func (suite *MySuite) TestEmailAttached(c *check.C) {
 	}, 0)
 	c.Assert(e, check.IsNil)
 
-	e = ActionEmail(r, s, a)
+	e = actionEmail(r.registrar(), s, a)
 	c.Check(e, check.IsNil)
 }

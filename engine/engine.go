@@ -12,25 +12,18 @@ const rules_watch_url = "status://*/rule/*"
 
 type Engine struct {
 	status  *status.Status
-	actions map[string]actions.Action // Action name to fuction to perform action.
-	rules   map[string]*rules.Rule    // URL of Rule definition to rule instance.
+	actions actions.ActionRegistrar
+	rules   map[string]*rules.Rule // URL of Rule definition to rule instance.
 	stop    chan bool
 }
 
 func NewEngine(status *status.Status) (mgr *Engine, e error) {
 	mgr = &Engine{
 		status,
-		map[string]actions.Action{},
+		actions.StandardActions(),
 		map[string]*rules.Rule{},
 		make(chan bool),
 	}
-
-	// Register the builtin actions.
-	mgr.RegisterAction("set", actions.ActionSet)
-	mgr.RegisterAction("wol", actions.ActionWol)
-	mgr.RegisterAction("ping", actions.ActionPing)
-	mgr.RegisterAction("fetch", actions.ActionFetch)
-	mgr.RegisterAction("email", actions.ActionEmail)
 
 	// Start watching the status for rules updates.
 	go mgr.rulesWatchReader()
@@ -42,17 +35,6 @@ func (m *Engine) Stop() (e error) {
 	m.stop <- true
 	<-m.stop
 	return nil
-}
-
-// Register additional actions for rules to perform. This is normally done by
-// adapters.
-func (m *Engine) RegisterAction(name string, action actions.Action) {
-	m.actions[name] = action
-}
-
-func (m *Engine) LookupAction(name string) (action actions.Action, ok bool) {
-	a, ok := m.actions[name]
-	return a, ok
 }
 
 // This is our back ground process for noticing rules updates.
@@ -135,7 +117,7 @@ func (m *Engine) AddRule(url string, match status.UrlMatch) error {
 // actions. It understands how to fire them, and how to handle errors (rules
 // don't).
 func (m *Engine) actionHelper(action *status.Status) {
-	e := actions.FireAction(m, m.status, action)
+	e := actions.FireAction(m.status, m.actions, action)
 	if e != nil {
 		log.Println("Fire Error: ", e)
 	}

@@ -9,14 +9,22 @@ import (
 // This is the signature of an action implementation.
 type Action func(r ActionRegistrar, s *status.Status, action *status.Status) (e error)
 
-// How do we look up named types? The manager does this in production, but
-// Mocks do it in tests.
-type ActionRegistrar interface {
-	LookupAction(name string) (action Action, ok bool)
+// Type for storing the known actions. Use StandardActions in production, but
+// mock it out for tests.
+type ActionRegistrar map[string]Action
+
+func StandardActions() ActionRegistrar {
+	return ActionRegistrar{
+		"set":   actionSet,
+		"wol":   actionWol,
+		"ping":  actionPing,
+		"fetch": actionFetch,
+		"email": actionEmail,
+	}
 }
 
 // This method should always be used to fire any action.
-func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) error {
+func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) error {
 	actionValue, _, e := action.Get("status://")
 	if e != nil {
 		return e
@@ -37,7 +45,7 @@ func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 				fetchStatus.Set("status://url", typedAction, 1)
 
 				// Recurse. This let's us lookup and fire the fetch action normally.
-				return FireAction(r, s, fetchStatus)
+				return FireAction(s, r, fetchStatus)
 			}
 
 			// Some other error, probably that the status URL doesn't exist.
@@ -45,7 +53,7 @@ func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 		}
 
 		// We found it, fire it off!
-		return FireAction(r, s, redirectAction)
+		return FireAction(s, r, redirectAction)
 
 	case []interface{}:
 		// An array of actions means fire each one in order.
@@ -53,7 +61,7 @@ func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 			subActionStatus := &status.Status{}
 			subActionStatus.Set("status://", subActionValue, 0)
 
-			e = FireAction(r, s, subActionStatus)
+			e = FireAction(s, r, subActionStatus)
 			if e != nil {
 				return e
 			}
@@ -67,7 +75,7 @@ func FireAction(r ActionRegistrar, s *status.Status, action *status.Status) erro
 			return fmt.Errorf("Action: No action specified: %s", actionName)
 		}
 
-		actionMethod, ok := r.LookupAction(actionName)
+		actionMethod, ok := r[actionName]
 		if !ok {
 			return fmt.Errorf("Action: No registered action: %s", actionName)
 		}
