@@ -56,7 +56,7 @@ func (suite *MySuite) TestRuleStartStop(c *check.C) {
 		status.UNCHECKED_REVISION)
 	c.Assert(e, check.IsNil)
 
-	rule, e := newRule(mockStatus, mockAH.helper, "Test Rule", 23, ruleBody)
+	rule, e := NewRule(mockStatus, mockAH.helper, "Test Rule", 23, ruleBody)
 	c.Assert(e, check.IsNil)
 
 	rule.Stop()
@@ -69,7 +69,7 @@ func (suite *MySuite) TestRuleFireSingle(c *check.C) {
 	actionBody := &status.Status{}
 	mockCondition := &mockCondition{make(chan bool)}
 
-	rule := &rule{
+	rule := &Rule{
 		mockAH.helper,
 		"Test Rule", 23,
 		mockCondition,
@@ -91,7 +91,7 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 	actionBody := &status.Status{}
 	mockCondition := &mockCondition{make(chan bool)}
 
-	rule := &rule{
+	rule := &Rule{
 		mockAH.helper,
 		"Test Rule", 23,
 		mockCondition,

@@ -5,10 +5,10 @@ import (
 	"log"
 	// "time"
 	"github.com/DonGar/go-house/adapter"
+	"github.com/DonGar/go-house/engine"
 	"github.com/DonGar/go-house/http-server"
 	"github.com/DonGar/go-house/logging"
 	"github.com/DonGar/go-house/options"
-	"github.com/DonGar/go-house/rules"
 	"github.com/DonGar/go-house/status"
 	"io"
 	"os"
@@ -30,12 +30,12 @@ func mainWork() error {
 		return e
 	}
 
-	// Start the rules manager
-	rulesMgr, e := rules.NewManager(status)
+	// Start the engine (rules, properties, active reactions)
+	engine, e := engine.NewEngine(status)
 	if e != nil {
 		return e
 	}
-	defer rulesMgr.Stop()
+	defer engine.Stop()
 
 	// Start the AdapterManager.
 	adapterMgr, e := adapter.NewManager(status)

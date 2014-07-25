@@ -1,7 +1,8 @@
-package rules
+package engine
 
 import (
-	"github.com/DonGar/go-house/rules/actions"
+	"github.com/DonGar/go-house/engine/actions"
+	"github.com/DonGar/go-house/engine/rules"
 	"github.com/DonGar/go-house/status"
 	"log"
 	"strings"
@@ -9,18 +10,18 @@ import (
 
 const rules_watch_url = "status://*/rule/*"
 
-type Manager struct {
+type Engine struct {
 	status  *status.Status
 	actions map[string]actions.Action // Action name to fuction to perform action.
-	rules   map[string]*rule          // URL of Rule definition to rule instance.
+	rules   map[string]*rules.Rule    // URL of Rule definition to rule instance.
 	stop    chan bool
 }
 
-func NewManager(status *status.Status) (mgr *Manager, e error) {
-	mgr = &Manager{
+func NewEngine(status *status.Status) (mgr *Engine, e error) {
+	mgr = &Engine{
 		status,
 		map[string]actions.Action{},
-		map[string]*rule{},
+		map[string]*rules.Rule{},
 		make(chan bool),
 	}
 
@@ -37,7 +38,7 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 	return mgr, nil
 }
 
-func (m *Manager) Stop() (e error) {
+func (m *Engine) Stop() (e error) {
 	m.stop <- true
 	<-m.stop
 	return nil
@@ -45,17 +46,17 @@ func (m *Manager) Stop() (e error) {
 
 // Register additional actions for rules to perform. This is normally done by
 // adapters.
-func (m *Manager) RegisterAction(name string, action actions.Action) {
+func (m *Engine) RegisterAction(name string, action actions.Action) {
 	m.actions[name] = action
 }
 
-func (m *Manager) LookupAction(name string) (action actions.Action, ok bool) {
+func (m *Engine) LookupAction(name string) (action actions.Action, ok bool) {
 	a, ok := m.actions[name]
 	return a, ok
 }
 
 // This is our back ground process for noticing rules updates.
-func (m *Manager) rulesWatchReader() {
+func (m *Engine) rulesWatchReader() {
 	rulesWatch, e := m.status.WatchForUpdate(rules_watch_url)
 	if e != nil {
 		panic("Failure should not be possible.")
@@ -77,11 +78,11 @@ func (m *Manager) rulesWatchReader() {
 }
 
 // Remove any rules that have been removed, or updated.
-func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
+func (m *Engine) updateRules(ruleMatches status.UrlMatches) {
 	// Remove all rules that no longer exist, or which have been updated.
 	for url, rule := range m.rules {
 		match, ok := ruleMatches[url]
-		if !ok || match.Revision != rule.revision {
+		if !ok || match.Revision != rule.Revision {
 			// It's no longer valid, remove it.
 			m.RemoveRule(url, rule)
 		}
@@ -103,13 +104,13 @@ func (m *Manager) updateRules(ruleMatches status.UrlMatches) {
 	}
 }
 
-func (m *Manager) RemoveRule(url string, rule *rule) {
-	log.Printf("Stop rule: %s: %s", rule.name, url)
+func (m *Engine) RemoveRule(url string, rule *rules.Rule) {
+	log.Printf("Stop rule: %s: %s", rule.Name, url)
 	rule.Stop()
 	delete(m.rules, url)
 }
 
-func (m *Manager) AddRule(url string, match status.UrlMatch) error {
+func (m *Engine) AddRule(url string, match status.UrlMatch) error {
 	// status://adapter_name/rules/<name>/
 	url_parts := strings.Split(url, "/")
 	ruleName := url_parts[len(url_parts)-1]
@@ -120,7 +121,7 @@ func (m *Manager) AddRule(url string, match status.UrlMatch) error {
 		log.Panic(e) // This is supposed to be impossible.
 	}
 
-	newRule, e := newRule(m.status, m.actionHelper, ruleName, match.Revision, ruleBody)
+	newRule, e := rules.NewRule(m.status, m.actionHelper, ruleName, match.Revision, ruleBody)
 	if e != nil {
 		return e
 	}
@@ -133,7 +134,7 @@ func (m *Manager) AddRule(url string, match status.UrlMatch) error {
 // This method implements the function signature needed by rules to fire
 // actions. It understands how to fire them, and how to handle errors (rules
 // don't).
-func (m *Manager) actionHelper(action *status.Status) {
+func (m *Engine) actionHelper(action *status.Status) {
 	e := actions.FireAction(m, m.status, action)
 	if e != nil {
 		log.Println("Fire Error: ", e)

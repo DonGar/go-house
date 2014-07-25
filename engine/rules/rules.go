@@ -2,7 +2,7 @@ package rules
 
 import (
 	"fmt"
-	"github.com/DonGar/go-house/rules/conditions"
+	"github.com/DonGar/go-house/engine/conditions"
 	"github.com/DonGar/go-house/status"
 	"log"
 )
@@ -11,21 +11,21 @@ import (
 type actionHelper func(action *status.Status)
 
 // The base type all rules should compose with.
-type rule struct {
+type Rule struct {
 	actionHelper actionHelper
-	name         string // Name of this rule.
-	revision     int    // Status revision of the rule definition.
+	Name         string // Name of this rule.
+	Revision     int    // Status revision of the rule definition.
 	condition    conditions.Condition
 	action       *status.Status // Substatus of the rule's action.
 	stop         chan bool
 }
 
-func newRule(
+func NewRule(
 	status *status.Status,
 	actionHelper actionHelper,
 	name string,
 	revision int,
-	ruleBody *status.Status) (*rule, error) {
+	ruleBody *status.Status) (*Rule, error) {
 
 	// Find the sub-expression contents.
 	conditionBody, _, e := ruleBody.GetSubStatus("status://condition")
@@ -44,7 +44,7 @@ func newRule(
 		return nil, e
 	}
 
-	result := &rule{
+	result := &Rule{
 		actionHelper,
 		name,
 		revision,
@@ -57,22 +57,22 @@ func newRule(
 	return result, nil
 }
 
-func (r *rule) start() {
+func (r *Rule) start() {
 	go r.watchConditionResults()
 }
 
-func (r *rule) Stop() {
+func (r *Rule) Stop() {
 	r.condition.Stop()
 	r.stop <- true
 	<-r.stop
 }
 
-func (r *rule) watchConditionResults() {
+func (r *Rule) watchConditionResults() {
 	for {
 		select {
 		case condValue := <-r.condition.Result():
 			if condValue {
-				log.Println("Firing rule: ", r.name)
+				log.Println("Firing rule: ", r.Name)
 				r.actionHelper(r.action)
 			}
 		case <-r.stop:

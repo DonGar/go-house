@@ -1,4 +1,4 @@
-package rules
+package engine
 
 import (
 	"github.com/DonGar/go-house/status"
