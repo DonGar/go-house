@@ -13,8 +13,7 @@ type actionHelper func(action *status.Status)
 // The base type all rules should compose with.
 type Rule struct {
 	actionHelper actionHelper
-	Name         string // Name of this rule.
-	Revision     int    // Status revision of the rule definition.
+	name         string // name of this rule.
 	condition    conditions.Condition
 	action       *status.Status // Substatus of the rule's action.
 	stop         chan bool
@@ -24,7 +23,6 @@ func NewRule(
 	status *status.Status,
 	actionHelper actionHelper,
 	name string,
-	revision int,
 	ruleBody *status.Status) (*Rule, error) {
 
 	// Find the sub-expression contents.
@@ -47,7 +45,6 @@ func NewRule(
 	result := &Rule{
 		actionHelper,
 		name,
-		revision,
 		condition,
 		actionBody,
 		make(chan bool)}
@@ -58,6 +55,7 @@ func NewRule(
 }
 
 func (r *Rule) start() {
+	log.Printf("Start rule: %s", r.name) // url)
 	go r.watchConditionResults()
 }
 
@@ -65,6 +63,7 @@ func (r *Rule) Stop() {
 	r.condition.Stop()
 	r.stop <- true
 	<-r.stop
+	log.Printf("Stop rule: %s", r.name) // url)
 }
 
 func (r *Rule) watchConditionResults() {
@@ -72,7 +71,7 @@ func (r *Rule) watchConditionResults() {
 		select {
 		case condValue := <-r.condition.Result():
 			if condValue {
-				log.Println("Firing rule: ", r.Name)
+				log.Println("Firing rule: ", r.name)
 				r.actionHelper(r.action)
 			}
 		case <-r.stop:
