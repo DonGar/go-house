@@ -24,25 +24,29 @@ func (suite *MySuite) TestPeriodicStartStop(c *check.C) {
 
 func (suite *MySuite) TestPeriodicFire(c *check.C) {
 
+	// 10 ms seems to be long enough to be safe when all tests are run in
+	// parallel.
+	period := 10 * time.Millisecond
+
 	start := time.Now()
 
-	cond := setupPeriodicRule(c, "2ms")
+	cond := setupPeriodicRule(c, period.String())
 
 	validateChannelRead(c, cond, true)
 	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
-	// We've seen the end of a 2 ms periodic cycle.
+	// We've seen the end of a periodic cycle.
 	duration := time.Since(start)
-	c.Check(duration < 3*time.Millisecond, check.Equals, true)
+	c.Check(duration < 2*period, check.Equals, true)
 
 	validateChannelRead(c, cond, true)
 	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
-	// We've seen the end of a second 2 ms periodic cycle.
+	// We've seen the end of a second periodic cycle.
 	duration = time.Since(start)
-	c.Check(duration < 5*time.Millisecond, check.Equals, true)
+	c.Check(duration < 3*period, check.Equals, true)
 
 	cond.Stop()
 }
