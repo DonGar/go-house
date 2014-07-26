@@ -2,26 +2,24 @@ package rules
 
 import (
 	"fmt"
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/engine/conditions"
 	"github.com/DonGar/go-house/status"
 	"log"
 )
 
-// An interface for firing actions that should be provided to all rules.
-type actionHelper func(action *status.Status)
-
-// The base type all rules should compose with.
 type Rule struct {
-	actionHelper actionHelper
-	name         string // name of this rule.
-	condition    conditions.Condition
-	action       *status.Status // Substatus of the rule's action.
-	stop         chan bool
+	status          *status.Status
+	actionRegistrar actions.ActionRegistrar
+	name            string // name of this rule.
+	condition       conditions.Condition
+	action          *status.Status // Substatus of the rule's action.
+	stop            chan bool
 }
 
 func NewRule(
 	status *status.Status,
-	actionHelper actionHelper,
+	actionRegistrar actions.ActionRegistrar,
 	name string,
 	ruleBody *status.Status) (*Rule, error) {
 
@@ -43,7 +41,8 @@ func NewRule(
 	}
 
 	result := &Rule{
-		actionHelper,
+		status,
+		actionRegistrar,
 		name,
 		condition,
 		actionBody,
@@ -72,7 +71,10 @@ func (r *Rule) watchConditionResults() {
 		case condValue := <-r.condition.Result():
 			if condValue {
 				log.Println("Firing rule: ", r.name)
-				r.actionHelper(r.action)
+				e := actions.FireAction(r.status, r.actionRegistrar, r.action)
+				if e != nil {
+					log.Println("Fire Error: ", e)
+				}
 			}
 		case <-r.stop:
 			r.stop <- true

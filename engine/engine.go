@@ -4,7 +4,6 @@ import (
 	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/engine/rules"
 	"github.com/DonGar/go-house/status"
-	"log"
 	"strings"
 )
 
@@ -33,15 +32,5 @@ func (e *Engine) newRule(url string, body *status.Status) (stoppable, error) {
 	url_parts := strings.Split(url, "/")
 	name := url_parts[len(url_parts)-1]
 
-	return rules.NewRule(e.status, e.actionHelper, name, body)
-}
-
-// This method implements the function signature needed by rules to fire
-// actions. It understands how to fire them, and how to handle errors (rules
-// don't).
-func (e *Engine) actionHelper(action *status.Status) {
-	err := actions.FireAction(e.status, e.actions, action)
-	if err != nil {
-		log.Println("Fire Error: ", err)
-	}
+	return rules.NewRule(e.status, e.actions, name, body)
 }

@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"fmt"
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"testing"
@@ -14,18 +16,46 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 //
-// Test Mocks
+// Action Mocks
 //
 
-type mockActionHelper struct {
-	fireCount  int
-	lastAction *status.Status
+type mockActions struct {
+	registrar         actions.ActionRegistrar
+	successCount      int
+	errorCount        int
+	actionSuccessBody *status.Status
+	actionErrorBody   *status.Status
 }
 
-func (m *mockActionHelper) helper(action *status.Status) {
-	m.fireCount += 1
-	m.lastAction = action
+func (m *mockActions) actionSuccess(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+	m.successCount += 1
+	return nil
 }
+
+func (m *mockActions) actionError(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+	m.errorCount += 1
+	return fmt.Errorf("Mock Error")
+}
+
+func newMockActions() *mockActions {
+	results := &mockActions{}
+
+	results.registrar = actions.ActionRegistrar{
+		"success": results.actionSuccess,
+		"error":   results.actionError}
+
+	results.actionSuccessBody = &status.Status{}
+	results.actionSuccessBody.Set("status://action", "success", 0)
+
+	results.actionErrorBody = &status.Status{}
+	results.actionErrorBody.Set("status://action", "error", 0)
+
+	return results
+}
+
+//
+// Condition Mocks
+//
 
 type mockCondition struct {
 	result chan bool
@@ -42,7 +72,7 @@ func (m *mockCondition) Stop() {
 
 func (suite *MySuite) TestRuleStartStop(c *check.C) {
 	mockStatus := &status.Status{}
-	mockAH := &mockActionHelper{}
+	mockActions := newMockActions()
 	ruleBody := &status.Status{}
 
 	e := ruleBody.SetJson(
@@ -56,24 +86,25 @@ func (suite *MySuite) TestRuleStartStop(c *check.C) {
 		status.UNCHECKED_REVISION)
 	c.Assert(e, check.IsNil)
 
-	rule, e := NewRule(mockStatus, mockAH.helper, "Test Rule", ruleBody)
+	rule, e := NewRule(mockStatus, mockActions.registrar, "Test Rule", ruleBody)
 	c.Assert(e, check.IsNil)
 
 	rule.Stop()
 
-	c.Check(mockAH.fireCount, check.Equals, 0)
+	c.Check(mockActions.successCount, check.Equals, 0)
 }
 
 func (suite *MySuite) TestRuleFireSingle(c *check.C) {
-	mockAH := &mockActionHelper{}
-	actionBody := &status.Status{}
+	s := &status.Status{}
+	mockActions := newMockActions()
 	mockCondition := &mockCondition{make(chan bool)}
 
 	rule := &Rule{
-		mockAH.helper,
-		"Test Rule",
+		s,
+		mockActions.registrar,
+		"Test Rule Single",
 		mockCondition,
-		actionBody,
+		mockActions.actionSuccessBody,
 		make(chan bool)}
 
 	rule.start()
@@ -82,20 +113,20 @@ func (suite *MySuite) TestRuleFireSingle(c *check.C) {
 
 	rule.Stop()
 
-	c.Check(mockAH.fireCount, check.Equals, 1)
-	c.Check(mockAH.lastAction, check.Equals, actionBody)
+	c.Check(mockActions.successCount, check.Equals, 1)
 }
 
 func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
-	mockAH := &mockActionHelper{}
-	actionBody := &status.Status{}
+	s := &status.Status{}
+	mockActions := newMockActions()
 	mockCondition := &mockCondition{make(chan bool)}
 
 	rule := &Rule{
-		mockAH.helper,
-		"Test Rule",
+		s,
+		mockActions.registrar,
+		"Test Rule Repeated",
 		mockCondition,
-		actionBody,
+		mockActions.actionSuccessBody,
 		make(chan bool)}
 
 	rule.start()
@@ -114,6 +145,37 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 
 	rule.Stop()
 
-	c.Check(mockAH.fireCount, check.Equals, 4)
-	c.Check(mockAH.lastAction, check.Equals, actionBody)
+	c.Check(mockActions.successCount, check.Equals, 4)
+}
+
+func (suite *MySuite) TestRuleFireError(c *check.C) {
+	s := &status.Status{}
+	mockActions := newMockActions()
+	mockCondition := &mockCondition{make(chan bool)}
+
+	rule := &Rule{
+		s,
+		mockActions.registrar,
+		"Test Rule Error",
+		mockCondition,
+		mockActions.actionErrorBody,
+		make(chan bool)}
+
+	rule.start()
+
+	// Send several patterns of true/false since conditions are not required
+	// to toggle rationally.
+	mockCondition.result <- true
+	mockCondition.result <- false
+	mockCondition.result <- false
+
+	mockCondition.result <- true
+	mockCondition.result <- true
+
+	mockCondition.result <- true
+	mockCondition.result <- false
+
+	rule.Stop()
+
+	c.Check(mockActions.errorCount, check.Equals, 4)
 }

@@ -84,6 +84,6 @@ func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) erro
 		return actionMethod(r, s, action)
 
 	default:
-		return fmt.Errorf("Action: Can't perform %s", action)
+		return fmt.Errorf("Action: Can't perform %#v", actionValue)
 	}
 }
