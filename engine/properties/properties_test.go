@@ -27,7 +27,6 @@ func (m *mockCondition) Result() <-chan bool {
 }
 
 func (m *mockCondition) Stop() {
-	m.result <- false
 }
 
 // Tests

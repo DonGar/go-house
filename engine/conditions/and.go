@@ -3,6 +3,7 @@ package conditions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
+	"log"
 	"reflect"
 )
 
@@ -38,36 +39,25 @@ func newAndCondition(s *status.Status, body *status.Status) (*andCondition, erro
 }
 
 func parseConditionValues(s *status.Status, valuesRaw interface{}) ([]conditionValue, error) {
-	conditionValues := []conditionValue{}
 
 	valuesArray, ok := valuesRaw.([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("'values' not an array ([]) on condition")
 	}
-	for i, valuesElementRaw := range valuesArray {
-		valuesElement, ok := valuesElementRaw.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("Invalid value %d (%#v) on condition", i, valuesElementRaw)
-		}
 
-		conditionBody, ok := valuesElement["condition"]
-		if !ok {
-			return nil, fmt.Errorf(
-				"No 'condition' on value %d (%#v) on condition", i, valuesElement)
-		}
+	conditionValues := make([]conditionValue, len(valuesArray))
+	for i, subConditionBody := range valuesArray {
 
 		conditionBodyStatus := &status.Status{}
-		conditionBodyStatus.Set("status://", conditionBody, status.UNCHECKED_REVISION)
+		conditionBodyStatus.Set("status://", subConditionBody, status.UNCHECKED_REVISION)
 
 		condition, e := NewCondition(s, conditionBodyStatus)
 		if e != nil {
-			return nil, fmt.Errorf(
-				"Invalid 'condition' on value %d (%#v) on condition: %s",
-				i, valuesElement, e.Error())
+			return nil, fmt.Errorf("And condition: %d (%#v): %s", i, subConditionBody, e.Error())
 		}
 
 		// We successfully parsed a value element. Remember it.
-		conditionValues = append(conditionValues, conditionValue{condition, false})
+		conditionValues[i] = conditionValue{condition, false}
 	}
 
 	return conditionValues, nil
@@ -95,13 +85,17 @@ func (c *andCondition) updateTarget() {
 		newResult = newResult && condValue.result
 	}
 
-	if newResult != c.currentResult {
+	if c.currentResult != newResult {
+		log.Println("And condition sending result: ", newResult)
 		c.currentResult = newResult
 		c.result <- newResult
 	}
 }
 
 func (c *andCondition) handle() {
+	// Set with default, if present.
+	c.updateTarget()
+
 	// We listen on all condition result channels.
 	channels := make([]reflect.SelectCase, len(c.conditions)+1)
 	for i, c := range c.conditions {

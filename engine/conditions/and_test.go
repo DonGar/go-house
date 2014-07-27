@@ -20,20 +20,45 @@ func (m *mockCondition) Stop() {
 
 // Actual tests.
 
-func (suite *MySuite) TestAndStartStop(c *check.C) {
+func validateParseStartStop(c *check.C, conditionsJson string, trueStart bool) {
 	s := &status.Status{}
 
 	body := &status.Status{}
 	e := body.Set("status://test", "and", 0)
-	e = body.Set("status://conditions", []interface{}{}, 1)
-	c.Assert(e, check.IsNil)
+	e = body.SetJson("status://conditions", []byte(conditionsJson), 1)
 
 	cond, e := NewCondition(s, body)
 	c.Assert(e, check.IsNil)
 
+	if trueStart {
+		validateChannelRead(c, cond, true)
+	}
 	validateChannelEmpty(c, cond)
 
 	cond.Stop()
+}
+
+func (suite *MySuite) TestAndStartStop(c *check.C) {
+	validateParseStartStop(c, "[]", true)
+	validateParseStartStop(c, `[
+		  {
+		  	"test": "watch",
+        "trigger": "1",
+        "watch": "status://iogear/iogear/desktop/active"
+		  }
+		]`, false)
+	validateParseStartStop(c, `[
+		  {
+		  	"test": "watch",
+        "trigger": "1",
+        "watch": "status://iogear/iogear/desktop/active"
+		  },
+		  {
+		  	"test": "watch",
+        "trigger": "2",
+        "watch": "status://iogear/iogear/desktop/active"
+		  }
+		]`, false)
 }
 
 func (suite *MySuite) TestAndOneMock(c *check.C) {
