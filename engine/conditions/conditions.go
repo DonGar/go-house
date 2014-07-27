@@ -34,11 +34,11 @@ func NewCondition(
 	switch conditionName {
 	case "base":
 		// This type only exists for basic testing.
-		return newBaseCondition(), nil
+		return newBaseCondition(s), nil
 	case "daily":
 		return newDailyCondition(s, body)
 	case "periodic":
-		return newPeriodicCondition(body)
+		return newPeriodicCondition(s, body)
 	case "watch":
 		return newWatchCondition(s, body)
 	default:
@@ -48,6 +48,7 @@ func NewCondition(
 
 // The base type all rules should compose with.
 type base struct {
+	status *status.Status
 	result chan bool // This will be sent on all condition result transitions.
 	stop   chan bool
 }
@@ -63,15 +64,14 @@ func (b *base) Stop() {
 
 // This only exists for testing, it should not be used by classes that compose
 // base.
-func newBaseCondition() Condition {
-	c := &base{make(chan bool), make(chan bool)}
+func newBaseCondition(s *status.Status) Condition {
+	c := &base{s, make(chan bool), make(chan bool)}
 	go c.handleEvents()
 
 	return c
 }
 
 func (c *base) handleEvents() {
-
 	for {
 		select {
 		case <-c.stop:

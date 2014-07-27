@@ -7,11 +7,12 @@ import (
 )
 
 func setupPeriodicRule(c *check.C, time string) *periodicCondition {
+	s := &status.Status{}
 	body := &status.Status{}
 	e := body.Set("status://", map[string]interface{}{"interval": time}, 0)
 	c.Assert(e, check.IsNil)
 
-	cond, e := newPeriodicCondition(body)
+	cond, e := newPeriodicCondition(s, body)
 	c.Assert(e, check.IsNil)
 
 	return cond

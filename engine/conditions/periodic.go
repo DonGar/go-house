@@ -11,7 +11,7 @@ type periodicCondition struct {
 	period time.Duration
 }
 
-func newPeriodicCondition(body *status.Status) (*periodicCondition, error) {
+func newPeriodicCondition(s *status.Status, body *status.Status) (*periodicCondition, error) {
 
 	interval, e := body.GetString("status://interval")
 	if e != nil {
@@ -24,7 +24,7 @@ func newPeriodicCondition(body *status.Status) (*periodicCondition, error) {
 	}
 
 	// Create the condition.
-	c := &periodicCondition{base{make(chan bool), make(chan bool)}, period}
+	c := &periodicCondition{base{s, make(chan bool), make(chan bool)}, period}
 
 	// Start it processing.
 	go c.handleTicks()

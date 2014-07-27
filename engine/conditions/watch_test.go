@@ -122,6 +122,61 @@ func helperTestTrigger(c *check.C, trigger interface{}, badValues ...interface{}
 	cond.Stop()
 }
 
+func (suite *MySuite) TestWatchWithTriggersInitialTrue(c *check.C) {
+	url := "status://foo"
+	trigger := true
+
+	s := &status.Status{}
+	e := s.Set(url, trigger, 0)
+	c.Assert(e, check.IsNil)
+
+	body := &status.Status{}
+	e = body.Set("status://watch", url, 0)
+	c.Assert(e, check.IsNil)
+
+	e = body.Set("status://trigger", trigger, 1)
+	c.Assert(e, check.IsNil)
+
+	cond, e := newWatchCondition(s, body)
+	c.Assert(e, check.IsNil)
+
+	validateChannelRead(c, cond, true)
+	validateChannelEmpty(c, cond)
+
+	s.Set(url, false, status.UNCHECKED_REVISION)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
+
+	cond.Stop()
+}
+
+func (suite *MySuite) TestWatchWithTriggersInitialFalse(c *check.C) {
+	url := "status://foo"
+	trigger := true
+
+	s := &status.Status{}
+	e := s.Set(url, false, 0)
+	c.Assert(e, check.IsNil)
+
+	body := &status.Status{}
+	e = body.Set("status://watch", url, 0)
+	c.Assert(e, check.IsNil)
+
+	e = body.Set("status://trigger", trigger, 1)
+	c.Assert(e, check.IsNil)
+
+	cond, e := newWatchCondition(s, body)
+	c.Assert(e, check.IsNil)
+
+	validateChannelEmpty(c, cond)
+
+	s.Set(url, true, status.UNCHECKED_REVISION)
+	validateChannelRead(c, cond, true)
+	validateChannelEmpty(c, cond)
+
+	cond.Stop()
+}
+
 func (suite *MySuite) TestWatchWithTriggers(c *check.C) {
 	helperTestTrigger(c, true, false)
 	helperTestTrigger(c, 1, 0, 2, 3)

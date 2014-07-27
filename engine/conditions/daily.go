@@ -24,10 +24,10 @@ type dailyCondition struct {
 	fixedOffset time.Duration // If fixed, how long after midnight until we fire?
 }
 
-func newDailyCondition(status *status.Status, body *status.Status) (*dailyCondition, error) {
+func newDailyCondition(s *status.Status, body *status.Status) (*dailyCondition, error) {
 	// Look up our Latitude and Longitude
-	latitude := status.GetFloatWithDefault("status://server/latitude", 0.0)
-	longitude := status.GetFloatWithDefault("status://server/longitude", 0.0)
+	latitude := s.GetFloatWithDefault("status://server/latitude", 0.0)
+	longitude := s.GetFloatWithDefault("status://server/longitude", 0.0)
 
 	timeDescription, e := body.GetString("status://time")
 	if e != nil {
@@ -40,7 +40,7 @@ func newDailyCondition(status *status.Status, body *status.Status) (*dailyCondit
 		return nil, e
 	}
 
-	c := &dailyCondition{base{make(chan bool), make(chan bool)}, latitude, longitude, timeType, fixedOffset}
+	c := &dailyCondition{base{s, make(chan bool), make(chan bool)}, latitude, longitude, timeType, fixedOffset}
 
 	// Start it's goroutine.
 	go c.handleTimer()

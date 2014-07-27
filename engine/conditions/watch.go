@@ -11,7 +11,6 @@ type watchCondition struct {
 	hasTrigger bool
 	trigger    interface{}
 
-	status    *status.Status
 	watchChan <-chan status.UrlMatches
 }
 
@@ -33,10 +32,12 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 	}
 
 	// Throw away the initial event that's always sent.
-	<-watchChan
+	if !hasTrigger {
+		<-watchChan
+	}
 
 	// Create our condition.
-	c := &watchCondition{base{make(chan bool), make(chan bool)}, hasTrigger, trigger, s, watchChan}
+	c := &watchCondition{base{s, make(chan bool), make(chan bool)}, hasTrigger, trigger, watchChan}
 
 	// Start it's goroutine.
 	go c.handleWatch()
