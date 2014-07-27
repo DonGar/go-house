@@ -129,7 +129,9 @@ func (p *Property) updateTarget() {
 
 	setTarget := func(value interface{}) {
 		e := p.status.Set(p.targetUrl, value, status.UNCHECKED_REVISION)
-		if e != nil {
+		if e == nil {
+			log.Printf("Property (%s: %s) updated: %#v", p.name, p.targetUrl, value)
+		} else {
 			log.Printf("Property (%s) update failed: %s", p.name, e.Error())
 		}
 	}
