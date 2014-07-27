@@ -15,26 +15,58 @@ func NewCondition(
 	s *status.Status,
 	body *status.Status) (c Condition, e error) {
 
-	// We received a dictionary, this is (hopefully) a registered action.
-	conditionName, e := body.GetString("status://test")
+	conditionValue, _, e := body.Get("status://")
 	if e != nil {
-		return nil, fmt.Errorf("Condition: No condition specified: %s", conditionName)
+		return nil, e
 	}
 
-	switch conditionName {
-	case "base":
-		// This type only exists for basic testing.
-		return newBaseCondition(s), nil
-	case "daily":
-		return newDailyCondition(s, body)
-	case "periodic":
-		return newPeriodicCondition(s, body)
-	case "watch":
-		return newWatchCondition(s, body)
-	case "and":
-		return newAndCondition(s, body)
+	switch typedValue := conditionValue.(type) {
+	case string:
+		// A simple string is a redirect status URL, like an action.
+		redirectBody, _, e := s.GetSubStatus(typedValue)
+		if e != nil {
+			return nil, fmt.Errorf("Condition: url invalid: %s: %s", typedValue, e.Error())
+		}
+		return NewCondition(s, redirectBody)
+
+	case []interface{}:
+		// A array is syntactic sugur for an 'and' condition.
+		andBody := &status.Status{}
+		e = andBody.Set("status://test", "and", status.UNCHECKED_REVISION)
+		if e != nil {
+			panic(e)
+		}
+		e = andBody.Set("status://conditions", conditionValue, status.UNCHECKED_REVISION)
+		if e != nil {
+			panic(e)
+		}
+		return NewCondition(s, andBody)
+
+	case map[string]interface{}:
+		// We received a dictionary, this is (hopefully) a registered action.
+		conditionName, e := body.GetString("status://test")
+		if e != nil {
+			return nil, fmt.Errorf("Condition: No condition specified: %s", conditionName)
+		}
+
+		switch conditionName {
+		case "base":
+			// This type only exists for basic testing.
+			return newBaseCondition(s), nil
+		case "daily":
+			return newDailyCondition(s, body)
+		case "periodic":
+			return newPeriodicCondition(s, body)
+		case "watch":
+			return newWatchCondition(s, body)
+		case "and":
+			return newAndCondition(s, body)
+		default:
+			return nil, fmt.Errorf("Condition: No known type: %s", conditionName)
+		}
+
 	default:
-		return nil, fmt.Errorf("Condition: No known type: %s", conditionName)
+		return nil, fmt.Errorf("Condition: Doin't understand %#v", conditionValue)
 	}
 }
 

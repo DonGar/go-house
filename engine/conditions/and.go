@@ -24,7 +24,7 @@ func newAndCondition(s *status.Status, body *status.Status) (*andCondition, erro
 	// look up the conditionValues.
 	valuesRaw, _, e := body.Get("status://conditions")
 	if e != nil {
-		return nil, fmt.Errorf("No 'values' on property: %s")
+		return nil, e
 	}
 	conditionValues, e := parseConditionValues(s, valuesRaw)
 	if e != nil {
