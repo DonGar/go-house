@@ -15,16 +15,6 @@ func NewCondition(
 	s *status.Status,
 	body *status.Status) (c Condition, e error) {
 
-	watchUrl, e := body.GetString("status://")
-	if e == nil {
-		_ = watchUrl
-		return nil, e
-		// watchBody := &status.Status{}
-		// _ = watchUrl
-		// // Blah, blah, fill in values, TODO
-		// return NewCondition(s, watchBody)
-	}
-
 	// We received a dictionary, this is (hopefully) a registered action.
 	conditionName, e := body.GetString("status://test")
 	if e != nil {
@@ -41,6 +31,8 @@ func NewCondition(
 		return newPeriodicCondition(s, body)
 	case "watch":
 		return newWatchCondition(s, body)
+	case "and":
+		return newAndCondition(s, body)
 	default:
 		return nil, fmt.Errorf("Condition: No known type: %s", conditionName)
 	}
