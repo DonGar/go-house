@@ -49,20 +49,18 @@ func NewRule(
 		make(chan bool)}
 
 	result.start()
-
 	return result, nil
 }
 
 func (r *Rule) start() {
 	log.Printf("Start rule: %s", r.name) // url)
 	go r.watchConditionResults()
+
 }
 
 func (r *Rule) Stop() {
-	r.condition.Stop()
 	r.stop <- true
 	<-r.stop
-	log.Printf("Stop rule: %s", r.name) // url)
 }
 
 func (r *Rule) watchConditionResults() {
@@ -77,6 +75,8 @@ func (r *Rule) watchConditionResults() {
 				}
 			}
 		case <-r.stop:
+			r.condition.Stop()
+			log.Printf("Stop rule: %s", r.name) // url)
 			r.stop <- true
 			return
 		}
