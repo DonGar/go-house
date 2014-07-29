@@ -65,7 +65,7 @@ func (suite *MySuite) TestAndOneMock(c *check.C) {
 	s := &status.Status{}
 	mockCond := &mockCondition{make(chan bool)}
 
-	conditionValues := []conditionValue{conditionValue{mockCond, false}}
+	conditionValues := []conditionValue{{mockCond, false}}
 
 	cond := &andCondition{base{s, make(chan bool), make(chan bool)}, false, conditionValues}
 	cond.start()
@@ -88,9 +88,9 @@ func (suite *MySuite) TestAndOneMock(c *check.C) {
 func (suite *MySuite) TestAndThreeMock(c *check.C) {
 	s := &status.Status{}
 	mockCond := []*mockCondition{
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)},
+		{make(chan bool)},
+		{make(chan bool)},
+		{make(chan bool)},
 	}
 
 	conditionValues := make([]conditionValue, len(mockCond))

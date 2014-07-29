@@ -157,7 +157,7 @@ func (suite *MySuite) TestPropertyFireCondition(c *check.C) {
 		s,
 		"Test Property Default",
 		"status://target",
-		[]conditionValue{conditionValue{mockCond, false, "condition"}},
+		[]conditionValue{{mockCond, false, "condition"}},
 		true,
 		"default set",
 		make(chan bool),
@@ -178,18 +178,18 @@ func (suite *MySuite) TestPropertyFireCondition(c *check.C) {
 func (suite *MySuite) TestPropertyFireConditionMultiple(c *check.C) {
 	s := &status.Status{}
 	mockCond := []*mockCondition{
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)}}
+		{make(chan bool)},
+		{make(chan bool)},
+		{make(chan bool)}}
 
 	p := &Property{
 		s,
 		"Test Property Default",
 		"status://target",
 		[]conditionValue{
-			conditionValue{mockCond[0], false, "condition 0"},
-			conditionValue{mockCond[1], false, "condition 1"},
-			conditionValue{mockCond[2], false, "condition 2"},
+			{mockCond[0], false, "condition 0"},
+			{mockCond[1], false, "condition 1"},
+			{mockCond[2], false, "condition 2"},
 		},
 		true,
 		"default set",
@@ -226,17 +226,17 @@ func (suite *MySuite) TestPropertyFireConditionMultiple(c *check.C) {
 func (suite *MySuite) TestPropertyFireConditionMultipleNoDefault(c *check.C) {
 	s := &status.Status{}
 	mockCond := []*mockCondition{
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)},
-		&mockCondition{make(chan bool)}}
+		{make(chan bool)},
+		{make(chan bool)},
+		{make(chan bool)}}
 
 	p := &Property{
 		s,
 		"Test Property Default",
 		"status://target",
 		[]conditionValue{
-			conditionValue{mockCond[0], false, "condition 0"},
-			conditionValue{mockCond[1], false, "condition 1"},
+			{mockCond[0], false, "condition 0"},
+			{mockCond[1], false, "condition 1"},
 		},
 		false,
 		"",

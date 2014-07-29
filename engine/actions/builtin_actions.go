@@ -55,7 +55,7 @@ func actionSet(r ActionRegistrar, s *status.Status, action *status.Status) (e er
 
 	var final error
 
-	for cUrl, _ := range componentMatches {
+	for cUrl := range componentMatches {
 		destUrl := cUrl + "/" + dest
 		if e = s.Set(destUrl, value, status.UNCHECKED_REVISION); e != nil {
 			final = e
@@ -111,7 +111,7 @@ func actionPing(r ActionRegistrar, s *status.Status, action *status.Status) (e e
 		return e
 	}
 
-	for cUrl, _ := range componentMatches {
+	for cUrl := range componentMatches {
 		resultUrl := cUrl + "/up"
 
 		// Extract the hostname from component URL.
