@@ -142,12 +142,10 @@ func (suite *MySuite) TestSetBadComponent(c *check.C) {
 }
 
 func (suite *MySuite) TestWol(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
-		"action": "wol",
-		"host":   "status://adapter/host/*",
+		"action":    "wol",
+		"component": "status://adapter/host/*",
 	}, 0)
 
 	e := actionWol(r.registrar(), s, a)
@@ -156,12 +154,10 @@ func (suite *MySuite) TestWol(c *check.C) {
 }
 
 func (suite *MySuite) TestPing(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
-		"action": "ping",
-		"host":   "status://adapter/host/*",
+		"action":    "ping",
+		"component": "status://adapter/host/*",
 	}, 0)
 
 	e := actionPing(r.registrar(), s, a)
@@ -170,8 +166,6 @@ func (suite *MySuite) TestPing(c *check.C) {
 }
 
 func (suite *MySuite) TestFetch(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action": "fetch",
@@ -184,8 +178,6 @@ func (suite *MySuite) TestFetch(c *check.C) {
 }
 
 func (suite *MySuite) TestFetchDownload(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 
 	tempDir := c.MkDir()
@@ -223,8 +215,6 @@ func (suite *MySuite) TestExpandFileName(c *check.C) {
 }
 
 func (suite *MySuite) TestEmail(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",
@@ -239,8 +229,6 @@ func (suite *MySuite) TestEmail(c *check.C) {
 }
 
 func (suite *MySuite) TestEmailAttached(c *check.C) {
-	return
-
 	r, s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",

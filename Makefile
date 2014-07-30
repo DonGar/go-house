@@ -8,6 +8,10 @@ run:
 test:
 	go test ./...
 
+lint:
+	gofmt -s -l .
+	go vet ./...
+
 install:
 	go install .
 	sudo install -d /usr/local/go-house/ /usr/local/go-house/static/

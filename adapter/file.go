@@ -85,7 +85,7 @@ func (fa *fileAdapter) watchForUpdates() {
 			log.Println("event:", ev)
 			e := fa.loadFile()
 			if e != nil {
-				log.Printf("File Adapter (%s) Load Error: %s", e)
+				log.Printf("File Adapter (%s) Load Error: %s", fa.adapterUrl, e)
 			}
 
 		case err := <-fa.watcher.Error:
