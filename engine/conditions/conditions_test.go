@@ -32,6 +32,18 @@ func validateChannelEmpty(c *check.C, cond Condition) {
 	}
 }
 
+// Mock condition for mocking inner conditions.
+type mockCondition struct {
+	result chan bool
+}
+
+func (m *mockCondition) Result() <-chan bool {
+	return m.result
+}
+
+func (m *mockCondition) Stop() {
+}
+
 //
 // Condition Parsing Tests
 //

@@ -53,14 +53,16 @@ func NewCondition(
 		case "base":
 			// This type only exists for basic testing.
 			return newBaseCondition(s), nil
+		case "after":
+			return newAfterCondition(s, body)
+		case "and":
+			return newAndCondition(s, body)
 		case "daily":
 			return newDailyCondition(s, body)
 		case "periodic":
 			return newPeriodicCondition(s, body)
 		case "watch":
 			return newWatchCondition(s, body)
-		case "and":
-			return newAndCondition(s, body)
 		default:
 			return nil, fmt.Errorf("Condition: No known type: %s", conditionName)
 		}

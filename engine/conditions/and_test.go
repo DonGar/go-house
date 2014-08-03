@@ -5,22 +5,9 @@ import (
 	"gopkg.in/check.v1"
 )
 
-// Mock condition for mocking inner conditions.
-
-type mockCondition struct {
-	result chan bool
-}
-
-func (m *mockCondition) Result() <-chan bool {
-	return m.result
-}
-
-func (m *mockCondition) Stop() {
-}
-
 // Actual tests.
 
-func validateParseStartStop(c *check.C, conditionsJson string, trueStart bool) {
+func validateAndParseStartStop(c *check.C, conditionsJson string, trueStart bool) {
 	s := &status.Status{}
 
 	body := &status.Status{}
@@ -39,15 +26,15 @@ func validateParseStartStop(c *check.C, conditionsJson string, trueStart bool) {
 }
 
 func (suite *MySuite) TestAndStartStop(c *check.C) {
-	validateParseStartStop(c, "[]", true)
-	validateParseStartStop(c, `[
+	validateAndParseStartStop(c, "[]", true)
+	validateAndParseStartStop(c, `[
 		  {
 		  	"test": "watch",
         "trigger": "1",
         "watch": "status://iogear/iogear/desktop/active"
 		  }
 		]`, false)
-	validateParseStartStop(c, `[
+	validateAndParseStartStop(c, `[
 		  {
 		  	"test": "watch",
         "trigger": "1",
