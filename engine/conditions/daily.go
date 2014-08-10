@@ -40,10 +40,10 @@ func newDailyCondition(s *status.Status, body *status.Status) (*dailyCondition, 
 		return nil, e
 	}
 
-	c := &dailyCondition{base{s, make(chan bool), make(chan bool)}, latitude, longitude, timeType, fixedOffset}
+	c := &dailyCondition{newBase(s), latitude, longitude, timeType, fixedOffset}
 
 	// Start it's goroutine.
-	go c.handleTimer()
+	go c.Handler()
 
 	return c, nil
 }
@@ -120,7 +120,7 @@ func (c *dailyCondition) findNextFireTime(now time.Time) (fireTime time.Time) {
 	return fireTime
 }
 
-func (c *dailyCondition) handleTimer() {
+func (c *dailyCondition) Handler() {
 
 	now := time.Now()
 	timer := time.NewTimer(c.findNextFireTime(now).Sub(now))
@@ -137,9 +137,9 @@ func (c *dailyCondition) handleTimer() {
 			now := time.Now()
 			timer.Reset(c.findNextFireTime(now.Add(5 * time.Minute)).Sub(now))
 
-		case <-c.stop:
+		case <-c.StopChan:
 			timer.Stop()
-			c.stop <- true
+			c.StopChan <- true
 			return
 		}
 	}

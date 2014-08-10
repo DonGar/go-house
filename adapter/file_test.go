@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 )
 
@@ -11,11 +12,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFile")
 	c.Assert(e, check.IsNil)
 
-	base := base{
-		status:     s,
-		config:     config,
-		adapterUrl: "status://TestFile",
-	}
+	base := base{stoppable.NewBase(), s, config, "status://TestFile"}
 
 	// Create a file adapter.
 	fa, e := newFileAdapter(nil, base)
@@ -28,8 +25,7 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	c.Check(e, check.IsNil)
 
 	// Stop the file adapter.
-	e = fa.Stop()
-	c.Assert(e, check.IsNil)
+	fa.Stop()
 
 	// Verify Status Contents.
 	v, r, e = s.Get(base.adapterUrl)
@@ -45,11 +41,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFileSpecified")
 	c.Assert(e, check.IsNil)
 
-	base := base{
-		status:     s,
-		config:     config,
-		adapterUrl: "status://TestFileSpecified",
-	}
+	base := base{stoppable.NewBase(), s, config, "status://TestFileSpecified"}
 
 	// Create a file adapter.
 	fa, e := newFileAdapter(nil, base)
@@ -62,8 +54,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	c.Check(e, check.IsNil)
 
 	// Stop the file adapter.
-	e = fa.Stop()
-	c.Assert(e, check.IsNil)
+	fa.Stop()
 
 	// Verify Status Contents.
 	v, r, e = s.Get(base.adapterUrl)

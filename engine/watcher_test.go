@@ -2,6 +2,7 @@ package engine
 
 import (
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 	"time"
 )
@@ -9,7 +10,7 @@ import (
 type mockWatchedItem struct {
 }
 
-func newWatched(url string, body *status.Status) (stoppable, error) {
+func newWatched(url string, body *status.Status) (stoppable.Stoppable, error) {
 	return &mockWatchedItem{}, nil
 }
 
@@ -20,7 +21,7 @@ func (suite *MySuite) TestWatcherStartStopEmpty(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := &status.Status{}
 
-	factoryAssert := func(url string, body *status.Status) (stoppable, error) {
+	factoryAssert := func(url string, body *status.Status) (stoppable.Stoppable, error) {
 		c.Error("Unexpected factory call: ", url)
 		return nil, nil
 	}

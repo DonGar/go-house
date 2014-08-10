@@ -5,6 +5,7 @@ import (
 	"github.com/DonGar/go-house/engine/properties"
 	"github.com/DonGar/go-house/engine/rules"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"strings"
 )
 
@@ -38,10 +39,10 @@ func nameFromUrl(url string) string {
 	return url_parts[len(url_parts)-1]
 }
 
-func (e *Engine) newRule(url string, body *status.Status) (stoppable, error) {
+func (e *Engine) newRule(url string, body *status.Status) (stoppable.Stoppable, error) {
 	return rules.NewRule(e.status, e.actions, nameFromUrl(url), body)
 }
 
-func (e *Engine) newProperty(url string, body *status.Status) (stoppable, error) {
+func (e *Engine) newProperty(url string, body *status.Status) (stoppable.Stoppable, error) {
 	return properties.NewProperty(e.status, nameFromUrl(url), body)
 }

@@ -61,8 +61,7 @@ func (suite *MySuite) TestAfterMock(c *check.C) {
 	mockCond := &mockCondition{make(chan bool)}
 
 	cond := &afterCondition{
-		base{s, make(chan bool), make(chan bool)},
-		false, false, mockCond, 10 * time.Millisecond}
+		newBase(s), false, false, mockCond, 10 * time.Millisecond}
 	cond.start()
 
 	validateChannelEmpty(c, cond)

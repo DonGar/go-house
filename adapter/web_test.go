@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 )
 
@@ -11,11 +12,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 	config, _, e := s.GetSubStatus("status://server/adapters/web/TestWeb")
 	c.Assert(e, check.IsNil)
 
-	base := base{
-		status:     s,
-		config:     config,
-		adapterUrl: "status://TestWeb",
-	}
+	base := base{stoppable.NewBase(), s, config, "status://TestWeb"}
 
 	// We need just enough of a manager to let WebAdapter register itself.
 	mgr := &Manager{webUrls: map[string]adapter{}}
@@ -43,8 +40,7 @@ func (suite *MySuite) TestWebAdapterStartStop(c *check.C) {
 		[]string{"status://TestWeb"})
 
 	// Stop the web adapter.
-	e = a.Stop()
-	c.Assert(e, check.IsNil)
+	a.Stop()
 
 	// Verify Manager removal.
 	c.Check(mgr.webUrls, check.DeepEquals, map[string]adapter{})

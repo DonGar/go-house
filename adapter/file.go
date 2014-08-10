@@ -13,7 +13,6 @@ type fileAdapter struct {
 	base
 	filename string
 	watcher  *fsnotify.Watcher
-	stop     chan bool
 }
 
 func newFileAdapter(m *Manager, base base) (a adapter, e error) {
@@ -42,7 +41,7 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 		return nil, e
 	}
 
-	fa := &fileAdapter{base, abs_name, watcher, make(chan bool)}
+	fa := &fileAdapter{base, abs_name, watcher}
 
 	e = fa.loadFile()
 	if e != nil {
@@ -50,7 +49,7 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 	}
 
 	// Setup watch on file so we can reload if it's updated.
-	go fa.watchForUpdates()
+	go fa.Handler()
 	e = fa.watcher.Watch(fa.filename)
 	if e != nil {
 		return nil, e
@@ -59,41 +58,33 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 	return fa, nil
 }
 
-func (fa *fileAdapter) loadFile() (e error) {
-	rawJson, e := ioutil.ReadFile(fa.filename)
+func (a *fileAdapter) loadFile() (e error) {
+	rawJson, e := ioutil.ReadFile(a.filename)
 	if e != nil {
 		// If we can't read the file, nil the contents.
-		fa.status.Set(fa.adapterUrl, nil, status.UNCHECKED_REVISION)
+		a.status.Set(a.adapterUrl, nil, status.UNCHECKED_REVISION)
 		return e
 	}
 
-	return fa.status.SetJson(fa.adapterUrl, rawJson, status.UNCHECKED_REVISION)
+	return a.status.SetJson(a.adapterUrl, rawJson, status.UNCHECKED_REVISION)
 }
 
-// Remove this adapter from the web URLs section, the default Stop.
-func (fa *fileAdapter) Stop() (e error) {
-
-	fa.stop <- true
-	<-fa.stop
-	return fa.base.Stop()
-}
-
-func (fa *fileAdapter) watchForUpdates() {
+func (a *fileAdapter) Handler() {
 	for {
 		select {
-		case ev := <-fa.watcher.Event:
+		case ev := <-a.watcher.Event:
 			log.Println("event:", ev)
-			e := fa.loadFile()
+			e := a.loadFile()
 			if e != nil {
-				log.Printf("File Adapter (%s) Load Error: %s", fa.adapterUrl, e)
+				log.Printf("File Adapter (%s) Load Error: %v", a.adapterUrl, e.Error())
 			}
 
-		case err := <-fa.watcher.Error:
-			log.Printf("File Adapter (%s) Watcher Error: %s", fa.adapterUrl, err)
+		case err := <-a.watcher.Error:
+			log.Printf("File Adapter (%s) Watcher Error: %v", a.adapterUrl, err)
 
-		case <-fa.stop:
-			fa.watcher.Close()
-			fa.stop <- true
+		case <-a.StopChan:
+			a.watcher.Close()
+			a.StopChan <- true
 			return
 		}
 	}

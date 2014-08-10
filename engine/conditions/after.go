@@ -42,7 +42,7 @@ func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, 
 	}
 
 	// Create our condition.
-	c := &afterCondition{base{s, make(chan bool), make(chan bool)}, false, false, condition, delay}
+	c := &afterCondition{newBase(s), false, false, condition, delay}
 
 	c.start()
 	return c, nil
@@ -50,7 +50,7 @@ func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, 
 
 func (c *afterCondition) start() {
 	// Start it's goroutine.
-	go c.handle()
+	go c.Handler()
 }
 
 func (c *afterCondition) Stop() {
@@ -67,7 +67,7 @@ func (c *afterCondition) updateTarget(newResult bool) {
 	}
 }
 
-func (c *afterCondition) handle() {
+func (c *afterCondition) Handler() {
 	// Create the timer with a really long timeout, then stop it.
 	// We'll reset, when we're ready to realy start it.
 	timer := time.NewTimer(time.Hour)
@@ -90,8 +90,8 @@ func (c *afterCondition) handle() {
 		case <-timer.C:
 			c.updateTarget(true)
 
-		case <-c.stop:
-			c.stop <- true
+		case <-c.StopChan:
+			c.StopChan <- true
 			return
 		}
 	}

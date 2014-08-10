@@ -2,18 +2,15 @@ package engine
 
 import (
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"log"
 )
 
-type stoppable interface {
-	Stop()
-}
-
-type newWatch func(url string, body *status.Status) (stoppable, error)
+type newWatch func(url string, body *status.Status) (stoppable.Stoppable, error)
 
 type watched struct {
 	revision int
-	value    stoppable
+	value    stoppable.Stoppable
 }
 
 type watcher struct {
@@ -21,24 +18,19 @@ type watcher struct {
 	url     string
 	factory newWatch
 	active  map[string]watched
-	stop    chan bool
+	stoppable.Base
 }
 
 func newWatcher(status *status.Status, url string, factory newWatch) *watcher {
-	result := &watcher{status, url, factory, map[string]watched{}, make(chan bool)}
+	result := &watcher{status, url, factory, map[string]watched{}, stoppable.NewBase()}
 
-	go result.watchReader()
+	go result.Handler()
 
 	return result
 }
 
-func (w *watcher) Stop() {
-	w.stop <- true
-	<-w.stop
-}
-
 // This is our back ground process for noticing rules updates.
-func (w *watcher) watchReader() {
+func (w *watcher) Handler() {
 	watch, e := w.status.WatchForUpdate(w.url)
 	if e != nil {
 		panic("Failure watching: " + w.url)
@@ -49,11 +41,11 @@ func (w *watcher) watchReader() {
 		case matches := <-watch:
 			// First remove rules that were removed or updated.
 			w.update(matches)
-		case <-w.stop:
+		case <-w.StopChan:
 			// Stop watching for changes, remove all existing rules, and signal done.
 			w.status.ReleaseWatch(watch)
 			w.update(status.UrlMatches{})
-			w.stop <- true
+			w.StopChan <- true
 			return
 		}
 	}

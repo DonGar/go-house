@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/engine/conditions"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"log"
 	"reflect"
 )
@@ -22,7 +23,7 @@ type Property struct {
 	conditions  []conditionValue
 	hasDefault  bool
 	defautValue interface{}
-	stop        chan bool
+	stoppable.Base
 }
 
 func NewProperty(
@@ -57,7 +58,7 @@ func NewProperty(
 		conditionValues,
 		hasDefault,
 		defaultValue,
-		make(chan bool)}
+		stoppable.NewBase()}
 
 	result.start()
 	return result, nil
@@ -111,7 +112,7 @@ func parseConditionValues(s *status.Status, name string, valuesRaw interface{}) 
 
 func (p *Property) start() {
 	log.Printf("Start property: %s", p.name) // url)
-	go p.watchConditionResults()
+	go p.Handler()
 }
 
 func (p *Property) Stop() {
@@ -121,8 +122,7 @@ func (p *Property) Stop() {
 		c.condition.Stop()
 	}
 
-	p.stop <- true
-	<-p.stop
+	p.Base.Stop()
 }
 
 func (p *Property) updateTarget() {
@@ -148,7 +148,7 @@ func (p *Property) updateTarget() {
 	}
 }
 
-func (p *Property) watchConditionResults() {
+func (p *Property) Handler() {
 	// Set with default, if present.
 	p.updateTarget()
 
@@ -161,7 +161,7 @@ func (p *Property) watchConditionResults() {
 
 	// We also listen to the stop channel.
 	channels[len(channels)-1] = reflect.SelectCase{
-		Dir: reflect.SelectRecv, Chan: reflect.ValueOf(p.stop)}
+		Dir: reflect.SelectRecv, Chan: reflect.ValueOf(p.StopChan)}
 
 	for {
 		receivedOnChannel, value, _ := reflect.Select(channels)
@@ -173,7 +173,7 @@ func (p *Property) watchConditionResults() {
 		} else {
 			// If it's after the conditions, it's the stop channel.
 			log.Printf("Stop property: %s", p.name) // url)
-			p.stop <- true
+			p.StopChan <- true
 			return
 		}
 	}

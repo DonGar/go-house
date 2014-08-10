@@ -2,18 +2,18 @@ package adapter
 
 import (
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 )
 
-// All Adapters must confirm to this interface.
-type adapter interface {
-	Stop() (e error)
-}
+// Create a standard type all adapters must conform too.
+type adapter stoppable.Stoppable
 
 // All Adapters must implement a factory with this signature.
 type newAdapter func(m *Manager, base base) (a adapter, e error)
 
 // All Adapters may compose this type for convenience.
 type base struct {
+	stoppable.Base
 	status     *status.Status
 	config     *status.Status
 	adapterUrl string
@@ -25,11 +25,13 @@ func newBaseAdapter(m *Manager, base base) (a adapter, e error) {
 	if e != nil {
 		return nil, e
 	}
+
+	go base.Handler()
 	return &base, nil
 }
 
 // This creates a default Stop method for adapters.
-func (ab *base) Stop() (e error) {
-	// TODO: Remove fully, when that's supported.
-	return ab.status.Set(ab.adapterUrl, nil, status.UNCHECKED_REVISION)
+func (b *base) Stop() {
+	b.Base.Stop()
+	b.status.Set(b.adapterUrl, nil, status.UNCHECKED_REVISION)
 }

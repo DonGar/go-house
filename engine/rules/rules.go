@@ -5,6 +5,7 @@ import (
 	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/engine/conditions"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"log"
 )
 
@@ -14,7 +15,7 @@ type Rule struct {
 	name            string // name of this rule.
 	condition       conditions.Condition
 	action          *status.Status // Substatus of the rule's action.
-	stop            chan bool
+	stoppable.Base
 }
 
 func NewRule(
@@ -46,7 +47,7 @@ func NewRule(
 		name,
 		condition,
 		actionBody,
-		make(chan bool)}
+		stoppable.NewBase()}
 
 	result.start()
 	return result, nil
@@ -54,16 +55,11 @@ func NewRule(
 
 func (r *Rule) start() {
 	log.Printf("Start rule: %s", r.name) // url)
-	go r.watchConditionResults()
+	go r.Handler()
 
 }
 
-func (r *Rule) Stop() {
-	r.stop <- true
-	<-r.stop
-}
-
-func (r *Rule) watchConditionResults() {
+func (r *Rule) Handler() {
 	for {
 		select {
 		case condValue := <-r.condition.Result():
@@ -74,10 +70,10 @@ func (r *Rule) watchConditionResults() {
 					log.Println("Fire Error: ", e)
 				}
 			}
-		case <-r.stop:
+		case <-r.StopChan:
 			r.condition.Stop()
 			log.Printf("Stop rule: %s", r.name) // url)
-			r.stop <- true
+			r.StopChan <- true
 			return
 		}
 	}

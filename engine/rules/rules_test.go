@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 	"testing"
 )
@@ -105,7 +106,7 @@ func (suite *MySuite) TestRuleFireSingle(c *check.C) {
 		"Test Rule Single",
 		mockCondition,
 		mockActions.actionSuccessBody,
-		make(chan bool)}
+		stoppable.NewBase()}
 
 	rule.start()
 
@@ -127,7 +128,7 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 		"Test Rule Repeated",
 		mockCondition,
 		mockActions.actionSuccessBody,
-		make(chan bool)}
+		stoppable.NewBase()}
 
 	rule.start()
 
@@ -159,7 +160,7 @@ func (suite *MySuite) TestRuleFireError(c *check.C) {
 		"Test Rule Error",
 		mockCondition,
 		mockActions.actionErrorBody,
-		make(chan bool)}
+		stoppable.NewBase()}
 
 	rule.start()
 

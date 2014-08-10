@@ -2,6 +2,7 @@ package properties
 
 import (
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 	"testing"
 	"time"
@@ -140,7 +141,7 @@ func (suite *MySuite) TestPropertyFireDefault(c *check.C) {
 		[]conditionValue{},
 		true,
 		"default set",
-		make(chan bool),
+		stoppable.NewBase(),
 	}
 
 	p.start()
@@ -160,7 +161,7 @@ func (suite *MySuite) TestPropertyFireCondition(c *check.C) {
 		[]conditionValue{{mockCond, false, "condition"}},
 		true,
 		"default set",
-		make(chan bool),
+		stoppable.NewBase(),
 	}
 
 	p.start()
@@ -193,7 +194,7 @@ func (suite *MySuite) TestPropertyFireConditionMultiple(c *check.C) {
 		},
 		true,
 		"default set",
-		make(chan bool),
+		stoppable.NewBase(),
 	}
 
 	p.start()
@@ -240,7 +241,7 @@ func (suite *MySuite) TestPropertyFireConditionMultipleNoDefault(c *check.C) {
 		},
 		false,
 		"",
-		make(chan bool),
+		stoppable.NewBase(),
 	}
 
 	p.start()

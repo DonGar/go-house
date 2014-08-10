@@ -3,6 +3,7 @@ package conditions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 )
 
 type Condition interface {
@@ -76,33 +77,22 @@ func NewCondition(
 type base struct {
 	status *status.Status
 	result chan bool // This will be sent on all condition result transitions.
-	stop   chan bool
+	stoppable.Base
+}
+
+func newBase(s *status.Status) base {
+	return base{s, make(chan bool), stoppable.NewBase()}
 }
 
 func (b *base) Result() <-chan bool {
 	return b.result
 }
 
-func (b *base) Stop() {
-	b.stop <- true
-	<-b.stop
-}
-
 // This only exists for testing, it should not be used by classes that compose
 // base.
 func newBaseCondition(s *status.Status) Condition {
-	c := &base{s, make(chan bool), make(chan bool)}
-	go c.handleEvents()
+	c := newBase(s)
+	go c.Handler()
 
-	return c
-}
-
-func (c *base) handleEvents() {
-	for {
-		select {
-		case <-c.stop:
-			c.stop <- true
-			return
-		}
-	}
+	return &c
 }

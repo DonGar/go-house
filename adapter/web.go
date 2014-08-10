@@ -16,16 +16,18 @@ func newWebAdapter(m *Manager, base base) (a adapter, e error) {
 		return nil, e
 	}
 
-	a = &webAdapter{base, m}
+	result := &webAdapter{base, m}
 
 	// Remember this adapter in the web URLs section.
-	m.webUrls[base.adapterUrl] = a
+	m.webUrls[base.adapterUrl] = result
 
-	return a, nil
+	go result.Handler()
+
+	return result, nil
 }
 
 // Remove this adapter from the web URLs section, the default Stop.
-func (a *webAdapter) Stop() (e error) {
+func (a *webAdapter) Stop() {
 	delete(a.adapterMgr.webUrls, a.base.adapterUrl)
-	return a.base.Stop()
+	a.base.Stop()
 }

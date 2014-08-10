@@ -24,15 +24,15 @@ func newPeriodicCondition(s *status.Status, body *status.Status) (*periodicCondi
 	}
 
 	// Create the condition.
-	c := &periodicCondition{base{s, make(chan bool), make(chan bool)}, period}
+	c := &periodicCondition{newBase(s), period}
 
 	// Start it processing.
-	go c.handleTicks()
+	go c.Handler()
 
 	return c, nil
 }
 
-func (c *periodicCondition) handleTicks() {
+func (c *periodicCondition) Handler() {
 	ticker := time.NewTicker(c.period)
 
 	for {
@@ -40,9 +40,9 @@ func (c *periodicCondition) handleTicks() {
 		case <-ticker.C:
 			c.result <- true
 			c.result <- false
-		case <-c.stop:
+		case <-c.StopChan:
 			ticker.Stop()
-			c.stop <- true
+			c.StopChan <- true
 			return
 		}
 	}

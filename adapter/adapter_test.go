@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 	"testing"
 )
@@ -49,14 +50,10 @@ func setupTestStatus(c *check.C) (s *status.Status, e error) {
 func (suite *MySuite) TestBaseStop(c *check.C) {
 	s, e := setupTestStatus(c)
 
-	base := base{
-		status:     s,
-		config:     &status.Status{},
-		adapterUrl: "status://TestBase",
-	}
+	base := base{stoppable.NewBase(), s, &status.Status{}, "status://TestBase"}
+	go base.Handler()
 
-	e = base.Stop()
-	c.Check(e, check.IsNil)
+	base.Stop()
 
 	// Make sure status://TestBase is gone.
 	v, r, e := s.Get(base.adapterUrl)

@@ -32,7 +32,7 @@ func newAndCondition(s *status.Status, body *status.Status) (*andCondition, erro
 	}
 
 	// Create our condition.
-	c := &andCondition{base{s, make(chan bool), make(chan bool)}, false, conditionValues}
+	c := &andCondition{newBase(s), false, conditionValues}
 
 	c.start()
 	return c, nil
@@ -65,7 +65,7 @@ func parseConditionValues(s *status.Status, valuesRaw interface{}) ([]conditionV
 
 func (c *andCondition) start() {
 	// Start it's goroutine.
-	go c.handle()
+	go c.Handler()
 }
 
 func (c *andCondition) Stop() {
@@ -92,7 +92,7 @@ func (c *andCondition) updateTarget() {
 	}
 }
 
-func (c *andCondition) handle() {
+func (c *andCondition) Handler() {
 	// Set with default, if present.
 	c.updateTarget()
 
@@ -105,7 +105,7 @@ func (c *andCondition) handle() {
 
 	// We also listen to the stop channel.
 	channels[len(channels)-1] = reflect.SelectCase{
-		Dir: reflect.SelectRecv, Chan: reflect.ValueOf(c.stop)}
+		Dir: reflect.SelectRecv, Chan: reflect.ValueOf(c.StopChan)}
 
 	for {
 		receivedOnChannel, value, _ := reflect.Select(channels)
@@ -116,7 +116,7 @@ func (c *andCondition) handle() {
 			c.updateTarget()
 		} else {
 			// If it's after the conditions, it's the stop channel.
-			c.stop <- true
+			c.StopChan <- true
 			return
 		}
 	}

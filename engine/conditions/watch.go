@@ -37,10 +37,10 @@ func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, 
 	}
 
 	// Create our condition.
-	c := &watchCondition{base{s, make(chan bool), make(chan bool)}, hasTrigger, trigger, watchChan}
+	c := &watchCondition{newBase(s), hasTrigger, trigger, watchChan}
 
 	// Start it's goroutine.
-	go c.handleWatch()
+	go c.Handler()
 
 	return c, nil
 }
@@ -55,7 +55,7 @@ func (c *watchCondition) triggerInMatches(matches status.UrlMatches) bool {
 	return false
 }
 
-func (c *watchCondition) handleWatch() {
+func (c *watchCondition) Handler() {
 
 	currentResult := false
 
@@ -74,9 +74,9 @@ func (c *watchCondition) handleWatch() {
 				c.result <- false
 			}
 
-		case <-c.stop:
+		case <-c.StopChan:
 			c.status.ReleaseWatch(c.watchChan)
-			c.stop <- true
+			c.StopChan <- true
 			return
 		}
 	}

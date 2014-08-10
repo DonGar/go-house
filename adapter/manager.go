@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/stoppable"
 	"log"
 )
 
@@ -25,11 +26,7 @@ var adapterFactories = map[string]newAdapter{
 func NewManager(status *status.Status) (mgr *Manager, e error) {
 
 	// Create the new manager.
-	mgr = &Manager{
-		status:   status,
-		adapters: map[string]adapter{},
-		webUrls:  map[string]adapter{},
-	}
+	mgr = &Manager{status, map[string]adapter{}, map[string]adapter{}}
 
 	// Look for adapter configs.
 	adapterTypes, e := status.GetChildNames(configUrl)
@@ -62,11 +59,7 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 			}
 
 			log.Printf("Create Adapter: %s", name)
-			newAdapter, e := factory(mgr, base{
-				status:     status,
-				config:     adapterConfig,
-				adapterUrl: adapterUrl,
-			})
+			newAdapter, e := factory(mgr, base{stoppable.NewBase(), status, adapterConfig, adapterUrl})
 			if e != nil {
 				return nil, e
 			}
@@ -78,16 +71,12 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 	return mgr, nil
 }
 
-func (m *Manager) Stop() (e error) {
+func (m *Manager) Stop() {
 	for name, adapter := range m.adapters {
 		log.Printf("Stop Adapter: %s", name)
-		e = adapter.Stop()
-		if e != nil {
-			return e
-		}
+		adapter.Stop()
 		delete(m.adapters, name)
 	}
-	return nil
 }
 
 func (m *Manager) WebAdapterStatusUrls() (result []string) {

@@ -54,7 +54,7 @@ func (suite *MySuite) TestAndOneMock(c *check.C) {
 
 	conditionValues := []conditionValue{{mockCond, false}}
 
-	cond := &andCondition{base{s, make(chan bool), make(chan bool)}, false, conditionValues}
+	cond := &andCondition{newBase(s), false, conditionValues}
 	cond.start()
 
 	validateChannelEmpty(c, cond)
@@ -85,7 +85,7 @@ func (suite *MySuite) TestAndThreeMock(c *check.C) {
 		conditionValues[i] = conditionValue{mockCond[i], false}
 	}
 
-	cond := &andCondition{base{s, make(chan bool), make(chan bool)}, false, conditionValues}
+	cond := &andCondition{newBase(s), false, conditionValues}
 	cond.start()
 
 	validateChannelEmpty(c, cond)
