@@ -1,12 +1,13 @@
 package adapter
 
 import (
-	"code.google.com/p/go.exp/fsnotify"
-	"github.com/DonGar/go-house/options"
-	"github.com/DonGar/go-house/status"
 	"io/ioutil"
 	"log"
 	"path/filepath"
+
+	"github.com/DonGar/go-house/options"
+	"github.com/DonGar/go-house/status"
+	"gopkg.in/fsnotify.v0"
 )
 
 type fileAdapter struct {
