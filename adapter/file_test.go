@@ -1,25 +1,19 @@
 package adapter
 
 import (
-	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
 )
 
 func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
-	s, e := setupTestStatus(c)
-	c.Assert(e, check.IsNil)
-
-	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFile")
-	c.Assert(e, check.IsNil)
-
-	base := base{stoppable.NewBase(), s, config, "status://TestFile"}
+	s, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/file/TestFile", "status://TestFile")
 
 	// Create a file adapter.
-	fa, e := newFileAdapter(nil, base)
+	fa, e := newFileAdapter(mgr, b)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.
-	v, r, e := s.Get(base.adapterUrl)
+	v, r, e := s.Get(b.adapterUrl)
 	c.Check(v, check.DeepEquals, map[string]interface{}{"foo": "bar"})
 	c.Check(r, check.Equals, 2)
 	c.Check(e, check.IsNil)
@@ -28,27 +22,22 @@ func (suite *MySuite) TestFileAdapterStartStopDefault(c *check.C) {
 	fa.Stop()
 
 	// Verify Status Contents.
-	v, r, e = s.Get(base.adapterUrl)
+	v, r, e = s.Get(b.adapterUrl)
 	c.Check(v, check.DeepEquals, nil)
 	c.Check(r, check.Equals, 3)
 	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
-	s, e := setupTestStatus(c)
-	c.Assert(e, check.IsNil)
-
-	config, _, e := s.GetSubStatus("status://server/adapters/file/TestFileSpecified")
-	c.Assert(e, check.IsNil)
-
-	base := base{stoppable.NewBase(), s, config, "status://TestFileSpecified"}
+	s, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/file/TestFileSpecified", "status://TestFileSpecified")
 
 	// Create a file adapter.
-	fa, e := newFileAdapter(nil, base)
+	fa, e := newFileAdapter(mgr, b)
 	c.Assert(e, check.IsNil)
 
 	// Verify Status Contents.
-	v, r, e := s.Get(base.adapterUrl)
+	v, r, e := s.Get(b.adapterUrl)
 	c.Check(v, check.DeepEquals, map[string]interface{}{"foo": "bar"})
 	c.Check(r, check.Equals, 2)
 	c.Check(e, check.IsNil)
@@ -57,7 +46,7 @@ func (suite *MySuite) TestFileAdapterStartStopFilename(c *check.C) {
 	fa.Stop()
 
 	// Verify Status Contents.
-	v, r, e = s.Get(base.adapterUrl)
+	v, r, e = s.Get(b.adapterUrl)
 	c.Check(v, check.DeepEquals, nil)
 	c.Check(r, check.Equals, 3)
 	c.Check(e, check.IsNil)

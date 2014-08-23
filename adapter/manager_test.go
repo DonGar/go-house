@@ -40,16 +40,11 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 }
 
 func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
-
-	s, e := setupTestStatus(c)
-	c.Assert(e, check.IsNil)
-
-	// config, _, e := s.GetSubStatus("status://server/adapters/base/TestBase")
-	// c.Assert(e, check.IsNil)
+	s := setupTestStatus(c)
 
 	// Create the manager.
 	var mgr *Manager
-	mgr, e = NewManager(s)
+	mgr, e := NewManager(s)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
@@ -61,30 +56,14 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Check(len(mgr.adapters), check.Equals, 0)
 
 	// Verify Status Contents
-	v, _, e := s.Get("status://")
-	c.Check(e, check.IsNil)
-	c.Check(
-		v,
-		check.DeepEquals,
-		map[string]interface{}{
-			"server": map[string]interface{}{
-				"config": "./testdata",
-				"adapters": map[string]interface{}{
-					"base": map[string]interface{}{
-						"TestBase": map[string]interface{}{},
-					},
-					"file": map[string]interface{}{
-						"TestFileSpecified": map[string]interface{}{
-							"filename": "TestFile.json"},
-						"TestFile": map[string]interface{}{},
-					},
-					"web": map[string]interface{}{
-						"TestWeb": map[string]interface{}{},
-					},
-				},
-			},
-			"TestBase":          interface{}(nil),
-			"TestFile":          interface{}(nil),
-			"TestFileSpecified": interface{}(nil),
-			"TestWeb":           interface{}(nil)})
+	adapterUrls := []string{
+		"status://TestBase", "status://TestFile", "status://TestFileSpecified",
+		"status://TestWeb",
+	}
+
+	for _, url := range adapterUrls {
+		v, _, e := s.Get(url)
+		c.Check(e, check.IsNil)
+		c.Check(v, check.DeepEquals, interface{}(nil))
+	}
 }

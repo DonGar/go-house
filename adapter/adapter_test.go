@@ -15,9 +15,9 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 // This creates standard status/options objects used by most Adapters tests.
-func setupTestStatus(c *check.C) (s *status.Status, e error) {
+func setupTestStatus(c *check.C) (s *status.Status) {
 	s = &status.Status{}
-	e = s.SetJson("status://",
+	e := s.SetJson("status://",
 		[]byte(`
     {
       "server": {
@@ -44,11 +44,25 @@ func setupTestStatus(c *check.C) (s *status.Status, e error) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	return s, nil
+	return s
+}
+
+func setupTestAdapter(c *check.C, configUrl string, adapterUrl string) (s *status.Status, mgr *Manager, b base) {
+	s = setupTestStatus(c)
+
+	config, _, e := s.GetSubStatus(configUrl)
+	c.Assert(e, check.IsNil)
+
+	b = base{stoppable.NewBase(), s, config, adapterUrl}
+
+	// We need just enough of a manager for our tests.
+	mgr = &Manager{webUrls: map[string]adapter{}}
+
+	return
 }
 
 func (suite *MySuite) TestBaseStop(c *check.C) {
-	s, e := setupTestStatus(c)
+	s := setupTestStatus(c)
 
 	base := base{stoppable.NewBase(), s, &status.Status{}, "status://TestBase"}
 	go base.Handler()
