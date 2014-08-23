@@ -53,7 +53,8 @@ func setupTestAdapter(c *check.C, configUrl string, adapterUrl string) (s *statu
 	config, _, e := s.GetSubStatus(configUrl)
 	c.Assert(e, check.IsNil)
 
-	b = base{stoppable.NewBase(), s, config, adapterUrl}
+	b, e = newBase(s, config, adapterUrl)
+	c.Assert(e, check.IsNil)
 
 	// We need just enough of a manager for our tests.
 	mgr = &Manager{webUrls: map[string]adapter{}}

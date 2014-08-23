@@ -19,13 +19,15 @@ type base struct {
 	adapterUrl string
 }
 
+func newBase(s, adapterConfig *status.Status, adapterUrl string) (b base, e error) {
+	b = base{stoppable.NewBase(), s, adapterConfig, adapterUrl}
+	e = b.status.SetJson(b.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
+
+	return
+}
+
 // This is really only present for testing purposes.
 func newBaseAdapter(m *Manager, base base) (a adapter, e error) {
-	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
-	if e != nil {
-		return nil, e
-	}
-
 	go base.Handler()
 	return &base, nil
 }

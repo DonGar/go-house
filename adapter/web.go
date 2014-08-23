@@ -1,8 +1,6 @@
 package adapter
 
-import (
-	"github.com/DonGar/go-house/status"
-)
+import ()
 
 type webAdapter struct {
 	base
@@ -10,12 +8,6 @@ type webAdapter struct {
 }
 
 func newWebAdapter(m *Manager, base base) (a adapter, e error) {
-
-	e = base.status.SetJson(base.adapterUrl, []byte(`{}`), status.UNCHECKED_REVISION)
-	if e != nil {
-		return nil, e
-	}
-
 	result := &webAdapter{base, m}
 
 	// Remember this adapter in the web URLs section.

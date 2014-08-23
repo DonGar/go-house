@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
-	"github.com/DonGar/go-house/stoppable"
 	"log"
 )
 
@@ -59,7 +58,12 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 			}
 
 			log.Printf("Create Adapter: %s", name)
-			newAdapter, e := factory(mgr, base{stoppable.NewBase(), status, adapterConfig, adapterUrl})
+			b, e := newBase(status, adapterConfig, adapterUrl)
+			if e != nil {
+				return nil, e
+			}
+
+			newAdapter, e := factory(mgr, b)
 			if e != nil {
 				return nil, e
 			}
