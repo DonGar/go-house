@@ -96,28 +96,28 @@ func (suite *MySuite) TestDailyParseTime(c *check.C) {
 func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
 	cond := setupTimeCondition(c, "sunrise")
 
-	sunriseToday := time.Date(2014, time.June, 12, 05, 47, 01, 0, time.Local)
-	sunriseTomorrow := time.Date(2014, time.June, 13, 05, 46, 59, 0, time.Local)
+	sunriseToday := time.Date(2014, time.June, 12, 12, 47, 00, 0, time.UTC)
+	sunriseTomorrow := time.Date(2014, time.June, 13, 12, 47, 00, 0, time.UTC)
 
 	// Test before sunrise.
-	now := time.Date(2014, time.June, 12, 2, 57, 12, 0, time.Local)
+	now := sunriseToday.Add(-5 * time.Minute)
 	fireTime := cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, sunriseToday)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseToday)
 
 	// Test 5 min after sunrise.
 	now = sunriseToday.Add(5 * time.Minute)
 	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, sunriseTomorrow)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
 
 	// Test after sunrise.
-	now = time.Date(2014, time.June, 12, 10, 57, 12, 0, time.Local)
+	now = sunriseToday.Add(12 * time.Hour)
 	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, sunriseTomorrow)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
 
 	// Test way after sunrise.
-	now = time.Date(2014, time.June, 12, 23, 57, 12, 0, time.Local)
+	now = sunriseToday.Add(12 * time.Hour).Add(59 * time.Minute)
 	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, sunriseTomorrow)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
 
 	cond.Stop()
 }
@@ -125,13 +125,13 @@ func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
 func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
 	cond := setupTimeCondition(c, "sunset")
 
-	sunsetToday := time.Date(2014, time.June, 12, 20, 29, 33, 0, time.Local)
-	sunsetTomorrow := time.Date(2014, time.June, 13, 20, 30, 00, 0, time.Local)
+	sunsetToday := time.Date(2014, time.June, 12, 3, 30, 00, 0, time.UTC)
+	sunsetTomorrow := time.Date(2014, time.June, 13, 3, 30, 00, 0, time.UTC)
 
 	// Test before sunset.
-	now := time.Date(2014, time.June, 12, 2, 57, 12, 0, time.Local)
+	now := sunsetToday.Add(-10 * time.Hour)
 	fireTime := cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, sunsetToday)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetToday)
 
 	// Test 5 min after sunset. Round since time of sunset is approximate.
 	now = sunsetToday.Add(5 * time.Minute)
@@ -139,7 +139,12 @@ func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
 	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
 
 	// Test after sunset.
-	now = time.Date(2014, time.June, 12, 22, 57, 12, 0, time.Local)
+	now = sunsetToday.Add(12 * time.Hour)
+	fireTime = cond.findNextFireTime(now)
+	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
+
+	// Test after sunset.
+	now = sunsetToday.Add(12 * time.Hour).Add(59 * time.Minute)
 	fireTime = cond.findNextFireTime(now)
 	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
 
