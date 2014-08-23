@@ -1,13 +1,12 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/options"
+	"github.com/DonGar/go-house/status"
+	"gopkg.in/fsnotify.v1"
 	"io/ioutil"
 	"log"
 	"path/filepath"
-
-	"github.com/DonGar/go-house/options"
-	"github.com/DonGar/go-house/status"
-	"gopkg.in/fsnotify.v0"
 )
 
 type fileAdapter struct {
@@ -51,7 +50,7 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 
 	// Setup watch on file so we can reload if it's updated.
 	go fa.Handler()
-	e = fa.watcher.Watch(fa.filename)
+	e = fa.watcher.Add(fa.filename)
 	if e != nil {
 		return nil, e
 	}
@@ -73,14 +72,14 @@ func (a *fileAdapter) loadFile() (e error) {
 func (a *fileAdapter) Handler() {
 	for {
 		select {
-		case ev := <-a.watcher.Event:
+		case ev := <-a.watcher.Events:
 			log.Println("event:", ev)
 			e := a.loadFile()
 			if e != nil {
 				log.Printf("File Adapter (%s) Load Error: %v", a.adapterUrl, e.Error())
 			}
 
-		case err := <-a.watcher.Error:
+		case err := <-a.watcher.Errors:
 			log.Printf("File Adapter (%s) Watcher Error: %v", a.adapterUrl, err)
 
 		case <-a.StopChan:
