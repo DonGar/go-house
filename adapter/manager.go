@@ -17,9 +17,10 @@ var configUrl = options.ADAPTERS
 
 // Map type name to factory method.
 var adapterFactories = map[string]newAdapter{
-	"base": newBaseAdapter,
-	"file": newFileAdapter,
-	"web":  newWebAdapter,
+	"base":  newBaseAdapter,
+	"file":  newFileAdapter,
+	"spark": newSparkAdapter,
+	"web":   newWebAdapter,
 }
 
 func NewManager(status *status.Status) (mgr *Manager, e error) {
