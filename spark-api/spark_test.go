@@ -34,7 +34,7 @@ func (suite *MySuite) TestStartStop(c *check.C) {
 	sa.Stop()
 }
 
-func (suite *MySuite) TestDeviceUpdates(c *check.C) {
+func (suite *MySuite) TestUpdates(c *check.C) {
 	if !*network {
 		c.Skip("-network tests not enabled.")
 	}
@@ -43,36 +43,21 @@ func (suite *MySuite) TestDeviceUpdates(c *check.C) {
 	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
 
 	println("Blocking on devices.")
-	devices := <-sa.DeviceUpdates()
+	devicesChan, eventChan := sa.Updates()
+	c.Check(devicesChan, check.NotNil)
+	c.Check(eventChan, check.NotNil)
+
+	devices := <-devicesChan
 	c.Check(devices, check.NotNil)
 
+	// Can't wait on eventChan, since there might not be any.
+
 	sa.Stop()
 }
 
-func (suite *MySuite) TestDeviceUpdatesStop(c *check.C) {
+func (suite *MySuite) TestUpdatesStop(c *check.C) {
 	// Start and stop right away, without waiting for results.
 	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
-	_ = sa.DeviceUpdates()
-	sa.Stop()
-}
-
-// Not useful, because we have no way to know if there will
-// be an event.
-
-// func (suite *MySuite) TestEvents(c *check.C) {
-// 	// Start and stop right away, without waiting for results.
-// 	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
-
-// 	println("Blocking on event.")
-// 	event := <-sa.Events()
-// 	c.Check(event, check.NotNil)
-
-// 	sa.Stop()
-// }
-
-func (suite *MySuite) TestEventsStop(c *check.C) {
-	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
-	_ = sa.Events()
+	_, _ = sa.Updates()
 	sa.Stop()
 }

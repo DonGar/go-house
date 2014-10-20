@@ -12,8 +12,7 @@ import (
 var SPARK_IO_URL string = "https://api.spark.io/"
 
 type SparkApiInterface interface {
-	DeviceUpdates() <-chan []Device
-	Events() <-chan Event
+	Updates() (<-chan []Device, <-chan Event)
 	Stop()
 }
 
@@ -55,22 +54,17 @@ func NewSparkApi(username, password, accessToken string) *SparkApi {
 	return s
 }
 
-func (s *SparkApi) DeviceUpdates() <-chan []Device {
+func (s *SparkApi) Updates() (<-chan []Device, <-chan Event) {
 	if s.deviceUpdates == nil {
 		s.deviceUpdates = make(chan []Device)
-		go func() { s.refreshDevices <- true }()
-	}
-
-	return s.deviceUpdates
-}
-
-func (s *SparkApi) Events() <-chan Event {
-	if s.events == nil {
 		s.events = make(chan Event)
-		go func() { s.listenEvents <- true }()
+		go func() {
+			s.listenEvents <- true
+			s.refreshDevices <- true
+		}()
 	}
 
-	return s.events
+	return s.deviceUpdates, s.events
 }
 
 func (s *SparkApi) sendDevicesUpdate(devices []Device) {

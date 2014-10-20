@@ -46,8 +46,7 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 
 func (a *sparkAdapter) Handler() {
 
-	deviceUpdates := a.SparkApiInterface.DeviceUpdates()
-	events := a.SparkApiInterface.Events()
+	deviceUpdates, events := a.SparkApiInterface.Updates()
 
 	for {
 		select {
