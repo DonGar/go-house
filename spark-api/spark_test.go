@@ -10,7 +10,6 @@ var network = flag.Bool("network", false, "Include networking tests")
 
 var TEST_USER string = "house@bgb.cc"
 var TEST_PASS string = "c4K4bJS&r4*o"
-var TEST_TOKEN string = "8e909b47c7911138b9891e47f8af75557058f410"
 
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { check.TestingT(t) }
@@ -30,7 +29,7 @@ func (suite *MySuite) TestInterfaceCompliance(c *check.C) {
 
 func (suite *MySuite) TestStartStop(c *check.C) {
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
+	sa := NewSparkApi(TEST_USER, TEST_PASS)
 	sa.Stop()
 }
 
@@ -40,7 +39,7 @@ func (suite *MySuite) TestUpdates(c *check.C) {
 	}
 
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
+	sa := NewSparkApi(TEST_USER, TEST_PASS)
 
 	println("Blocking on devices.")
 	devicesChan, eventChan := sa.Updates()
@@ -57,7 +56,7 @@ func (suite *MySuite) TestUpdates(c *check.C) {
 
 func (suite *MySuite) TestUpdatesStop(c *check.C) {
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS, TEST_TOKEN)
+	sa := NewSparkApi(TEST_USER, TEST_PASS)
 	_, _ = sa.Updates()
 	sa.Stop()
 }

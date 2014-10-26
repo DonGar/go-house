@@ -20,9 +20,9 @@ type SparkApi struct {
 	stoppable.Base
 
 	// Our connection information.
-	username    string
-	password    string
-	accessToken string
+	username string
+	password string
+	token    string
 
 	// Track current known devices.
 	devices []Device
@@ -37,10 +37,10 @@ type SparkApi struct {
 	refreshDevices chan bool
 }
 
-func NewSparkApi(username, password, accessToken string) *SparkApi {
+func NewSparkApi(username, password string) *SparkApi {
 	s := &SparkApi{
 		stoppable.NewBase(),
-		username, password, accessToken,
+		username, password, "",
 		[]Device{},
 		nil,
 		nil,

@@ -13,7 +13,7 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi(TEST_USER, TEST_PASS, "")
+	sa := NewSparkApi(TEST_USER, TEST_PASS)
 
 	// We failed with a BadRequest error.
 	response, err := sa.urlToResponseWithToken(DEVICES_URL)
@@ -29,7 +29,7 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 	response.Body.Close()
 
 	// We have a new token.
-	c.Check(sa.accessToken, check.Not(check.Equals), "")
+	c.Check(sa.token, check.Not(check.Equals), "")
 
 	// Redo the original request, and it works.
 	response, err = sa.urlToResponseWithToken(DEVICES_URL)
@@ -40,6 +40,28 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 	sa.Stop()
 }
 
+func (suite *MySuite) TestUrlLookup(c *check.C) {
+	// Test starting out with an empty token. We should find
+	// a new valid one, then succeed.
+
+	if !*network {
+		c.Skip("-network tests not enabled.")
+	}
+
+	// We test creating before looking up to ensure there is always something
+	// to look up.
+
+	// Verify that we can create a new token.
+	token, err := refreshToken(TEST_USER, TEST_PASS)
+	c.Check(err, check.IsNil)
+	c.Check(token, check.Not(check.Equals), "")
+
+	// Verify that we can lookup ao test token.
+	token, err = lookupToken(TEST_USER, TEST_PASS)
+	c.Check(err, check.IsNil)
+	c.Check(token, check.Not(check.Equals), "")
+}
+
 func (suite *MySuite) TestUrlToResponseBadUser(c *check.C) {
 	// Test starting out with a bad token, and bad user data.
 
@@ -47,7 +69,7 @@ func (suite *MySuite) TestUrlToResponseBadUser(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi("", "", "")
+	sa := NewSparkApi("", "")
 
 	// Do a token refresh.
 	response, err := sa.urlToResponseWithTokenRefresh(DEVICES_URL)

@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 )
 
-var OAUTH_URL string = SPARK_IO_URL + "oauth/token"
 var DEVICES_URL string = SPARK_IO_URL + "v1/devices"
 
 func (s *SparkApi) discoverDevices() ([]Device, error) {

@@ -8,6 +8,9 @@ import (
 	"strings"
 )
 
+var OAUTH_URL string = SPARK_IO_URL + "oauth/token"
+var TOKENS_URL string = SPARK_IO_URL + "v1/access_tokens"
+
 //
 // Type to encode HTTP Errors.
 //
@@ -47,53 +50,103 @@ func (s *SparkApi) urlToResponseWithToken(requestUrl string) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
-	request.Header.Set("Authorization", "Bearer "+s.accessToken)
+	request.Header.Set("Authorization", "Bearer "+s.token)
 
 	return requestToResponse(request)
 }
 
 func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
 	// Helper for performing an HTTP request, and getting back the body of
-	// the response. Our access token is used for authorization. Refresh
-	// the token if it's not valid for any reason.
+	// the response. Our access token is used for authorization. Lookup/refresh
+	// the token as needed.
 
-	bodyText, err := s.urlToResponseWithToken(requestUrl)
+	var err error
 
-	// If it worked, we are done.
-	if err == nil {
-		return bodyText, err
+	// If we have a token, try to use it. It might fail if the token is
+	// expired.
+	if s.token != "" {
+		bodyText, err := s.urlToResponseWithToken(requestUrl)
+
+		// If it worked, we are done.
+		if err == nil {
+			return bodyText, err
+		}
+
+		// Exit if not a we are sure a token refresh won't help.
+		responseError, ok := err.(ResponseError)
+		if !ok || responseError.StatusCode != http.StatusBadRequest {
+			return nil, err
+		}
 	}
 
-	// Exit if not a candidate for a bad/expired token.
-	responseError, ok := err.(ResponseError)
-	if !ok || responseError.StatusCode != http.StatusBadRequest {
-		return nil, err
+	// Lookup for generate a new token. If we don't find one, try to create one.
+	s.token, _ = lookupToken(s.username, s.password)
+	if s.token == "" {
+		s.token, err = refreshToken(s.username, s.password)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	// Get a new token.
-	err = s.refreshToken()
-	if err != nil {
-		return nil, err
-	}
-
-	// Request with new token.
+	// Request with new token. If this fails, we are done.
 	return s.urlToResponseWithToken(requestUrl)
 }
 
-func (s *SparkApi) refreshToken() (e error) {
-	// Ask for a new token, and store it in out accessToken member.
+func lookupToken(username, password string) (token string, err error) {
+	// Look for an existing token we can use for all requests.
+
+	request, err := http.NewRequest("GET", TOKENS_URL, nil)
+	if err != nil {
+		return "", err
+	}
+	request.SetBasicAuth(username, password)
+
+	// Ask for the new token.
+	response, err := requestToResponse(request)
+	if err != nil {
+		return "", err
+	}
+
+	// Read the full response.
+	bodyText, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var parsedResponse []struct {
+		Token      string
+		Expires_at string
+		Client     string
+	}
+
+	err = json.Unmarshal(bodyText, &parsedResponse)
+	if err != nil {
+		return "", err
+	}
+
+	// We found it.
+	if len(parsedResponse) > 0 {
+		return parsedResponse[0].Token, nil
+	}
+
+	// We didn't find one.
+	return "", nil
+}
+
+func refreshToken(username, password string) (token string, err error) {
+	// Generate a new token we can use for future requests.
 
 	// Build our request.
 	postFormValues := url.Values{
 		"grant_type": {"password"},
-		"username":   {s.username},
-		"password":   {s.password},
+		"username":   {username},
+		"password":   {password},
 	}
 
 	request, err := http.NewRequest(
 		"POST", OAUTH_URL, strings.NewReader(postFormValues.Encode()))
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -102,13 +155,13 @@ func (s *SparkApi) refreshToken() (e error) {
 	// Ask for the new token.
 	response, err := requestToResponse(request)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Read the full response.
 	bodyText, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Parse the response.
@@ -118,10 +171,9 @@ func (s *SparkApi) refreshToken() (e error) {
 
 	err = json.Unmarshal(bodyText, &parsedResponse)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	// Save it on this adaptor.
-	s.accessToken = parsedResponse.Access_Token
-	return nil
+	// We found it.
+	return parsedResponse.Access_Token, nil
 }

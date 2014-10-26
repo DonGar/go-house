@@ -26,15 +26,10 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 		return nil, e
 	}
 
-	token, e := b.config.GetString("status://token")
-	if e != nil {
-		token = ""
-	}
-
 	// Create an start adapter.
 	sa := &sparkAdapter{
 		b,
-		sparkapi.NewSparkApi(username, password, token),
+		sparkapi.NewSparkApi(username, password),
 	}
 
 	// Create the root for the core devices we are about to discover.
