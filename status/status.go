@@ -60,10 +60,7 @@ func (s *Status) Get(url string) (value interface{}, revision int, e error) {
 	node := nodes[len(nodes)-1]
 
 	revision = node.revision
-	value, e = statusValueToValue(node.value)
-	if e != nil {
-		return nil, 0, e
-	}
+	value = statusValueToValue(node.value)
 
 	return
 }
@@ -224,10 +221,7 @@ UnfinishedUrls:
 		}
 
 		// If we finished without continuing to the next URL, it's a match.
-		value, e := statusValueToValue(current.value)
-		if e != nil {
-			return nil, e
-		}
+		value := statusValueToValue(current.value)
 		matches[joinUrl(urlPath)] = UrlMatch{Revision: current.revision, Value: value}
 	}
 
@@ -393,7 +387,7 @@ func valueToStatusValue(value interface{}, revision int) (result statusValue, e 
 }
 
 // Convert an internal value to the external (JSON structure) equivalent.
-func statusValueToValue(value statusValue) (result interface{}, e error) {
+func statusValueToValue(value statusValue) (result interface{}) {
 	switch t := value.(type) {
 	case bool, float64, int, int64, string, nil:
 		// Immutable values are simply assigned.
@@ -409,14 +403,12 @@ func statusValueToValue(value statusValue) (result interface{}, e error) {
 		// Convert each sub-value in a map.
 		valueMap := map[string]interface{}{}
 		for k, v := range t {
-			if valueMap[k], e = statusValueToValue(v.value); e != nil {
-				return nil, e
-			}
+			valueMap[k] = statusValueToValue(v.value)
 		}
 		result = valueMap
 	default:
-		return nil, fmt.Errorf("Status: Can't convert type: %T to Status value", t)
+		panic(fmt.Errorf("Status: Can't convert type: %T to Status value", t))
 	}
 
-	return result, nil
+	return result
 }

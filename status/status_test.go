@@ -204,9 +204,7 @@ func (s *MySuite) TestIdentity(c *check.C) {
 		s, e = valueToStatusValue(value, 22)
 		c.Check(e, check.IsNil)
 
-		after, e = statusValueToValue(s)
-		c.Check(e, check.IsNil)
-
+		after = statusValueToValue(s)
 		c.Check(after, check.DeepEquals, value)
 	}
 
