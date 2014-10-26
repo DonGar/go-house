@@ -1,9 +1,10 @@
 package adapter
 
 import (
-	"fmt"
 	"github.com/DonGar/go-house/spark-api"
 	"github.com/DonGar/go-house/status"
+	"log"
+	"strings"
 )
 
 type sparkAdapter struct {
@@ -51,11 +52,11 @@ func (a *sparkAdapter) Handler() {
 	for {
 		select {
 		case devices := <-deviceUpdates:
-			fmt.Printf("Got devices. %+v\n", devices)
+			log.Printf("Spark: Got devices. %+v\n", devices)
 			a.updateDeviceList(devices)
 
 		case event := <-events:
-			fmt.Printf("Got event. %+v\n", event)
+			log.Printf("Spark: Got event. %+v\n", event)
 			a.updateFromEvent(event)
 
 		case <-a.StopChan:
@@ -72,9 +73,45 @@ func (a *sparkAdapter) Stop() {
 
 func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 
-	event_url := a.adapterUrl + "/core/" + event.CoreId + "/events/" + event.Name
+	device_url := a.findDeviceUrl(event.CoreId)
+	if device_url == "" {
+		// If we have no associated device (yet), ignore the event.
+		log.Println("Spark: Received event from unknown device: ", event.CoreId)
+		return
+	}
+
+	event_url := device_url + "/events/" + event.Name
+
 	a.status.Set(event_url+"/data", event.Data, status.UNCHECKED_REVISION)
 	a.status.Set(event_url+"/published", event.Published_at, status.UNCHECKED_REVISION)
+}
+
+func (a sparkAdapter) findDeviceUrl(id string) string {
+
+	// Find the id's of all devices.
+	devices_url := a.adapterUrl + "/core/*/id"
+
+	// Find all device URLs, the look for the one we want.
+	matches, err := a.status.GetMatchingUrls(devices_url)
+	if err != nil {
+		// Not possible/hard to handle
+		panic(err)
+	}
+
+	// Find the device with our requested id.
+	for search_url, raw_search_id := range matches {
+		search_id := raw_search_id.Value.(string)
+
+		// If we found it.
+		if search_id == id {
+			// Strip off /id from the end of the URL.
+			last_break := strings.LastIndex(search_url, "/")
+			return search_url[:last_break]
+		}
+	}
+
+	// No device, no url.
+	return ""
 }
 
 func (a sparkAdapter) updateDeviceList(devices []sparkapi.Device) {
@@ -99,8 +136,8 @@ OldNames:
 
 	// Add/update devices that exist.
 	for _, d := range devices {
-		device_url := core_url + "/" + d.Id
-		a.status.Set(device_url+"/name", d.Name, status.UNCHECKED_REVISION)
+		device_url := core_url + "/" + d.Name
+		a.status.Set(device_url+"/id", d.Id, status.UNCHECKED_REVISION)
 		a.status.Set(device_url+"/last_heard", d.LastHeard, status.UNCHECKED_REVISION)
 		a.status.Set(device_url+"/connected", d.Connected, status.UNCHECKED_REVISION)
 		a.status.Set(device_url+"/variables", d.Variables, status.UNCHECKED_REVISION)
