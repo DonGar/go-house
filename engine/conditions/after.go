@@ -68,8 +68,8 @@ func (c *afterCondition) updateTarget(newResult bool) {
 }
 
 func (c *afterCondition) Handler() {
-	// Create the timer with a really long timeout, then stop it.
-	// We'll reset, when we're ready to realy start it.
+	// Create the timer with a long timeout, then stop it.
+	// We'll reset, when we're ready to really start it.
 	timer := time.NewTimer(time.Hour)
 	timer.Stop()
 

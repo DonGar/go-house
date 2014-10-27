@@ -30,13 +30,13 @@ func setupTestStatus(c *check.C) (s *status.Status) {
     				"condition": {
     					"test": "base"
     				},
-    				"action": null
+    				"on": null
 					},
     			"RuleTwo": {
     				"condition": {
     					"test": "base"
     				},
-    				"action": null
+    				"off": null
 					}
       	},
       	"property": {

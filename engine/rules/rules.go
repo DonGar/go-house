@@ -14,7 +14,8 @@ type Rule struct {
 	actionRegistrar actions.ActionRegistrar
 	name            string // name of this rule.
 	condition       conditions.Condition
-	action          *status.Status // Substatus of the rule's action.
+	actionOn        *status.Status // Substatus of the rule's action.
+	actionOff       *status.Status // Substatus of the rule's action.
 	stoppable.Base
 }
 
@@ -30,9 +31,11 @@ func NewRule(
 		return nil, fmt.Errorf("No 'condition' section.")
 	}
 
-	actionBody, _, e := ruleBody.GetSubStatus("status://action")
-	if e != nil {
-		return nil, fmt.Errorf("No 'action' section.")
+	actionOn, _, _ := ruleBody.GetSubStatus("status://on")
+	actionOff, _, _ := ruleBody.GetSubStatus("status://off")
+
+	if actionOn == nil && actionOff == nil {
+		return nil, fmt.Errorf("No On or Off action.")
 	}
 
 	// Create the condition (last, because it needs Stopping on failure).
@@ -46,7 +49,8 @@ func NewRule(
 		actionRegistrar,
 		name,
 		condition,
-		actionBody,
+		actionOn,
+		actionOff,
 		stoppable.NewBase()}
 
 	result.start()
@@ -63,12 +67,20 @@ func (r *Rule) Handler() {
 	for {
 		select {
 		case condValue := <-r.condition.Result():
+			var err error
 			if condValue {
-				log.Println("Firing rule: ", r.name)
-				e := actions.FireAction(r.status, r.actionRegistrar, r.action)
-				if e != nil {
-					log.Println("Fire Error: ", e)
+				if r.actionOn != nil {
+					log.Println("Firing rule On: ", r.name)
+					err = actions.FireAction(r.status, r.actionRegistrar, r.actionOn)
 				}
+			} else {
+				if r.actionOff != nil {
+					log.Println("Firing rule Off: ", r.name)
+					err = actions.FireAction(r.status, r.actionRegistrar, r.actionOff)
+				}
+			}
+			if err != nil {
+				log.Println("Fire Error: ", err)
 			}
 		case <-r.StopChan:
 			r.condition.Stop()

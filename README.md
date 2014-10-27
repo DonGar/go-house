@@ -167,30 +167,39 @@ Components generally contain a number of component type specific values that are
 
 ###Rules
 
-The "behavior" of a rule says which type of rule it is.
+Rules have a condition, and on/off actions (either action is optional).
 
- * Periodic - These rules fire at fixed intervals.
+Whenever the condition transitions to true, the on action if fired.
 
+Whenever the condition transitions to false, the off action is fired.
 
-        "<name>": {
-            "time": "<time_units>",
-            "action": <action>
-        },
+"<name>": {
+  "condition": "<condition>",
+  "on": <action>    (optional)
+  "off": <action>   (optional)
+},
 
-    * time - How often to fire this rule. Sample time formats are: "300s",
-      "1.5h" or "2h45m. 'h', 'm', and 's' are valid units.
-    * action - Action to take when rule fires.
+####Conditions
 
+A condition has a true or false state, and notifies it's container (rule, property, etc) whenever that changes.
 
- * Daily - These rules fire once a day.
+ * after - after an inner condition is true for some minimum period of time, become true.
+   * condition - Inner condition of any kind.
+   * delay - How long to wait before becoming true.
+ * and - become true when all inner conditions are true.
+   * conditions - [] of subconditions.
+ * daily - pulse true, once a day, at a specified time.
+   * time - (11:00, 2:00PM, 14:00, 9:43:21, etc) Supports the special values 'sunset', 'sunrise' (based on server latitude/longitude).
+ * periodic - pulse true at specified time intervals.
+   * interval - How often this condition should pulse true. Always starts counting from server startup. ("1s", "2h", "3d", etc)
+ * watch - watch a specified status url and pulse true when it is updated, or (optionally) become true if it matches a specified value.
+   * watch - Status URL of value to watch. Doesn't have to (always) exist.
+   * trigger - Optional value to compare the watched location against.
 
-        "<name>": {
-            "time": "<hh:mm:ss|sunset|sunrise>",
-            "action": <action>
-        },
+Two special case formats:
 
-    * time - When to fire this rule. Either an absolute 24 hour time (15:33:22), or "sunset" or "sunrise" which are calculated based on the server latitude/longitude.
-    * action - Action to take when rule fires.
+ * "status://_status_uri_" - Fetch the condition at the specified address and use it instead.
+ * [<condition>, <condition>, ...] - Shorthand notation for 'and' conditions above.
 
 ###Actions
 

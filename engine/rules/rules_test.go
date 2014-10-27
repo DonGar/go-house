@@ -21,15 +21,22 @@ var _ = check.Suite(&MySuite{})
 //
 
 type mockActions struct {
-	registrar         actions.ActionRegistrar
-	successCount      int
-	errorCount        int
-	actionSuccessBody *status.Status
-	actionErrorBody   *status.Status
+	registrar       actions.ActionRegistrar
+	onCount         int
+	offCount        int
+	errorCount      int
+	actionOnBody    *status.Status
+	actionOffBody   *status.Status
+	actionErrorBody *status.Status
 }
 
-func (m *mockActions) actionSuccess(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
-	m.successCount += 1
+func (m *mockActions) actionOn(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+	m.onCount += 1
+	return nil
+}
+
+func (m *mockActions) actionOff(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+	m.offCount += 1
 	return nil
 }
 
@@ -38,15 +45,25 @@ func (m *mockActions) actionError(r actions.ActionRegistrar, s *status.Status, a
 	return fmt.Errorf("Mock Error")
 }
 
+func (m mockActions) verify(c *check.C, on, off, err int) {
+	c.Check(m.onCount, check.Equals, on)
+	c.Check(m.offCount, check.Equals, off)
+	c.Check(m.errorCount, check.Equals, err)
+}
+
 func newMockActions() *mockActions {
 	results := &mockActions{}
 
 	results.registrar = actions.ActionRegistrar{
-		"success": results.actionSuccess,
-		"error":   results.actionError}
+		"on":    results.actionOn,
+		"off":   results.actionOff,
+		"error": results.actionError}
 
-	results.actionSuccessBody = &status.Status{}
-	results.actionSuccessBody.Set("status://action", "success", 0)
+	results.actionOnBody = &status.Status{}
+	results.actionOnBody.Set("status://action", "on", 0)
+
+	results.actionOffBody = &status.Status{}
+	results.actionOffBody.Set("status://action", "off", 0)
 
 	results.actionErrorBody = &status.Status{}
 	results.actionErrorBody.Set("status://action", "error", 0)
@@ -82,7 +99,7 @@ func (suite *MySuite) TestRuleStartStop(c *check.C) {
 			"condition": {
 				"test": "base"
 			},
-			"action": null
+			"on": null
 		}`),
 		status.UNCHECKED_REVISION)
 	c.Assert(e, check.IsNil)
@@ -92,10 +109,10 @@ func (suite *MySuite) TestRuleStartStop(c *check.C) {
 
 	rule.Stop()
 
-	c.Check(mockActions.successCount, check.Equals, 0)
+	mockActions.verify(c, 0, 0, 0)
 }
 
-func (suite *MySuite) TestRuleFireSingle(c *check.C) {
+func (suite *MySuite) TestRuleOnFireSingle(c *check.C) {
 	s := &status.Status{}
 	mockActions := newMockActions()
 	mockCondition := &mockCondition{make(chan bool)}
@@ -105,19 +122,21 @@ func (suite *MySuite) TestRuleFireSingle(c *check.C) {
 		mockActions.registrar,
 		"Test Rule Single",
 		mockCondition,
-		mockActions.actionSuccessBody,
+		mockActions.actionOnBody,
+		mockActions.actionOffBody,
 		stoppable.NewBase()}
 
 	rule.start()
 
 	mockCondition.result <- true
+	mockCondition.result <- false
 
 	rule.Stop()
 
-	c.Check(mockActions.successCount, check.Equals, 1)
+	mockActions.verify(c, 1, 1, 0)
 }
 
-func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
+func (suite *MySuite) TestRuleOnOffFireRepeated(c *check.C) {
 	s := &status.Status{}
 	mockActions := newMockActions()
 	mockCondition := &mockCondition{make(chan bool)}
@@ -127,7 +146,8 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 		mockActions.registrar,
 		"Test Rule Repeated",
 		mockCondition,
-		mockActions.actionSuccessBody,
+		mockActions.actionOnBody,
+		mockActions.actionOffBody,
 		stoppable.NewBase()}
 
 	rule.start()
@@ -136,17 +156,68 @@ func (suite *MySuite) TestRuleFireRepeated(c *check.C) {
 	// to toggle rationally.
 	mockCondition.result <- true
 	mockCondition.result <- false
-	mockCondition.result <- false
-
-	mockCondition.result <- true
-	mockCondition.result <- true
-
 	mockCondition.result <- true
 	mockCondition.result <- false
 
 	rule.Stop()
 
-	c.Check(mockActions.successCount, check.Equals, 4)
+	mockActions.verify(c, 2, 2, 0)
+}
+
+func (suite *MySuite) TestRuleOnActionOnly(c *check.C) {
+	s := &status.Status{}
+	mockActions := newMockActions()
+	mockCondition := &mockCondition{make(chan bool)}
+
+	rule := &Rule{
+		s,
+		mockActions.registrar,
+		"Test Rule Repeated",
+		mockCondition,
+		mockActions.actionOnBody,
+		nil,
+		stoppable.NewBase()}
+
+	rule.start()
+
+	// Send several patterns of true/false since conditions are not required
+	// to toggle rationally.
+	mockCondition.result <- true
+	mockCondition.result <- false
+	mockCondition.result <- true
+	mockCondition.result <- false
+
+	rule.Stop()
+
+	mockActions.verify(c, 2, 0, 0)
+}
+
+func (suite *MySuite) TestRuleOffActionOnly(c *check.C) {
+	s := &status.Status{}
+	mockActions := newMockActions()
+	mockCondition := &mockCondition{make(chan bool)}
+
+	rule := &Rule{
+		s,
+		mockActions.registrar,
+		"Test Rule Repeated",
+		mockCondition,
+		nil,
+		mockActions.actionOffBody,
+		stoppable.NewBase()}
+
+	rule.start()
+
+	// Send several patterns of true/false since conditions are not required
+	// to toggle rationally.
+	mockCondition.result <- true
+	mockCondition.result <- false
+	mockCondition.result <- true
+	mockCondition.result <- false
+
+	rule.Stop()
+
+	mockActions.verify(c, 0, 2, 0)
 }
 
 func (suite *MySuite) TestRuleFireError(c *check.C) {
@@ -160,23 +231,18 @@ func (suite *MySuite) TestRuleFireError(c *check.C) {
 		"Test Rule Error",
 		mockCondition,
 		mockActions.actionErrorBody,
+		nil,
 		stoppable.NewBase()}
 
 	rule.start()
 
-	// Send several patterns of true/false since conditions are not required
-	// to toggle rationally.
+	// Send several actions to trigger errors.
 	mockCondition.result <- true
 	mockCondition.result <- false
-	mockCondition.result <- false
-
-	mockCondition.result <- true
-	mockCondition.result <- true
-
 	mockCondition.result <- true
 	mockCondition.result <- false
 
 	rule.Stop()
 
-	c.Check(mockActions.errorCount, check.Equals, 4)
+	mockActions.verify(c, 0, 0, 2)
 }

@@ -65,6 +65,11 @@ func (suite *MySuite) TestDailyParseTime(c *check.C) {
 	c.Check(fixedOffset, check.Equals, 11*time.Hour)
 	c.Check(e, check.IsNil)
 
+	timeType, fixedOffset, e = parseTime("23:00")
+	c.Check(timeType, check.Equals, fixed)
+	c.Check(fixedOffset, check.Equals, 23*time.Hour)
+	c.Check(e, check.IsNil)
+
 	timeType, fixedOffset, e = parseTime("12:00AM")
 	c.Check(timeType, check.Equals, fixed)
 	c.Check(fixedOffset, check.Equals, 0*time.Hour)
