@@ -77,7 +77,13 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 
 	event_url := device_url + "/events/" + event.Name
 
-	a.status.Set(event_url+"/data", event.Data, status.UNCHECKED_REVISION)
+	// Event data may be in JSON.
+	data_url := event_url + "/data"
+	err := a.status.SetJson(data_url, []byte(event.Data), status.UNCHECKED_REVISION)
+	if err != nil {
+		// Not valid JSON, treat as a simple string.
+		a.status.Set(data_url, event.Data, status.UNCHECKED_REVISION)
+	}
 	a.status.Set(event_url+"/published", event.Published_at, status.UNCHECKED_REVISION)
 }
 
