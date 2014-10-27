@@ -173,11 +173,11 @@ Whenever the condition transitions to true, the on action if fired.
 
 Whenever the condition transitions to false, the off action is fired.
 
-"<name>": {
-  "condition": "<condition>",
-  "on": <action>    (optional)
-  "off": <action>   (optional)
-},
+    "<name>": {
+      "condition": "<condition>",
+      "on": <action>    (optional)
+      "off": <action>   (optional)
+    },
 
 ####Conditions
 
