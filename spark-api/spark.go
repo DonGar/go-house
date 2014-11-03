@@ -58,10 +58,8 @@ func (s *SparkApi) Updates() (<-chan []Device, <-chan Event) {
 	if s.deviceUpdates == nil {
 		s.deviceUpdates = make(chan []Device)
 		s.events = make(chan Event)
-		go func() {
-			s.listenEvents <- true
-			s.refreshDevices <- true
-		}()
+		// Start listening for events, which also kicks off device refresh.
+		go func() { s.listenEvents <- true }()
 	}
 
 	return s.deviceUpdates, s.events
@@ -107,16 +105,28 @@ func (s *SparkApi) handler() {
 	var eventResponse *http.Response
 	var err error
 
+	// We don't need an exact timing, just... occasionally.
+	refreshTimer := time.NewTicker(24 * time.Hour)
+
 	// Start our event handling loop.
 	for {
 		select {
 		case <-s.StopChan:
+			refreshTimer.Stop()
 			if eventResponse != nil {
 				eventResponse.Body.Close()
 			}
 
 			s.StopChan <- true
 			return
+
+		case <-refreshTimer.C:
+			// Refresh our device list, at least once a day.
+			go func() {
+				if s.deviceUpdates != nil {
+					s.refreshDevices <- true
+				}
+			}()
 
 		case <-s.refreshDevices:
 			s.devices, err = s.discoverDevices()
@@ -132,13 +142,15 @@ func (s *SparkApi) handler() {
 			eventResponse, reader, err = s.openEventConnection()
 			if err == nil {
 				go func() {
+					s.refreshDevices <- true
+
 					// readEvents never returns without an error.
 					// On it's exit, log, and signal ourselves to reconnect.
 					err = s.readEvents(reader)
 					log.Println("readEvents failed: ", err.Error())
 
 					// Try to reconnect, after a delay.
-					time.Sleep(10 * time.Second)
+					time.Sleep(20 * time.Second)
 					s.listenEvents <- true
 				}()
 			} else {
