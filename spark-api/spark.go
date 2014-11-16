@@ -100,8 +100,14 @@ func (s *SparkApi) readEvents(reader *bufio.Reader) error {
 	}
 }
 
-func (s *SparkApi) handler() {
+func (s *SparkApi) reconnectAfterDelay() {
+	// Try to reconnect the even listener, after a delay.
+	time.Sleep(20 * time.Second)
+	log.Println("Requesting new Spark API connection.")
+	s.listenEvents <- true
+}
 
+func (s *SparkApi) handler() {
 	var eventResponse *http.Response
 	var err error
 
@@ -137,25 +143,24 @@ func (s *SparkApi) handler() {
 
 		case <-s.listenEvents:
 			var reader *bufio.Reader
-			var err error
 
 			eventResponse, reader, err = s.openEventConnection()
-			if err == nil {
-				go func() {
-					s.refreshDevices <- true
-
-					// readEvents never returns without an error.
-					// On it's exit, log, and signal ourselves to reconnect.
-					err = s.readEvents(reader)
-					log.Println("readEvents failed: ", err.Error())
-
-					// Try to reconnect, after a delay.
-					time.Sleep(20 * time.Second)
-					s.listenEvents <- true
-				}()
-			} else {
+			if err != nil {
 				log.Println("openEventConnection failed: ", err.Error())
+				go s.reconnectAfterDelay()
 			}
+
+			go func() {
+				// If we successfully opened and event connection, refresh our device list.
+				s.refreshDevices <- true
+
+				// readEvents never returns without an error. Always reconnect.
+				err = s.readEvents(reader)
+				if err != nil {
+					log.Println("readEvents failed: ", err.Error())
+				}
+				go s.reconnectAfterDelay()
+			}()
 		}
 	}
 }
