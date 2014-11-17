@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	PORT          = "status://server/port"
-	CONFIG_DIR    = "status://server/config"
-	STATIC_DIR    = "status://server/static"
-	DOWNLOADS_DIR = "status://server/downloads"
 	ADAPTERS      = "status://server/adapters"
+	CONFIG_DIR    = "status://server/config"
+	DOWNLOADS_DIR = "status://server/downloads"
+	LOG_FILE      = "status://server/logfile"
+	PORT          = "status://server/port"
+	STATIC_DIR    = "status://server/static"
 )
 
 // Load the initial server config into our status struct.

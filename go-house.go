@@ -1,9 +1,6 @@
 package main
 
 import (
-	// "github.com/cpucycle/astrotime"
-	"log"
-	// "time"
 	"github.com/DonGar/go-house/adapter"
 	"github.com/DonGar/go-house/engine"
 	"github.com/DonGar/go-house/http-server"
@@ -11,6 +8,7 @@ import (
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"io"
+	"log"
 	"os"
 )
 
@@ -25,22 +23,37 @@ func mainWork() error {
 
 	// Load the initial config, and parse command line arguments.
 	// All settings are stored in status://server.
-	e := options.IntializeServerConfig(status, os.Args)
-	if e != nil {
-		return e
+	err := options.IntializeServerConfig(status, os.Args)
+	if err != nil {
+		return err
 	}
 
+	// Redirect logging to include a log file, if listed in options.
+	logfileName, err := status.GetString(options.LOG_FILE)
+	if err == nil {
+		logfile, err := os.Create(logfileName)
+		if err != nil {
+			return err
+		}
+
+		// Write to the log file, along with other targets.
+		log.SetOutput(io.MultiWriter(os.Stderr, cachedLogging, logfile))
+	}
+
+	// Setup syslog writting.
+	//syslogWriter, err := syslog.New(syslog.LOG_NOTICE, "go-house")
+
 	// Start the engine (rules, properties, active reactions)
-	engine, e := engine.NewEngine(status)
-	if e != nil {
-		return e
+	engine, err := engine.NewEngine(status)
+	if err != nil {
+		return err
 	}
 	defer engine.Stop()
 
 	// Start the AdapterManager.
-	adapterMgr, e := adapter.NewManager(status)
-	if e != nil {
-		return e
+	adapterMgr, err := adapter.NewManager(status)
+	if err != nil {
+		return err
 	}
 	defer adapterMgr.Stop()
 
@@ -49,7 +62,7 @@ func mainWork() error {
 }
 
 func main() {
-	if e := mainWork(); e != nil {
-		panic(e)
+	if err := mainWork(); err != nil {
+		log.Panic(err)
 	}
 }
