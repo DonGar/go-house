@@ -17,10 +17,11 @@ var TOKENS_URL string = SPARK_IO_URL + "v1/access_tokens"
 type ResponseError struct {
 	Status     string
 	StatusCode int
+	BodyText   string
 }
 
 func (r ResponseError) Error() string {
-	return "Request got code: " + r.Status
+	return "Request got code: " + r.Status + "\nBody:\n" + r.BodyText
 }
 
 // Helper method that makes a request, and reads the result body into an []byte.
@@ -35,8 +36,9 @@ func requestToResponse(request *http.Request) (*http.Response, error) {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		response.Body.Close()
-		return nil, ResponseError{response.Status, response.StatusCode}
+		// Read the full response, ignore a read error.
+		bodyText, _ := ioutil.ReadAll(response.Body)
+		return nil, ResponseError{response.Status, response.StatusCode, string(bodyText)}
 	}
 
 	return response, err
