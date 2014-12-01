@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 var OAUTH_URL string = SPARK_IO_URL + "oauth/token"
@@ -126,9 +127,24 @@ func lookupToken(username, password string) (token string, err error) {
 		return "", err
 	}
 
-	// We found it.
-	if len(parsedResponse) > 0 {
-		return parsedResponse[0].Token, nil
+	// We only count tokens as valid if they still have > 12 hours left.
+	valid := time.Now().Add(12 * time.Hour)
+
+	// The server will return expired tokens in the response, so check dates for
+	// a valid one.
+	for _, token := range parsedResponse {
+
+		tokenExpires, err := time.Parse(time.RFC3339, token.Expires_at)
+		if err != nil {
+			// If we can't parse the time on the token, we got bogus data from the
+			// server. Report it up the chain.
+			return "", err
+		}
+
+		if tokenExpires.After(valid) {
+			// We found a valid token, use it!
+			return token.Token, nil
+		}
 	}
 
 	// We didn't find one.
