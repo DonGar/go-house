@@ -68,11 +68,11 @@ func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Respo
 	// If we have a token, try to use it. It might fail if the token is
 	// expired.
 	if s.token != "" {
-		bodyText, err := s.urlToResponseWithToken(requestUrl)
+		response, err := s.urlToResponseWithToken(requestUrl)
 
 		// If it worked, we are done.
 		if err == nil {
-			return bodyText, err
+			return response, err
 		}
 
 		// Exit if not a we are sure a token refresh won't help.
