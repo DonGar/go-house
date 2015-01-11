@@ -34,7 +34,7 @@ func (s *SparkApi) discoverDevices() ([]Device, error) {
 
 	err = json.Unmarshal(bodyText, &parsedResponse)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Can't unmarshel device: %s\n%s", err, string(bodyText))
 	}
 
 	devices := make([]Device, len(parsedResponse))
@@ -82,7 +82,7 @@ func (s *SparkApi) discoverDeviceDetails(device *Device) (e error) {
 
 	err = json.Unmarshal(bodyText, &parsedResponse)
 	if err != nil {
-		return err
+		return fmt.Errorf("Can't unmarshel device details: %s\n%s", err, string(bodyText))
 	}
 
 	// There are a wide variety of error responses, but none seem
