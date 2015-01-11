@@ -32,15 +32,18 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 		sparkapi.NewSparkApi(username, password),
 	}
 
-	// Create the root for the core devices we are about to discover.
-	e = sa.status.SetJson(sa.adapterUrl+"/core", []byte(`{}`), status.UNCHECKED_REVISION)
-
 	go sa.Handler()
 
 	return sa, nil
 }
 
 func (a *sparkAdapter) Handler() {
+
+	// Create the root for the core devices we are about to discover.
+	err := a.status.SetJson(a.adapterUrl+"/core", []byte(`{}`), status.UNCHECKED_REVISION)
+	if err != nil {
+		panic(err)
+	}
 
 	deviceUpdates, events := a.SparkApiInterface.Updates()
 
@@ -121,7 +124,7 @@ func (a sparkAdapter) updateDeviceList(devices []sparkapi.Device) {
 	// Remove any old cores that don't exist any more.
 	oldNames, err := a.status.GetChildNames(core_url)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 OldNames:
@@ -132,16 +135,43 @@ OldNames:
 			}
 		}
 
-		a.status.Remove(core_url+"/"+old, status.UNCHECKED_REVISION)
+		err = a.status.Remove(core_url+"/"+old, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// Add/update devices that exist.
 	for _, d := range devices {
 		device_url := core_url + "/" + d.Name
-		a.status.Set(device_url+"/id", d.Id, status.UNCHECKED_REVISION)
-		a.status.Set(device_url+"/last_heard", d.LastHeard, status.UNCHECKED_REVISION)
-		a.status.Set(device_url+"/connected", d.Connected, status.UNCHECKED_REVISION)
-		a.status.Set(device_url+"/variables", d.Variables, status.UNCHECKED_REVISION)
-		a.status.Set(device_url+"/functions", d.Functions, status.UNCHECKED_REVISION)
+		err = a.status.Set(device_url+"/id", d.Id, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
+
+		err = a.status.Set(device_url+"/last_heard", d.LastHeard, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
+
+		err = a.status.Set(device_url+"/connected", d.Connected, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
+
+		err = a.status.Set(device_url+"/variables", d.Variables, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
+
+		funcNames := make([]interface{}, len(d.Functions))
+		for i, name := range d.Functions {
+			funcNames[i] = name
+		}
+
+		err = a.status.Set(device_url+"/functions", funcNames, status.UNCHECKED_REVISION)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
