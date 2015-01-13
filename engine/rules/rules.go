@@ -10,18 +10,18 @@ import (
 )
 
 type Rule struct {
-	status          *status.Status
-	actionRegistrar actions.ActionRegistrar
-	name            string // name of this rule.
-	condition       conditions.Condition
-	actionOn        *status.Status // Substatus of the rule's action.
-	actionOff       *status.Status // Substatus of the rule's action.
+	status        *status.Status
+	actionManager *actions.ActionManager
+	name          string // name of this rule.
+	condition     conditions.Condition
+	actionOn      *status.Status // Substatus of the rule's action.
+	actionOff     *status.Status // Substatus of the rule's action.
 	stoppable.Base
 }
 
 func NewRule(
 	status *status.Status,
-	actionRegistrar actions.ActionRegistrar,
+	actionManager *actions.ActionManager,
 	name string,
 	ruleBody *status.Status) (*Rule, error) {
 
@@ -46,7 +46,7 @@ func NewRule(
 
 	result := &Rule{
 		status,
-		actionRegistrar,
+		actionManager,
 		name,
 		condition,
 		actionOn,
@@ -71,12 +71,12 @@ func (r *Rule) Handler() {
 			if condValue {
 				if r.actionOn != nil {
 					log.Println("Firing rule On: ", r.name)
-					err = actions.FireAction(r.status, r.actionRegistrar, r.actionOn)
+					err = r.actionManager.FireAction(r.status, r.actionOn)
 				}
 			} else {
 				if r.actionOff != nil {
 					log.Println("Firing rule Off: ", r.name)
-					err = actions.FireAction(r.status, r.actionRegistrar, r.actionOff)
+					err = r.actionManager.FireAction(r.status, r.actionOff)
 				}
 			}
 			if err != nil {

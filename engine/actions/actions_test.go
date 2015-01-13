@@ -23,17 +23,17 @@ type mockActionResults struct {
 
 const MOCK_FAILURE_MSG = "Mock Action Failed."
 
-func (m *mockActionResults) success(r ActionRegistrar, s *status.Status, action *status.Status) error {
+func (m *mockActionResults) success(s *status.Status, action *status.Status) error {
 	m.successCalls += 1
 	return nil
 }
 
-func (m *mockActionResults) fail(r ActionRegistrar, s *status.Status, action *status.Status) error {
+func (m *mockActionResults) fail(s *status.Status, action *status.Status) error {
 	m.failCalls += 1
 	return fmt.Errorf(MOCK_FAILURE_MSG)
 }
 
-func (m *mockActionResults) fetch(r ActionRegistrar, s *status.Status, action *status.Status) error {
+func (m *mockActionResults) fetch(s *status.Status, action *status.Status) error {
 	url, e := action.GetString("status://url")
 	if e != nil {
 		return e
@@ -44,12 +44,13 @@ func (m *mockActionResults) fetch(r ActionRegistrar, s *status.Status, action *s
 	return nil
 }
 
-func (m *mockActionResults) registrar() ActionRegistrar {
-	return ActionRegistrar{
-		"success": m.success,
-		"fail":    m.fail,
-		"fetch":   m.fetch,
-	}
+func (m *mockActionResults) mgr() *ActionManager {
+	result := NewActionManager()
+	result.RegisterAction("success", m.success)
+	result.RegisterAction("fail", m.fail)
+	result.RegisterAction("fetch", m.fetch)
+
+	return result
 }
 
 func setupTestActionEnv(c *check.C) (r *mockActionResults, s *status.Status, a *status.Status) {
@@ -70,10 +71,56 @@ func setupTestActionEnv(c *check.C) (r *mockActionResults, s *status.Status, a *
 	return r, s, a
 }
 
+func (suite *MySuite) TestActionManagerRegisterUnRegister(c *check.C) {
+
+	var testAction Action = func(s *status.Status, action *status.Status) error { return nil }
+
+	mgr := NewActionManager()
+
+	// Register a couple of actions.
+	err := mgr.RegisterAction("foo", testAction)
+	c.Check(err, check.IsNil)
+
+	err = mgr.RegisterAction("bar", testAction)
+	c.Check(err, check.IsNil)
+
+	// Register one a second time.
+	err = mgr.RegisterAction("foo", testAction)
+	c.Check(err, check.ErrorMatches, "Action: Already Exists: .*")
+
+	// Look one up.
+	resultAction, err := mgr.lookupAction("foo")
+	c.Check(err, check.IsNil)
+	c.Check(resultAction, check.NotNil)
+
+	// Remove it.
+	err = mgr.UnRegisterAction("foo")
+	c.Check(err, check.IsNil)
+
+	// Make sure we can't look it up.
+	resultAction, err = mgr.lookupAction("foo")
+	c.Check(err, check.ErrorMatches, "Action: Not Registered: .*")
+	c.Check(resultAction, check.IsNil)
+
+	// Look up the other action to make sure it's still valid.
+	resultAction, err = mgr.lookupAction("bar")
+	c.Check(err, check.IsNil)
+	c.Check(resultAction, check.NotNil)
+
+	// Look up an unknown action.
+	resultAction, err = mgr.lookupAction("unknown")
+	c.Check(err, check.ErrorMatches, "Action: Not Registered: .*")
+	c.Check(resultAction, check.IsNil)
+
+	// Unregister up an unknown action.
+	err = mgr.UnRegisterAction("unknown")
+	c.Check(err, check.ErrorMatches, "Action: Not Registered: .*")
+}
+
 func (suite *MySuite) TestFireActionNil(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.ErrorMatches, "Action: Can't perform .*")
 	c.Check(r.successCalls, check.Equals, 0)
@@ -85,7 +132,7 @@ func (suite *MySuite) TestFireActionStringRedirect(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", "status://action/actionSuccess", 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.IsNil)
 	c.Check(r.successCalls, check.Equals, 1)
@@ -97,7 +144,7 @@ func (suite *MySuite) TestFireActionStringRedirectHttp(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", "http://foo/", 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.IsNil)
 	c.Check(r.successCalls, check.Equals, 0)
@@ -110,7 +157,7 @@ func (suite *MySuite) TestFireActionStringRedirectBadLocation(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", "status://bogus/redirect", 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.ErrorMatches, "Status: Node status://bogus of status://bogus/redirect does not exist.")
 	c.Check(r.successCalls, check.Equals, 0)
@@ -124,7 +171,7 @@ func (suite *MySuite) TestFireActionArray(c *check.C) {
 		"status://action/actionSuccess",
 		"status://action/actionSuccess"}, 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.IsNil)
 	c.Check(r.successCalls, check.Equals, 2)
@@ -139,7 +186,7 @@ func (suite *MySuite) TestFireActionArrayFailure(c *check.C) {
 		"status://action/actionFail",
 		"status://action/actionSuccess"}, 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.ErrorMatches, MOCK_FAILURE_MSG)
 	c.Check(r.successCalls, check.Equals, 1)
@@ -151,7 +198,7 @@ func (suite *MySuite) TestFireActionDict(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", map[string]interface{}{"action": "success"}, 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.IsNil)
 	c.Check(r.successCalls, check.Equals, 1)
@@ -163,7 +210,7 @@ func (suite *MySuite) TestFireActionDictFail(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", map[string]interface{}{"action": "fail"}, 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
 	c.Check(e, check.ErrorMatches, MOCK_FAILURE_MSG)
 	c.Check(r.successCalls, check.Equals, 0)
@@ -171,13 +218,13 @@ func (suite *MySuite) TestFireActionDictFail(c *check.C) {
 	c.Check(r.httpCalls, check.Equals, 0)
 }
 
-func (suite *MySuite) TestFireActionRegistrarUnknown(c *check.C) {
+func (suite *MySuite) TestFireActionManagerUnknown(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", map[string]interface{}{"action": "unknown"}, 0)
 
-	e := FireAction(s, r.registrar(), a)
+	e := r.mgr().FireAction(s, a)
 
-	c.Check(e, check.ErrorMatches, "Action: No registered action: unknown")
+	c.Check(e, check.ErrorMatches, "Action: Not Registered: unknown")
 	c.Check(r.successCalls, check.Equals, 0)
 	c.Check(r.failCalls, check.Equals, 0)
 	c.Check(r.httpCalls, check.Equals, 0)

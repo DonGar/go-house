@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/DonGar/go-house/adapter"
 	"github.com/DonGar/go-house/engine"
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/http-server"
 	"github.com/DonGar/go-house/logging"
 	"github.com/DonGar/go-house/options"
@@ -43,8 +44,12 @@ func mainWork() error {
 	// Setup syslog writting.
 	//syslogWriter, err := syslog.New(syslog.LOG_NOTICE, "go-house")
 
+	// Create the action registrar
+	actionsMgr := actions.NewActionManager()
+	actions.RegisterStandardActions(actionsMgr)
+
 	// Start the engine (rules, properties, active reactions)
-	engine, err := engine.NewEngine(status)
+	engine, err := engine.NewEngine(status, actionsMgr)
 	if err != nil {
 		return err
 	}

@@ -4,27 +4,63 @@ import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
 	"strings"
+	"sync"
 )
 
 // This is the signature of an action implementation.
-type Action func(r ActionRegistrar, s *status.Status, action *status.Status) (e error)
+type Action func(s *status.Status, action *status.Status) (e error)
 
-// Type for storing the known actions. Use StandardActions in production, but
-// mock it out for tests.
-type ActionRegistrar map[string]Action
+// Type for tracking the known actions in a thread safe manner.
+type ActionManager struct {
+	lock    sync.Mutex
+	actions map[string]Action
+}
 
-func StandardActions() ActionRegistrar {
-	return ActionRegistrar{
-		"set":   actionSet,
-		"wol":   actionWol,
-		"ping":  actionPing,
-		"fetch": actionFetch,
-		"email": actionEmail,
+func NewActionManager() *ActionManager {
+	return &ActionManager{sync.Mutex{}, map[string]Action{}}
+}
+
+func (a *ActionManager) RegisterAction(name string, action Action) error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	_, ok := a.actions[name]
+	if ok {
+		return fmt.Errorf("Action: Already Exists: %s", name)
+	}
+
+	a.actions[name] = action
+	return nil
+}
+
+func (a *ActionManager) UnRegisterAction(name string) error {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	_, ok := a.actions[name]
+	if !ok {
+		return fmt.Errorf("Action: Not Registered: %s", name)
+	}
+
+	delete(a.actions, name)
+	return nil
+}
+
+func (a *ActionManager) lookupAction(name string) (action Action, err error) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	action, ok := a.actions[name]
+
+	if ok {
+		return action, nil
+	} else {
+		return nil, fmt.Errorf("Action: Not Registered: %s", name)
 	}
 }
 
 // This method should always be used to fire any action.
-func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) error {
+func (am *ActionManager) FireAction(s *status.Status, action *status.Status) error {
 	actionValue, _, e := action.Get("status://")
 	if e != nil {
 		return e
@@ -45,7 +81,7 @@ func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) erro
 				fetchStatus.Set("status://url", typedAction, 1)
 
 				// Recurse. This let's us lookup and fire the fetch action normally.
-				return FireAction(s, r, fetchStatus)
+				return am.FireAction(s, fetchStatus)
 			}
 
 			// Some other error, probably that the status URL doesn't exist.
@@ -53,7 +89,7 @@ func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) erro
 		}
 
 		// We found it, fire it off!
-		return FireAction(s, r, redirectAction)
+		return am.FireAction(s, redirectAction)
 
 	case []interface{}:
 		// An array of actions means fire each one in order.
@@ -61,7 +97,7 @@ func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) erro
 			subActionStatus := &status.Status{}
 			subActionStatus.Set("status://", subActionValue, 0)
 
-			e = FireAction(s, r, subActionStatus)
+			e = am.FireAction(s, subActionStatus)
 			if e != nil {
 				return e
 			}
@@ -75,13 +111,13 @@ func FireAction(s *status.Status, r ActionRegistrar, action *status.Status) erro
 			return fmt.Errorf("Action: No action specified: %s", actionName)
 		}
 
-		actionMethod, ok := r[actionName]
-		if !ok {
-			return fmt.Errorf("Action: No registered action: %s", actionName)
+		actionMethod, e := am.lookupAction(actionName)
+		if e != nil {
+			return e
 		}
 
 		// Fire the looked up action.
-		return actionMethod(r, s, action)
+		return actionMethod(s, action)
 
 	default:
 		return fmt.Errorf("Action: Can't perform %#v", actionValue)

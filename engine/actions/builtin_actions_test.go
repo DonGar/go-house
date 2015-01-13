@@ -5,8 +5,7 @@ import (
 	"gopkg.in/check.v1"
 )
 
-func setupTestBuiltinActionEnv(c *check.C) (r *mockActionResults, s *status.Status, a *status.Status) {
-	r = &mockActionResults{}
+func setupTestBuiltinActionEnv(c *check.C) (s *status.Status, a *status.Status) {
 	s = &status.Status{}
 	a = &status.Status{}
 
@@ -32,11 +31,11 @@ func setupTestBuiltinActionEnv(c *check.C) (r *mockActionResults, s *status.Stat
 		}`), 0)
 	c.Assert(e, check.IsNil)
 
-	return r, s, a
+	return s, a
 }
 
 func (suite *MySuite) TestSet(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action":    "set",
 		"component": "status://adapter/host/hostA",
@@ -44,7 +43,7 @@ func (suite *MySuite) TestSet(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := actionSet(r.registrar(), s, a)
+	e := actionSet(s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -71,7 +70,7 @@ func (suite *MySuite) TestSet(c *check.C) {
 }
 
 func (suite *MySuite) TestSetWildcard(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action":    "set",
 		"component": "status://adapter/host/*",
@@ -79,7 +78,7 @@ func (suite *MySuite) TestSetWildcard(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := actionSet(r.registrar(), s, a)
+	e := actionSet(s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -108,7 +107,7 @@ func (suite *MySuite) TestSetWildcard(c *check.C) {
 }
 
 func (suite *MySuite) TestSetBadComponent(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action":    "set",
 		"component": "status://adapter/host/Nunya",
@@ -116,7 +115,7 @@ func (suite *MySuite) TestSetBadComponent(c *check.C) {
 		"value":     "new_value",
 	}, 0)
 
-	e := actionSet(r.registrar(), s, a)
+	e := actionSet(s, a)
 
 	c.Check(e, check.IsNil)
 
@@ -142,43 +141,43 @@ func (suite *MySuite) TestSetBadComponent(c *check.C) {
 }
 
 func (suite *MySuite) TestWol(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action":    "wol",
 		"component": "status://adapter/host/*",
 	}, 0)
 
-	e := actionWol(r.registrar(), s, a)
+	e := actionWol(s, a)
 
 	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestPing(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action":    "ping",
 		"component": "status://adapter/host/*",
 	}, 0)
 
-	e := actionPing(r.registrar(), s, a)
+	e := actionPing(s, a)
 
 	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestFetch(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	a.Set("status://", map[string]interface{}{
 		"action": "fetch",
 		"url":    "http://www.google.com/",
 	}, 0)
 
-	e := actionFetch(r.registrar(), s, a)
+	e := actionFetch(s, a)
 
 	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestFetchDownload(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 
 	tempDir := c.MkDir()
 	s.Set("status://server/downloads", tempDir, status.UNCHECKED_REVISION)
@@ -189,7 +188,7 @@ func (suite *MySuite) TestFetchDownload(c *check.C) {
 		"download_name": "foo.{time}.bar",
 	}, 0)
 
-	e := actionFetch(r.registrar(), s, a)
+	e := actionFetch(s, a)
 
 	c.Check(e, check.IsNil)
 }
@@ -215,7 +214,7 @@ func (suite *MySuite) TestExpandFileName(c *check.C) {
 }
 
 func (suite *MySuite) TestEmail(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",
 		"to":      "dgarrett@acm.org",
@@ -224,12 +223,12 @@ func (suite *MySuite) TestEmail(c *check.C) {
 	}, 0)
 	c.Assert(e, check.IsNil)
 
-	e = actionEmail(r.registrar(), s, a)
+	e = actionEmail(s, a)
 	c.Check(e, check.IsNil)
 }
 
 func (suite *MySuite) TestEmailAttached(c *check.C) {
-	r, s, a := setupTestBuiltinActionEnv(c)
+	s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",
 		"to":      "dgarrett@acm.org",
@@ -248,6 +247,6 @@ func (suite *MySuite) TestEmailAttached(c *check.C) {
 	}, 0)
 	c.Assert(e, check.IsNil)
 
-	e = actionEmail(r.registrar(), s, a)
+	e = actionEmail(s, a)
 	c.Check(e, check.IsNil)
 }

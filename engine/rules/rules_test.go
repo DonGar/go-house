@@ -21,7 +21,7 @@ var _ = check.Suite(&MySuite{})
 //
 
 type mockActions struct {
-	registrar       actions.ActionRegistrar
+	registrar       *actions.ActionManager
 	onCount         int
 	offCount        int
 	errorCount      int
@@ -30,17 +30,17 @@ type mockActions struct {
 	actionErrorBody *status.Status
 }
 
-func (m *mockActions) actionOn(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func (m *mockActions) actionOn(s *status.Status, action *status.Status) (e error) {
 	m.onCount += 1
 	return nil
 }
 
-func (m *mockActions) actionOff(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func (m *mockActions) actionOff(s *status.Status, action *status.Status) (e error) {
 	m.offCount += 1
 	return nil
 }
 
-func (m *mockActions) actionError(r actions.ActionRegistrar, s *status.Status, action *status.Status) (e error) {
+func (m *mockActions) actionError(s *status.Status, action *status.Status) (e error) {
 	m.errorCount += 1
 	return fmt.Errorf("Mock Error")
 }
@@ -54,10 +54,10 @@ func (m mockActions) verify(c *check.C, on, off, err int) {
 func newMockActions() *mockActions {
 	results := &mockActions{}
 
-	results.registrar = actions.ActionRegistrar{
-		"on":    results.actionOn,
-		"off":   results.actionOff,
-		"error": results.actionError}
+	results.registrar = actions.NewActionManager()
+	results.registrar.RegisterAction("on", results.actionOn)
+	results.registrar.RegisterAction("off", results.actionOff)
+	results.registrar.RegisterAction("error", results.actionError)
 
 	results.actionOnBody = &status.Status{}
 	results.actionOnBody.Set("status://action", "on", 0)

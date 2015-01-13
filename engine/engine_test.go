@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"testing"
@@ -13,6 +14,10 @@ func Test(t *testing.T) { check.TestingT(t) }
 type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
+
+func bogus_action(am actions.ActionManager, s *status.Status, action *status.Status) (e error) {
+	return nil
+}
 
 // This creates standard status/options objects used by most Adapters tests.
 func setupTestStatus(c *check.C) (s *status.Status) {
@@ -49,26 +54,28 @@ func setupTestStatus(c *check.C) (s *status.Status) {
 	return s
 }
 
-func (suite *MySuite) TestMgrStartStopEmpty(c *check.C) {
+func (suite *MySuite) TestEngineStartStopEmpty(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := &status.Status{}
+	a := actions.NewActionManager()
 
-	engine, e := NewEngine(s)
+	engine, e := NewEngine(s, a)
 	c.Assert(e, check.IsNil)
 
 	// Stop it.
 	engine.Stop()
 }
 
-func (suite *MySuite) TestMgrStartStopPopulated(c *check.C) {
+func (suite *MySuite) TestEngineStartStopPopulated(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := setupTestStatus(c)
+	a := actions.NewActionManager()
 
-	engine, e := NewEngine(s)
+	engine, e := NewEngine(s, a)
 	c.Assert(e, check.IsNil)
 
 	// We give the watcher a little time to finish initializing.
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(time.Millisecond)
 	c.Check(len(engine.rules.active), check.Equals, 2)
 
 	// Stop it.
