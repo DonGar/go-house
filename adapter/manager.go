@@ -24,12 +24,19 @@ var adapterFactories = map[string]newAdapter{
 }
 
 func NewManager(status *status.Status, actionsMgr *actions.Manager) (mgr *Manager, e error) {
-
 	// Create the new manager.
 	mgr = &Manager{status, actionsMgr, map[string]adapter{}, map[string]adapter{}}
+	err := mgr.createAdapters()
+	if err != nil {
+		return nil, err
+	}
 
+	return mgr, nil
+}
+
+func (m *Manager) createAdapters() error {
 	// Look for adapter configs.
-	adapterTypes, e := status.GetChildNames(options.ADAPTERS)
+	adapterTypes, e := m.status.GetChildNames(options.ADAPTERS)
 	if e != nil {
 		// If there are no adapters configured, just don't set any up.
 		adapterTypes = []string{}
@@ -37,43 +44,46 @@ func NewManager(status *status.Status, actionsMgr *actions.Manager) (mgr *Manage
 
 	// Loop through the types of adapters.
 	for _, adapterType := range adapterTypes {
-
-		factory, ok := adapterFactories[adapterType]
-		if !ok {
-			return nil, fmt.Errorf("Adapter: Unknown type: %s.", adapterType)
-		}
-
-		adapterNames, e := status.GetChildNames(options.ADAPTERS + "/" + adapterType)
+		adapterNames, e := m.status.GetChildNames(options.ADAPTERS + "/" + adapterType)
 		if e != nil {
-			return nil, e
+			return e
 		}
 
 		// Loop through the adapters of a given type.
 		for _, name := range adapterNames {
-			adapterConfigUrl := options.ADAPTERS + "/" + adapterType + "/" + name
-			adapterUrl := "status://" + name
-
-			adapterConfig, _, e := status.GetSubStatus(adapterConfigUrl)
+			newAdapter, e := m.createAdaptor(adapterType, name)
 			if e != nil {
-				return nil, e
+				return e
 			}
 
-			log.Printf("Create Adapter: %s", name)
-			b, e := newBase(status, adapterConfig, adapterUrl)
-			if e != nil {
-				return nil, e
-			}
-
-			newAdapter, e := factory(mgr, b)
-			if e != nil {
-				return nil, e
-			}
-
-			mgr.adapters[name] = newAdapter
+			m.adapters[name] = newAdapter
 		}
 	}
 
-	return mgr, nil
+	return nil
+}
+
+func (m *Manager) createAdaptor(adapterType, name string) (adapter, error) {
+	adapterConfigUrl := options.ADAPTERS + "/" + adapterType + "/" + name
+	adapterUrl := "status://" + name
+
+	factory, ok := adapterFactories[adapterType]
+	if !ok {
+		return nil, fmt.Errorf("Adapter: Unknown type: %s.", adapterType)
+	}
+
+	adapterConfig, _, e := m.status.GetSubStatus(adapterConfigUrl)
+	if e != nil {
+		return nil, e
+	}
+
+	log.Printf("Create Adapter: %s", name)
+	b, e := newBase(m.status, adapterConfig, adapterUrl)
+	if e != nil {
+		return nil, e
+	}
+
+	return factory(m, b)
 }
 
 func (m *Manager) Stop() {
