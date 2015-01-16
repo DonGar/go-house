@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 )
@@ -8,6 +9,8 @@ import (
 func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := &status.Status{}
+	actionsMgr := actions.NewManager()
+
 	e := s.SetJson("status://",
 		[]byte(`
     {
@@ -28,7 +31,7 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 
 	// Create the manager.
 	var mgr *Manager
-	mgr, e = NewManager(s)
+	mgr, e = NewManager(s, actionsMgr)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
@@ -41,10 +44,11 @@ func (suite *MySuite) TestMgrBaseAdapters(c *check.C) {
 
 func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	s := setupTestStatus(c)
+	actionsMgr := actions.NewManager()
 
 	// Create the manager.
 	var mgr *Manager
-	mgr, e := NewManager(s)
+	mgr, e := NewManager(s, actionsMgr)
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.

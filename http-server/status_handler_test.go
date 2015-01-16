@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/DonGar/go-house/adapter"
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"net/http"
@@ -13,8 +14,9 @@ import (
 
 func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
+	actionsMgr := actions.NewManager()
 
-	adapterMgr, e := adapter.NewManager(status)
+	adapterMgr, e := adapter.NewManager(status, actionsMgr)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{
@@ -25,6 +27,7 @@ func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 
 func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
+	actionsMgr := actions.NewManager()
 
 	// Add a web adapter.
 	e := status.SetJson("status://",
@@ -41,7 +44,7 @@ func setupStatusHandlerWithAdapter(c *check.C) (statusHandler *StatusHandler) {
 		0)
 	c.Assert(e, check.IsNil)
 
-	adapterMgr, e := adapter.NewManager(status)
+	adapterMgr, e := adapter.NewManager(status, actionsMgr)
 	c.Assert(e, check.IsNil)
 
 	return &StatusHandler{

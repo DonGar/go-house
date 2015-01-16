@@ -2,18 +2,18 @@ package adapter
 
 import (
 	"fmt"
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/options"
 	"github.com/DonGar/go-house/status"
 	"log"
 )
 
 type Manager struct {
-	status   *status.Status
-	adapters map[string]adapter // Map configUrl to Adapter.
-	webUrls  map[string]adapter // These are updated directly by WebAdapter.
+	status     *status.Status
+	actionsMgr *actions.Manager
+	adapters   map[string]adapter // Map options.ADAPTERS to Adapter.
+	webUrls    map[string]adapter // These are updated directly by WebAdapter.
 }
-
-var configUrl = options.ADAPTERS
 
 // Map type name to factory method.
 var adapterFactories = map[string]newAdapter{
@@ -23,13 +23,13 @@ var adapterFactories = map[string]newAdapter{
 	"web":   newWebAdapter,
 }
 
-func NewManager(status *status.Status) (mgr *Manager, e error) {
+func NewManager(status *status.Status, actionsMgr *actions.Manager) (mgr *Manager, e error) {
 
 	// Create the new manager.
-	mgr = &Manager{status, map[string]adapter{}, map[string]adapter{}}
+	mgr = &Manager{status, actionsMgr, map[string]adapter{}, map[string]adapter{}}
 
 	// Look for adapter configs.
-	adapterTypes, e := status.GetChildNames(configUrl)
+	adapterTypes, e := status.GetChildNames(options.ADAPTERS)
 	if e != nil {
 		// If there are no adapters configured, just don't set any up.
 		adapterTypes = []string{}
@@ -43,14 +43,14 @@ func NewManager(status *status.Status) (mgr *Manager, e error) {
 			return nil, fmt.Errorf("Adapter: Unknown type: %s.", adapterType)
 		}
 
-		adapterNames, e := status.GetChildNames(configUrl + "/" + adapterType)
+		adapterNames, e := status.GetChildNames(options.ADAPTERS + "/" + adapterType)
 		if e != nil {
 			return nil, e
 		}
 
 		// Loop through the adapters of a given type.
 		for _, name := range adapterNames {
-			adapterConfigUrl := configUrl + "/" + adapterType + "/" + name
+			adapterConfigUrl := options.ADAPTERS + "/" + adapterType + "/" + name
 			adapterUrl := "status://" + name
 
 			adapterConfig, _, e := status.GetSubStatus(adapterConfigUrl)

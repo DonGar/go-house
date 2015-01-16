@@ -56,7 +56,7 @@ func mainWork() error {
 	defer engine.Stop()
 
 	// Start the AdapterManager.
-	adapterMgr, err := adapter.NewManager(status)
+	adapterMgr, err := adapter.NewManager(status, actionsMgr)
 	if err != nil {
 		return err
 	}
