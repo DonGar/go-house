@@ -21,7 +21,7 @@ var _ = check.Suite(&MySuite{})
 //
 
 type mockActions struct {
-	registrar       *actions.ActionManager
+	registrar       *actions.Manager
 	onCount         int
 	offCount        int
 	errorCount      int
@@ -54,7 +54,7 @@ func (m mockActions) verify(c *check.C, on, off, err int) {
 func newMockActions() *mockActions {
 	results := &mockActions{}
 
-	results.registrar = actions.NewActionManager()
+	results.registrar = actions.NewManager()
 	results.registrar.RegisterAction("on", results.actionOn)
 	results.registrar.RegisterAction("off", results.actionOff)
 	results.registrar.RegisterAction("error", results.actionError)

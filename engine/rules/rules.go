@@ -11,7 +11,7 @@ import (
 
 type Rule struct {
 	status        *status.Status
-	actionManager *actions.ActionManager
+	actionManager *actions.Manager
 	name          string // name of this rule.
 	condition     conditions.Condition
 	actionOn      *status.Status // Substatus of the rule's action.
@@ -21,7 +21,7 @@ type Rule struct {
 
 func NewRule(
 	status *status.Status,
-	actionManager *actions.ActionManager,
+	actionManager *actions.Manager,
 	name string,
 	ruleBody *status.Status) (*Rule, error) {
 

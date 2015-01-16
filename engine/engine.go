@@ -14,12 +14,12 @@ const properties_watch_url = "status://*/property/*"
 
 type Engine struct {
 	status     *status.Status
-	actions    *actions.ActionManager
+	actions    *actions.Manager
 	rules      *watcher
 	properties *watcher
 }
 
-func NewEngine(status *status.Status, actions *actions.ActionManager) (engine *Engine, e error) {
+func NewEngine(status *status.Status, actions *actions.Manager) (engine *Engine, e error) {
 	engine = &Engine{status, actions, nil, nil}
 	engine.rules = newWatcher(status, rules_watch_url, engine.newRule)
 	engine.properties = newWatcher(status, properties_watch_url, engine.newProperty)

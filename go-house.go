@@ -45,7 +45,7 @@ func mainWork() error {
 	//syslogWriter, err := syslog.New(syslog.LOG_NOTICE, "go-house")
 
 	// Create the action registrar
-	actionsMgr := actions.NewActionManager()
+	actionsMgr := actions.NewManager()
 	actions.RegisterStandardActions(actionsMgr)
 
 	// Start the engine (rules, properties, active reactions)

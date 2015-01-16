@@ -11,16 +11,16 @@ import (
 type Action func(s *status.Status, action *status.Status) (e error)
 
 // Type for tracking the known actions in a thread safe manner.
-type ActionManager struct {
+type Manager struct {
 	lock    sync.Mutex
 	actions map[string]Action
 }
 
-func NewActionManager() *ActionManager {
-	return &ActionManager{sync.Mutex{}, map[string]Action{}}
+func NewManager() *Manager {
+	return &Manager{sync.Mutex{}, map[string]Action{}}
 }
 
-func (a *ActionManager) RegisterAction(name string, action Action) error {
+func (a *Manager) RegisterAction(name string, action Action) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -33,7 +33,7 @@ func (a *ActionManager) RegisterAction(name string, action Action) error {
 	return nil
 }
 
-func (a *ActionManager) UnRegisterAction(name string) error {
+func (a *Manager) UnRegisterAction(name string) error {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -46,7 +46,7 @@ func (a *ActionManager) UnRegisterAction(name string) error {
 	return nil
 }
 
-func (a *ActionManager) lookupAction(name string) (action Action, err error) {
+func (a *Manager) lookupAction(name string) (action Action, err error) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
@@ -60,7 +60,7 @@ func (a *ActionManager) lookupAction(name string) (action Action, err error) {
 }
 
 // This method should always be used to fire any action.
-func (am *ActionManager) FireAction(s *status.Status, action *status.Status) error {
+func (am *Manager) FireAction(s *status.Status, action *status.Status) error {
 	actionValue, _, e := action.Get("status://")
 	if e != nil {
 		return e

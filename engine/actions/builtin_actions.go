@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func RegisterStandardActions(am *ActionManager) {
+func RegisterStandardActions(am *Manager) {
 	am.RegisterAction("set", actionSet)
 	am.RegisterAction("wol", actionWol)
 	am.RegisterAction("ping", actionPing)

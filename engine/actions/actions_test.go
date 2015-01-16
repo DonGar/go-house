@@ -44,8 +44,8 @@ func (m *mockActionResults) fetch(s *status.Status, action *status.Status) error
 	return nil
 }
 
-func (m *mockActionResults) mgr() *ActionManager {
-	result := NewActionManager()
+func (m *mockActionResults) mgr() *Manager {
+	result := NewManager()
 	result.RegisterAction("success", m.success)
 	result.RegisterAction("fail", m.fail)
 	result.RegisterAction("fetch", m.fetch)
@@ -71,11 +71,11 @@ func setupTestActionEnv(c *check.C) (r *mockActionResults, s *status.Status, a *
 	return r, s, a
 }
 
-func (suite *MySuite) TestActionManagerRegisterUnRegister(c *check.C) {
+func (suite *MySuite) TestManagerRegisterUnRegister(c *check.C) {
 
 	var testAction Action = func(s *status.Status, action *status.Status) error { return nil }
 
-	mgr := NewActionManager()
+	mgr := NewManager()
 
 	// Register a couple of actions.
 	err := mgr.RegisterAction("foo", testAction)
@@ -218,7 +218,7 @@ func (suite *MySuite) TestFireActionDictFail(c *check.C) {
 	c.Check(r.httpCalls, check.Equals, 0)
 }
 
-func (suite *MySuite) TestFireActionManagerUnknown(c *check.C) {
+func (suite *MySuite) TestFireManagerUnknown(c *check.C) {
 	r, s, a := setupTestActionEnv(c)
 	a.Set("status://", map[string]interface{}{"action": "unknown"}, 0)
 

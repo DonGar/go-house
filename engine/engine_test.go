@@ -15,7 +15,7 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
-func bogus_action(am actions.ActionManager, s *status.Status, action *status.Status) (e error) {
+func bogus_action(am actions.Manager, s *status.Status, action *status.Status) (e error) {
 	return nil
 }
 
@@ -57,7 +57,7 @@ func setupTestStatus(c *check.C) (s *status.Status) {
 func (suite *MySuite) TestEngineStartStopEmpty(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := &status.Status{}
-	a := actions.NewActionManager()
+	a := actions.NewManager()
 
 	engine, e := NewEngine(s, a)
 	c.Assert(e, check.IsNil)
@@ -69,7 +69,7 @@ func (suite *MySuite) TestEngineStartStopEmpty(c *check.C) {
 func (suite *MySuite) TestEngineStartStopPopulated(c *check.C) {
 	// Setup a couple of base adapters and verify their contents.
 	s := setupTestStatus(c)
-	a := actions.NewActionManager()
+	a := actions.NewManager()
 
 	engine, e := NewEngine(s, a)
 	c.Assert(e, check.IsNil)
