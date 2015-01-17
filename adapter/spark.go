@@ -144,32 +144,21 @@ OldNames:
 	// Add/update devices that exist.
 	for _, d := range devices {
 		device_url := core_url + "/" + d.Name
-		err = a.status.Set(device_url+"/id", d.Id, status.UNCHECKED_REVISION)
-		if err != nil {
-			panic(err)
-		}
-
-		err = a.status.Set(device_url+"/last_heard", d.LastHeard, status.UNCHECKED_REVISION)
-		if err != nil {
-			panic(err)
-		}
-
-		err = a.status.Set(device_url+"/connected", d.Connected, status.UNCHECKED_REVISION)
-		if err != nil {
-			panic(err)
-		}
-
-		err = a.status.Set(device_url+"/variables", d.Variables, status.UNCHECKED_REVISION)
-		if err != nil {
-			panic(err)
-		}
 
 		funcNames := make([]interface{}, len(d.Functions))
 		for i, name := range d.Functions {
 			funcNames[i] = name
 		}
 
-		err = a.status.Set(device_url+"/functions", funcNames, status.UNCHECKED_REVISION)
+		coreContents := map[string]interface{}{
+			"id":         d.Id,
+			"last_heard": d.LastHeard,
+			"connected":  d.Connected,
+			"variables":  d.Variables,
+			"functions":  funcNames,
+		}
+
+		err = a.status.Set(device_url, coreContents, status.UNCHECKED_REVISION)
 		if err != nil {
 			panic(err)
 		}
