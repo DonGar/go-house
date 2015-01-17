@@ -41,14 +41,11 @@ func mainWork() error {
 		log.SetOutput(io.MultiWriter(os.Stderr, cachedLogging, logfile))
 	}
 
-	// Setup syslog writting.
-	//syslogWriter, err := syslog.New(syslog.LOG_NOTICE, "go-house")
-
 	// Create the action registrar
 	actionsMgr := actions.NewManager()
 	actions.RegisterStandardActions(actionsMgr)
 
-	// Start the engine (rules, properties, active reactions)
+	// Start the engine (rules, properties, etc)
 	engine, err := engine.NewEngine(status, actionsMgr)
 	if err != nil {
 		return err
