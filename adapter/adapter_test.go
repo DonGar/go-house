@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"github.com/DonGar/go-house/stoppable"
 	"gopkg.in/check.v1"
@@ -64,7 +65,7 @@ func setupTestAdapter(c *check.C, configUrl string, adapterUrl string) (s *statu
 	c.Assert(e, check.IsNil)
 
 	// We need just enough of a manager for our tests.
-	mgr = &Manager{webUrls: map[string]adapter{}}
+	mgr = &Manager{actionsMgr: actions.NewManager(), webUrls: map[string]adapter{}}
 
 	return
 }

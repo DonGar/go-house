@@ -1,15 +1,19 @@
 package adapter
 
 import (
+	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/spark-api"
 	"github.com/DonGar/go-house/status"
 	"log"
+	"path/filepath"
 	"strings"
 )
 
 type sparkAdapter struct {
 	base
 	sparkapi.SparkApiInterface
+	actionName string
+	actionsMgr *actions.Manager
 }
 
 func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
@@ -30,6 +34,8 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 	sa := &sparkAdapter{
 		b,
 		sparkapi.NewSparkApi(username, password),
+		filepath.Base(b.adapterUrl) + ".function",
+		m.actionsMgr,
 	}
 
 	go sa.Handler()
@@ -38,9 +44,13 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 }
 
 func (a *sparkAdapter) Handler() {
+	err := a.actionsMgr.RegisterAction(a.actionName, a.functionAction)
+	if err != nil {
+		panic(err)
+	}
 
 	// Create the root for the core devices we are about to discover.
-	err := a.status.SetJson(a.adapterUrl+"/core", []byte(`{}`), status.UNCHECKED_REVISION)
+	err = a.status.SetJson(a.adapterUrl+"/core", []byte(`{}`), status.UNCHECKED_REVISION)
 	if err != nil {
 		panic(err)
 	}
@@ -58,6 +68,11 @@ func (a *sparkAdapter) Handler() {
 			a.updateFromEvent(event)
 
 		case <-a.StopChan:
+			err := a.actionsMgr.UnRegisterAction(a.actionName)
+			if err != nil {
+				panic(err)
+			}
+
 			a.StopChan <- true
 			return
 		}
@@ -85,7 +100,11 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 	err := a.status.SetJson(data_url, []byte(event.Data), status.UNCHECKED_REVISION)
 	if err != nil {
 		// Not valid JSON, treat as a simple string.
-		a.status.Set(data_url, event.Data, status.UNCHECKED_REVISION)
+		err = a.status.Set(data_url, event.Data, status.UNCHECKED_REVISION)
+		if err != nil {
+			// Not possible/hard to handle
+			panic(err)
+		}
 	}
 	a.status.Set(event_url+"/published", event.Published_at, status.UNCHECKED_REVISION)
 }
@@ -150,12 +169,24 @@ OldNames:
 			funcNames[i] = name
 		}
 
+		actionsContents := map[string]interface{}{}
+		for _, name := range d.Functions {
+			actionContents := map[string]interface{}{
+				"action":   a.actionName,
+				"device":   d.Name,
+				"function": name,
+				"argument": "",
+			}
+			actionsContents[name] = actionContents
+		}
+
 		coreContents := map[string]interface{}{
 			"id":         d.Id,
 			"last_heard": d.LastHeard,
 			"connected":  d.Connected,
 			"variables":  d.Variables,
 			"functions":  funcNames,
+			"actions":    actionsContents,
 		}
 
 		err = a.status.Set(device_url, coreContents, status.UNCHECKED_REVISION)
@@ -163,4 +194,23 @@ OldNames:
 			panic(err)
 		}
 	}
+}
+
+func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e error) {
+	device, err := action.GetString("status://device")
+	if err != nil {
+		return err
+	}
+
+	function, err := action.GetString("status://function")
+	if err != nil {
+		return err
+	}
+
+	argument, err := action.GetString("status://argument")
+	if err != nil {
+		return err
+	}
+
+	return a.SparkApiInterface.CallFunction(device, function, argument)
 }
