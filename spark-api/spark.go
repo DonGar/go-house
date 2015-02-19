@@ -12,7 +12,7 @@ import (
 var SPARK_IO_URL string = "https://api.spark.io/"
 
 type SparkApiInterface interface {
-	CallFunction(device, function, argument string) error
+	CallFunction(device, function, argument string) (int, error)
 	Updates() (<-chan []Device, <-chan Event)
 	Stop()
 }
@@ -55,8 +55,8 @@ func NewSparkApi(username, password string) *SparkApi {
 	return s
 }
 
-func (s *SparkApi) CallFunction(device, function, argument string) error {
-	return nil
+func (s *SparkApi) CallFunction(device, function, argument string) (int, error) {
+	return -1, nil
 }
 
 func (s *SparkApi) Updates() (<-chan []Device, <-chan Event) {

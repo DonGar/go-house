@@ -212,5 +212,13 @@ func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e
 		return err
 	}
 
-	return a.SparkApiInterface.CallFunction(device, function, argument)
+	// Log detailed results.
+	result, err := a.SparkApiInterface.CallFunction(device, function, argument)
+	if err == nil {
+		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, result)
+	} else {
+		log.Printf("Spark %s.%s(%s) error: %s\n", device, function, argument, err)
+	}
+
+	return err
 }

@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	"errors"
 	"github.com/DonGar/go-house/spark-api"
+	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"time"
 )
@@ -49,9 +49,9 @@ func newMockSparkApi() *mockSparkApi {
 	}
 }
 
-func (s *mockSparkApi) CallFunction(device, function, argument string) error {
+func (s *mockSparkApi) CallFunction(device, function, argument string) (int, error) {
 	s.actionArgs = mockFunctionCall{device, function, argument}
-	return s.actionResult
+	return 0, s.actionResult
 }
 
 func (m *mockSparkApi) Updates() (<-chan []sparkapi.Device, <-chan sparkapi.Event) {
@@ -119,7 +119,7 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 	checkAdaptorContents(c, &b, `null`)
 }
 
-func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
+func (suite *MySuite) TestSparkAdapterActionGenerated(c *check.C) {
 	s, mgr, b := setupTestAdapter(c,
 		"status://server/adapters/spark/TestSpark", "status://TestSpark")
 
@@ -140,18 +140,93 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 
 	// Check that a normal calls work for both functions.
 	err = adaptor.actionsMgr.FireAction(s, action_a)
+	time.Sleep(time.Microsecond)
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "func_a", ""})
 	c.Check(err, check.IsNil)
 
 	err = adaptor.actionsMgr.FireAction(s, action_b)
+	time.Sleep(time.Microsecond)
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "func_b", ""})
 	c.Check(err, check.IsNil)
 
-	// Check that a failure is returns.
-	mock.actionResult = errors.New("Mock Error")
-	err = adaptor.actionsMgr.FireAction(s, action_a)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "func_a", ""})
-	c.Check(err, check.Equals, mock.actionResult)
-
 	adaptor.Stop()
+}
+
+func (suite *MySuite) TestSparkAdapterActionManual(c *check.C) {
+
+	s, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+
+	// Create a spark adapter.
+	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+
+	mock.devices <- []sparkapi.Device{deviceA, deviceB}
+
+	// Let the background routine catchup.
+	time.Sleep(time.Microsecond)
+
+	verifyFailure := func(actionContents map[string]interface{}) {
+		// Create action definition.
+		action := &status.Status{}
+		err := action.Set("status://", actionContents, status.UNCHECKED_REVISION)
+		c.Assert(err, check.IsNil)
+
+		// Fire Action
+		err = adaptor.actionsMgr.FireAction(s, action)
+
+		c.Check(err, check.NotNil)
+	}
+
+	verifySuccess := func(device, function, argument string) {
+		// Create action definition.
+		action := &status.Status{}
+		actionContents := map[string]interface{}{
+			"action":   "mock_action",
+			"device":   device,
+			"function": function,
+			"argument": argument,
+		}
+		err := action.Set("status://", actionContents, status.UNCHECKED_REVISION)
+		c.Assert(err, check.IsNil)
+
+		// Fire Action
+		err = adaptor.actionsMgr.FireAction(s, action)
+		c.Check(err, check.IsNil)
+		c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{device, function, argument})
+	}
+
+	// Verify assorted failure modes.
+
+	// Bogus action name.
+	verifyFailure(map[string]interface{}{
+		"action":   "bogus",
+		"device":   "dev",
+		"function": "func",
+		"argument": "arg",
+	})
+
+	// No device.
+	verifyFailure(map[string]interface{}{
+		"action":   "mock_action",
+		"function": "func",
+		"argument": "arg",
+	})
+
+	// No function.
+	verifyFailure(map[string]interface{}{
+		"action":   "mock_action",
+		"device":   "dev",
+		"argument": "arg",
+	})
+
+	// No argument.
+	verifyFailure(map[string]interface{}{
+		"action":   "mock_action",
+		"device":   "dev",
+		"function": "func",
+	})
+
+	// Test success cases.
+	verifySuccess("dev", "func", "")
+	verifySuccess("dev", "func", "arg")
 }
