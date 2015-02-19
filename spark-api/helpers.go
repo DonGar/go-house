@@ -45,20 +45,15 @@ func requestToResponse(request *http.Request) (*http.Response, error) {
 	return response, err
 }
 
-func (s *SparkApi) urlToResponseWithToken(requestUrl string) (*http.Response, error) {
+func (s *SparkApi) requestToResponseWithToken(request *http.Request) (*http.Response, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization.
-
-	request, err := http.NewRequest("GET", requestUrl, nil)
-	if err != nil {
-		return nil, err
-	}
 	request.Header.Set("Authorization", "Bearer "+s.token)
 
 	return requestToResponse(request)
 }
 
-func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
+func (s *SparkApi) requestToResponseWithTokenRefresh(request *http.Request) (*http.Response, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization. Lookup/refresh
 	// the token as needed.
@@ -68,7 +63,7 @@ func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Respo
 	// If we have a token, try to use it. It might fail if the token is
 	// expired.
 	if s.token != "" {
-		response, err := s.urlToResponseWithToken(requestUrl)
+		response, err := s.requestToResponseWithToken(request)
 
 		// If it worked, we are done.
 		if err == nil {
@@ -92,7 +87,18 @@ func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Respo
 	}
 
 	// Request with new token. If this fails, we are done.
-	return s.urlToResponseWithToken(requestUrl)
+	return s.requestToResponseWithToken(request)
+}
+
+func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
+	// Perform requestToResponseWithTokenRefresh from a URL.
+
+	request, err := http.NewRequest("GET", requestUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.requestToResponseWithTokenRefresh(request)
 }
 
 func lookupToken(username, password string) (token string, err error) {

@@ -16,14 +16,17 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 	sa := NewSparkApi(TEST_USER, TEST_PASS)
 
 	// We failed with a BadRequest error.
-	response, err := sa.urlToResponseWithToken(DEVICES_URL)
+	request, err := http.NewRequest("GET", DEVICES_URL, nil)
+	c.Assert(err, check.IsNil)
+
+	response, err := sa.requestToResponseWithToken(request)
 	responseError, ok := err.(ResponseError)
 	c.Check(ok, check.Equals, true)
 	c.Check(responseError.StatusCode, check.Equals, http.StatusBadRequest)
 	c.Check(response, check.IsNil)
 
 	// Do a token refresh.
-	response, err = sa.urlToResponseWithTokenRefresh(DEVICES_URL)
+	response, err = sa.requestToResponseWithTokenRefresh(request)
 	c.Check(err, check.IsNil)
 	c.Check(response, check.NotNil)
 	response.Body.Close()
@@ -32,7 +35,7 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 	c.Check(sa.token, check.Not(check.Equals), "")
 
 	// Redo the original request, and it works.
-	response, err = sa.urlToResponseWithToken(DEVICES_URL)
+	response, err = sa.requestToResponseWithToken(request)
 	c.Check(err, check.IsNil)
 	c.Check(response, check.NotNil)
 	response.Body.Close()

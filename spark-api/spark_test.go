@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// go test -network (in spark-api dir, only)
 var network = flag.Bool("network", false, "Include networking tests")
 
 var TEST_USER string = "house@bgb.cc"
@@ -55,6 +56,9 @@ func (suite *MySuite) TestUpdates(c *check.C) {
 }
 
 func (suite *MySuite) TestUpdatesStop(c *check.C) {
+	if !*network {
+		c.Skip("-network tests not enabled.")
+	}
 	// Start and stop right away, without waiting for results.
 	sa := NewSparkApi(TEST_USER, TEST_PASS)
 	_, _ = sa.Updates()
