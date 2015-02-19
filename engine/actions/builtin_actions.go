@@ -165,12 +165,8 @@ func actionFetch(s *status.Status, action *status.Status) (e error) {
 	fileName = expandFileName(s, fileName)
 
 	// Fetch the file, and download to fileName if fileName != ""
-	go func() {
-		_, e := performFetch(url, fileName)
-		errorHandler(e)
-	}()
-
-	return nil
+	_, e = performFetch(url, fileName)
+	return e
 }
 
 func performFetch(url, fileName string) (contentsBuffer []byte, e error) {
@@ -274,21 +270,18 @@ func actionEmail(s *status.Status, action *status.Status) (e error) {
 	relayPassword := values[3]
 	relayIdServer := values[4]
 
-	go func() {
-		attachments, e := fetchAttachments(attachments)
-		errorHandler(e)
+	attachementFiles, e := fetchAttachments(attachments)
+	if e != nil {
+		// If we got an error, log and add it to the message body.
+		log.Println("Error fetching attachements: ", e)
+		body = fmt.Sprintf("%s\n\nError fetching: %s", body, e.Error())
+	}
 
-		if e != nil {
-			// If we got an error fetching attachments, add it to the message body.
-			body = fmt.Sprintf("%s\n\nError fetching: %s", body, e.Error())
-		}
+	e = sendEmail(
+		to, from, subject, body, attachementFiles,
+		relayServer, relayUser, relayPassword, relayIdServer)
 
-		errorHandler(sendEmail(
-			to, from, subject, body, attachments,
-			relayServer, relayUser, relayPassword, relayIdServer))
-	}()
-
-	return
+	return e
 }
 
 // Fetch all of the attachments requested for a given email. It will always

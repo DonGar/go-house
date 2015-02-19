@@ -224,7 +224,7 @@ func (suite *MySuite) TestEmail(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	e = actionEmail(s, a)
-	c.Check(e, check.IsNil)
+	c.Check(e, check.NotNil)
 }
 
 func (suite *MySuite) TestEmailAttached(c *check.C) {
@@ -248,5 +248,5 @@ func (suite *MySuite) TestEmailAttached(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	e = actionEmail(s, a)
-	c.Check(e, check.IsNil)
+	c.Check(e, check.NotNil)
 }

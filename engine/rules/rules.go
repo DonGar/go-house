@@ -67,21 +67,25 @@ func (r *Rule) Handler() {
 	for {
 		select {
 		case condValue := <-r.condition.Result():
-			var err error
+
+			errorHandler := func(err error) {
+				if err != nil {
+					log.Println("Fire error: ", err)
+				}
+			}
+
 			if condValue {
 				if r.actionOn != nil {
 					log.Println("Firing rule On: ", r.name)
-					err = r.actionManager.FireAction(r.status, r.actionOn)
+					go errorHandler(r.actionManager.FireAction(r.status, r.actionOn))
 				}
 			} else {
 				if r.actionOff != nil {
 					log.Println("Firing rule Off: ", r.name)
-					err = r.actionManager.FireAction(r.status, r.actionOff)
+					go errorHandler(r.actionManager.FireAction(r.status, r.actionOff))
 				}
 			}
-			if err != nil {
-				log.Println("Fire Error: ", err)
-			}
+
 		case <-r.StopChan:
 			r.condition.Stop()
 			log.Printf("Stop rule: %s", r.name) // url)
