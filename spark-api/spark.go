@@ -2,6 +2,7 @@ package sparkapi
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/DonGar/go-house/stoppable"
 	"log"
 	"net/http"
@@ -15,6 +16,11 @@ type SparkApiInterface interface {
 	CallFunction(device, function, argument string) (int, error)
 	Updates() (<-chan []Device, <-chan Event)
 	Stop()
+}
+
+type funcResponse struct {
+	result int
+	err    error
 }
 
 type SparkApi struct {
@@ -32,6 +38,8 @@ type SparkApi struct {
 	// Will have nil values, if nobody is listening.
 	deviceUpdates chan []Device
 	events        chan Event
+	funcCall      chan [3]string
+	funcResponse  chan funcResponse
 
 	// Internally trigger a refresh of our known devices.
 	listenEvents   chan bool
@@ -45,6 +53,8 @@ func NewSparkApi(username, password string) *SparkApi {
 		[]Device{},
 		nil,
 		nil,
+		make(chan [3]string),
+		make(chan funcResponse),
 		make(chan bool),
 		make(chan bool),
 	}
@@ -55,8 +65,11 @@ func NewSparkApi(username, password string) *SparkApi {
 	return s
 }
 
-func (s *SparkApi) CallFunction(device, function, argument string) (int, error) {
-	return -1, nil
+func (s *SparkApi) CallFunction(device, function, argument string) (result int, err error) {
+	// This is a blocking call, but processed in handler routine.
+	s.funcCall <- [3]string{device, function, argument}
+	fullResult := <-s.funcResponse
+	return fullResult.result, fullResult.err
 }
 
 func (s *SparkApi) Updates() (<-chan []Device, <-chan Event) {
@@ -132,6 +145,18 @@ func (s *SparkApi) handler() {
 
 			s.StopChan <- true
 			return
+
+		case args := <-s.funcCall:
+			device, function, argument := args[0], args[1], args[2]
+			d := s.findDevice(device)
+
+			if d != nil {
+				result, err := s.callFunction(d, function, argument)
+				s.funcResponse <- funcResponse{result, err}
+			} else {
+				err = fmt.Errorf("Can't find device '%s' to invoke %s\n", device, function)
+				s.funcResponse <- funcResponse{-1, err}
+			}
 
 		case <-refreshTimer.C:
 			// Refresh our device list, at least once a day.

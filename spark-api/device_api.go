@@ -4,9 +4,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 )
 
 var DEVICES_URL string = SPARK_IO_URL + "v1/devices"
+
+func (s *SparkApi) findDevice(name string) *Device {
+	// Find a current device, by name.
+	for _, d := range s.devices {
+		if d.Name == name {
+			return &d
+		}
+	}
+
+	return nil
+}
 
 func (s *SparkApi) discoverDevices() ([]Device, error) {
 	// Lookup the list of devices, and discoverDeviceDetails on each.
@@ -143,4 +155,40 @@ func (s *SparkApi) lookupDeviceVariable(device *Device, variable string) (e erro
 	// Save the value we looked up.
 	device.Variables[variable] = parsedResponse.Result
 	return nil
+}
+
+func (s *SparkApi) callFunction(device *Device, function, argument string) (int, error) {
+	// Invoke a function on a Spark Core.
+	postUrl := DEVICES_URL + "/" + device.Id + "/" + function
+
+	response, err := s.postToResponseWithTokenRefresh(postUrl, url.Values{"args": {argument}})
+	if err != nil {
+		return -1, err
+	}
+
+	// Read the full response.
+	bodyText, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return -1, err
+	}
+
+	// Parse the response.
+	var parsedResponse struct {
+		Id           string
+		Return_value int
+	}
+
+	err = json.Unmarshal(bodyText, &parsedResponse)
+	if err != nil {
+		return -1, err
+	}
+
+	// There are a wide variety of error responses, but none seem
+	// to include an Id field.
+	if parsedResponse.Id != device.Id {
+		return -1, fmt.Errorf("Error Response on Lookup: %s", string(bodyText))
+	}
+
+	// The call was successfull.
+	return parsedResponse.Return_value, nil
 }

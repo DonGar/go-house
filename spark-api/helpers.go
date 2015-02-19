@@ -101,6 +101,18 @@ func (s *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Respo
 	return s.requestToResponseWithTokenRefresh(request)
 }
 
+func (s *SparkApi) postToResponseWithTokenRefresh(postUrl string, postFormValues url.Values) (*http.Response, error) {
+	// Perform requestToResponseWithTokenRefresh from a URL.
+
+	request, err := http.NewRequest("POST", postUrl, strings.NewReader(postFormValues.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	return s.requestToResponseWithTokenRefresh(request)
+}
+
 func lookupToken(username, password string) (token string, err error) {
 	// Look for an existing token we can use for all requests.
 

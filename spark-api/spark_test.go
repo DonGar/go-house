@@ -64,3 +64,17 @@ func (suite *MySuite) TestUpdatesStop(c *check.C) {
 	_, _ = sa.Updates()
 	sa.Stop()
 }
+
+func (suite *MySuite) TestCallFunctionBadDevice(c *check.C) {
+	if !*network {
+		c.Skip("-network tests not enabled.")
+	}
+
+	sa := NewSparkApi(TEST_USER, TEST_PASS)
+
+	// Invoke a function on a non-exitant device.
+	_, err := sa.CallFunction("device_name", "function", "argument")
+	c.Check(err, check.NotNil)
+
+	sa.Stop()
+}
