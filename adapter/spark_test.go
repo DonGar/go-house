@@ -152,6 +152,64 @@ func (suite *MySuite) TestSparkAdapterActionGenerated(c *check.C) {
 	adaptor.Stop()
 }
 
+func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
+	_, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+
+	// Create a spark adapter.
+	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+
+	// Send to devices without a refresh method.
+	mock.devices <- []sparkapi.Device{deviceA, deviceB}
+	time.Sleep(time.Microsecond)
+
+	// Check that no refresh method was called.
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Define an online device with a refresh method.
+	deviceRefresh := sparkapi.Device{
+		"ccc",
+		"c",
+		"date_time",
+		true,
+		map[string]interface{}{"var1": "val1", "var2": 2},
+		[]string{"func_a", "refresh"},
+	}
+
+	// Send a device with a refresh method.
+	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	time.Sleep(time.Microsecond)
+
+	// Check that refresh method was called.
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"c", "refresh", ""})
+
+	// Clear the mock, and send the same devices with connected status unchanged.
+	mock.actionArgs = mockFunctionCall{}
+	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	time.Sleep(time.Microsecond)
+
+	// Check that no refresh method was called.
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Take the refresh device offline.
+	deviceRefresh.Connected = false
+	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	time.Sleep(time.Microsecond)
+
+	// Check that no refresh method was called.
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Bring the device back online.
+	deviceRefresh.Connected = true
+	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	time.Sleep(time.Microsecond)
+
+	// Check that refresh method was called.
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"c", "refresh", ""})
+
+	adaptor.Stop()
+}
+
 func (suite *MySuite) TestSparkAdapterActionManual(c *check.C) {
 
 	s, mgr, b := setupTestAdapter(c,

@@ -164,6 +164,8 @@ OldNames:
 	for _, d := range devices {
 		device_url := core_url + "/" + d.Name
 
+		wasConnected := a.status.GetBoolWithDefault(device_url+"/connected", false)
+
 		funcNames := make([]interface{}, len(d.Functions))
 		for i, name := range d.Functions {
 			funcNames[i] = name
@@ -178,6 +180,17 @@ OldNames:
 				"argument": "",
 			}
 			actionsContents[name] = actionContents
+		}
+
+		if d.Connected && !wasConnected {
+			for _, name := range d.Functions {
+				// Refresh is called for devices that just connected, and after server
+				// restart to allow current events to be resent.
+				if name == "refresh" {
+					// Request refresh in background, to avoid slowing devices update.
+					go a.callFunction(d.Name, "refresh", "")
+				}
+			}
 		}
 
 		coreContents := map[string]interface{}{
@@ -213,6 +226,10 @@ func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e
 	}
 
 	// Log detailed results.
+	return a.callFunction(device, function, argument)
+}
+
+func (a sparkAdapter) callFunction(device, function, argument string) (e error) {
 	result, err := a.SparkApiInterface.CallFunction(device, function, argument)
 	if err == nil {
 		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, result)
