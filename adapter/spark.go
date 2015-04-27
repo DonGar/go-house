@@ -93,6 +93,11 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 		return
 	}
 
+	if strings.HasPrefix(event.Name, "spark") {
+		log.Printf("Spark: Ignoring system event %s from %s.\n", event.Name, event.CoreId)
+		return
+	}
+
 	event_url := device_url + "/events/" + event.Name
 
 	// Event data may be in JSON.

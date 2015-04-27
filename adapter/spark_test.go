@@ -292,6 +292,14 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 			`"a":{"connected":true,"events":{"standard":{"data":"updated","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
 			`}}`)
 
+	// Send a system event to make sure it's ignored.
+	mock.events <- sparkapi.Event{"spark/status", "online", "p_date", "aaa"}
+
+	checkAdaptorContents(c, &b,
+		`{"core":{`+
+			`"a":{"connected":true,"events":{"standard":{"data":"updated","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
+			`}}`)
+
 	adaptor.Stop()
 
 	checkAdaptorContents(c, &b, `null`)
