@@ -187,9 +187,6 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 
 	mock.devices <- []sparkapi.Device{deviceA, deviceB}
 
-	// Let the background routine catchup.
-	time.Sleep(time.Microsecond)
-
 	verifyFailure := func(actionContents map[string]interface{}) {
 		// Create action definition.
 		action := &status.Status{}
@@ -254,4 +251,48 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 	// Test success cases.
 	verifySuccess("dev", "func", "")
 	verifySuccess("dev", "func", "arg")
+}
+
+func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
+	_, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+
+	// Create a spark adapter.
+	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+
+	checkAdaptorContents(c, &b, `{"core":{}}`)
+
+	// Create a device.
+	mock.devices <- []sparkapi.Device{deviceA}
+
+	// Send a valid event for device.
+	mock.events <- sparkapi.Event{"standard", "value", "p_date", "aaa"}
+
+	// Send an event for an unknown device (to be ignored).
+	mock.events <- sparkapi.Event{"standard", "value", "p_date", "bogus_core_id"}
+
+	checkAdaptorContents(c, &b,
+		`{"core":{`+
+			`"a":{"connected":true,"events":{"standard":{"data":"value","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
+			`}}`)
+
+	// Update device, verify event is still there.
+	mock.devices <- []sparkapi.Device{deviceA}
+
+	checkAdaptorContents(c, &b,
+		`{"core":{`+
+			`"a":{"connected":true,"events":{"standard":{"data":"value","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
+			`}}`)
+
+	// Update an event value.
+	mock.events <- sparkapi.Event{"standard", "updated", "p_date", "aaa"}
+
+	checkAdaptorContents(c, &b,
+		`{"core":{`+
+			`"a":{"connected":true,"events":{"standard":{"data":"updated","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
+			`}}`)
+
+	adaptor.Stop()
+
+	checkAdaptorContents(c, &b, `null`)
 }

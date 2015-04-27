@@ -190,6 +190,12 @@ OldNames:
 			"functions":  funcNames,
 		}
 
+		// If the device existed, and we had events for it, preserve them.
+		events, _, _ := a.status.Get(device_url + "/events")
+		if events != nil {
+			coreContents["events"] = events
+		}
+
 		err = a.status.Set(device_url, coreContents, status.UNCHECKED_REVISION)
 		if err != nil {
 			panic(err)
