@@ -171,17 +171,6 @@ OldNames:
 			funcNames[i] = name
 		}
 
-		actionsContents := map[string]interface{}{}
-		for _, name := range d.Functions {
-			actionContents := map[string]interface{}{
-				"action":   a.actionName,
-				"device":   d.Name,
-				"function": name,
-				"argument": "",
-			}
-			actionsContents[name] = actionContents
-		}
-
 		if d.Connected && !wasConnected {
 			for _, name := range d.Functions {
 				// Refresh is called for devices that just connected, and after server
@@ -199,7 +188,6 @@ OldNames:
 			"connected":  d.Connected,
 			"variables":  d.Variables,
 			"functions":  funcNames,
-			"actions":    actionsContents,
 		}
 
 		err = a.status.Set(device_url, coreContents, status.UNCHECKED_REVISION)

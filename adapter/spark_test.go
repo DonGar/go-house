@@ -110,46 +110,13 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 
 	checkAdaptorContents(c, &b,
 		`{"core":{`+
-			`"a":{"actions":{},"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}},`+
-			`"b":{"actions":{"func_a":{"action":"mock_action","argument":"","device":"b","function":"func_a"},"func_b":{"action":"mock_action","argument":"","device":"b","function":"func_b"}},"connected":false,"functions":["func_a","func_b"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}`+
+			`"a":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}},`+
+			`"b":{"connected":false,"functions":["func_a","func_b"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}`+
 			`}}`)
 
 	adaptor.Stop()
 
 	checkAdaptorContents(c, &b, `null`)
-}
-
-func (suite *MySuite) TestSparkAdapterActionGenerated(c *check.C) {
-	s, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
-
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
-
-	mock.devices <- []sparkapi.Device{deviceA, deviceB}
-
-	// Let the background routine catchup.
-	time.Sleep(time.Microsecond)
-
-	// Fetch generated action sub statuses for these functions.
-	action_a, _, err := s.GetSubStatus(adaptor.adapterUrl + "/core/b/actions/func_a")
-	c.Assert(err, check.IsNil)
-
-	action_b, _, err := s.GetSubStatus(adaptor.adapterUrl + "/core/b/actions/func_b")
-	c.Assert(err, check.IsNil)
-
-	// Check that a normal calls work for both functions.
-	err = adaptor.actionsMgr.FireAction(s, action_a)
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "func_a", ""})
-	c.Check(err, check.IsNil)
-
-	err = adaptor.actionsMgr.FireAction(s, action_b)
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "func_b", ""})
-	c.Check(err, check.IsNil)
-
-	adaptor.Stop()
 }
 
 func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
@@ -210,7 +177,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	adaptor.Stop()
 }
 
-func (suite *MySuite) TestSparkAdapterActionManual(c *check.C) {
+func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 
 	s, mgr, b := setupTestAdapter(c,
 		"status://server/adapters/spark/TestSpark", "status://TestSpark")
