@@ -106,6 +106,29 @@ func (s *Status) GetStringWithDefault(url string, defaultValue string) (value st
 	}
 }
 
+func (s *Status) GetBool(url string) (value bool, e error) {
+	rawValue, _, e := s.Get(url)
+	if e != nil {
+		return false, e
+	}
+
+	switch t := rawValue.(type) {
+	case bool:
+		return t, nil
+	default:
+		return false, fmt.Errorf("Status: %s is %T not bool.", url, rawValue)
+	}
+}
+
+func (s *Status) GetBoolWithDefault(url string, defaultValue bool) (value bool) {
+	v, e := s.GetBool(url)
+	if e == nil {
+		return v
+	} else {
+		return defaultValue
+	}
+}
+
 func (s *Status) GetInt(url string) (value int, e error) {
 	rawValue, _, e := s.Get(url)
 	if e != nil {
