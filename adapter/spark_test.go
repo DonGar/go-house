@@ -110,8 +110,8 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 
 	checkAdaptorContents(c, &b,
 		`{"core":{`+
-			`"a":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}},`+
-			`"b":{"connected":false,"functions":["func_a","func_b"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}`+
+			`"a":{"details":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}},`+
+			`"b":{"details":{"connected":false,"functions":["func_a","func_b"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}}`+
 			`}}`)
 
 	adaptor.Stop()
@@ -262,45 +262,46 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 
 	checkAdaptorContents(c, &b, `{"core":{}}`)
 
+	adaptor_no_event := `{"core":{"a":{"details":{` +
+		`"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
+		`}}}}`
+
+	adaptor_event_1 := `{"core":{"a":{"details":{` +
+		`"connected":true,` +
+		`"events":{"standard":{"data":"value","published":"p_date"}},` +
+		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
+		`}}}}`
+
+	adaptor_event_2 := `{"core":{"a":{"details":{` +
+		`"connected":true,` +
+		`"events":{"standard":{"data":"updated","published":"p_date"}},` +
+		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
+		`}}}}`
+
 	// Create a device.
 	mock.devices <- []sparkapi.Device{deviceA}
-
-	// Send a valid event for device.
-	mock.events <- sparkapi.Event{"standard", "value", "p_date", "aaa"}
+	checkAdaptorContents(c, &b, adaptor_no_event)
 
 	// Send an event for an unknown device (to be ignored).
 	mock.events <- sparkapi.Event{"standard", "value", "p_date", "bogus_core_id"}
+	checkAdaptorContents(c, &b, adaptor_no_event)
 
-	checkAdaptorContents(c, &b,
-		`{"core":{`+
-			`"a":{"connected":true,"events":{"standard":{"data":"value","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
-			`}}`)
+	// Send a valid event for device.
+	mock.events <- sparkapi.Event{"standard", "value", "p_date", "aaa"}
+	checkAdaptorContents(c, &b, adaptor_event_1)
 
 	// Update device, verify event is still there.
 	mock.devices <- []sparkapi.Device{deviceA}
-
-	checkAdaptorContents(c, &b,
-		`{"core":{`+
-			`"a":{"connected":true,"events":{"standard":{"data":"value","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
-			`}}`)
+	checkAdaptorContents(c, &b, adaptor_event_1)
 
 	// Update an event value.
 	mock.events <- sparkapi.Event{"standard", "updated", "p_date", "aaa"}
-
-	checkAdaptorContents(c, &b,
-		`{"core":{`+
-			`"a":{"connected":true,"events":{"standard":{"data":"updated","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
-			`}}`)
+	checkAdaptorContents(c, &b, adaptor_event_2)
 
 	// Send a system event to make sure it's ignored.
 	mock.events <- sparkapi.Event{"spark/status", "online", "p_date", "aaa"}
-
-	checkAdaptorContents(c, &b,
-		`{"core":{`+
-			`"a":{"connected":true,"events":{"standard":{"data":"updated","published":"p_date"}},"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}`+
-			`}}`)
+	checkAdaptorContents(c, &b, adaptor_event_2)
 
 	adaptor.Stop()
-
 	checkAdaptorContents(c, &b, `null`)
 }

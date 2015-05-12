@@ -98,7 +98,7 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 		return
 	}
 
-	event_url := device_url + "/events/" + event.Name
+	event_url := device_url + "/details/events/" + event.Name
 
 	// Event data may be in JSON.
 	data_url := event_url + "/data"
@@ -117,7 +117,7 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 func (a sparkAdapter) findDeviceUrl(id string) string {
 
 	// Find the id's of all devices.
-	devices_url := a.adapterUrl + "/core/*/id"
+	devices_url := a.adapterUrl + "/core/*/details/id"
 
 	// Find all device URLs, the look for the one we want.
 	matches, err := a.status.GetMatchingUrls(devices_url)
@@ -134,6 +134,10 @@ func (a sparkAdapter) findDeviceUrl(id string) string {
 		if search_id == id {
 			// Strip off /id from the end of the URL.
 			last_break := strings.LastIndex(search_url, "/")
+			search_url = search_url[:last_break]
+
+			// Strip off /details from the end of the URL.
+			last_break = strings.LastIndex(search_url, "/")
 			return search_url[:last_break]
 		}
 	}
@@ -167,9 +171,9 @@ OldNames:
 
 	// Add/update devices that exist.
 	for _, d := range devices {
-		device_url := core_url + "/" + d.Name
+		device_details_url := core_url + "/" + d.Name + "/details"
 
-		wasConnected := a.status.GetBoolWithDefault(device_url+"/connected", false)
+		wasConnected := a.status.GetBoolWithDefault(device_details_url+"/connected", false)
 
 		funcNames := make([]interface{}, len(d.Functions))
 		for i, name := range d.Functions {
@@ -187,7 +191,7 @@ OldNames:
 			}
 		}
 
-		coreContents := map[string]interface{}{
+		coreDetails := map[string]interface{}{
 			"id":         d.Id,
 			"last_heard": d.LastHeard,
 			"connected":  d.Connected,
@@ -196,12 +200,12 @@ OldNames:
 		}
 
 		// If the device existed, and we had events for it, preserve them.
-		events, _, _ := a.status.Get(device_url + "/events")
+		events, _, _ := a.status.Get(device_details_url + "/events")
 		if events != nil {
-			coreContents["events"] = events
+			coreDetails["events"] = events
 		}
 
-		err = a.status.Set(device_url, coreContents, status.UNCHECKED_REVISION)
+		err = a.status.Set(device_details_url, coreDetails, status.UNCHECKED_REVISION)
 		if err != nil {
 			panic(err)
 		}
