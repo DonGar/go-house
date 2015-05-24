@@ -54,6 +54,10 @@ func (s *mockSparkApi) CallFunction(device, function, argument string) (int, err
 	return 0, s.actionResult
 }
 
+func (s *mockSparkApi) CallFunctionAsync(device, function, argument string) {
+	s.actionArgs = mockFunctionCall{device, function, argument}
+}
+
 func (m *mockSparkApi) Updates() (<-chan []sparkapi.Device, <-chan sparkapi.Event) {
 	return m.devices, m.events
 }

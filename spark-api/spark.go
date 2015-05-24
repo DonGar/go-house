@@ -14,6 +14,7 @@ var SPARK_IO_URL string = "https://api.particle.io/"
 
 type SparkApiInterface interface {
 	CallFunction(device, function, argument string) (int, error)
+	CallFunctionAsync(device, function, argument string)
 	Updates() (<-chan []Device, <-chan Event)
 	Stop()
 }
@@ -53,7 +54,7 @@ func NewSparkApi(username, password string) *SparkApi {
 		[]Device{},
 		nil,
 		nil,
-		make(chan [3]string),
+		make(chan [3]string, 10),
 		make(chan funcResponse),
 		make(chan bool),
 		make(chan bool),
@@ -68,7 +69,25 @@ func NewSparkApi(username, password string) *SparkApi {
 func (s *SparkApi) CallFunction(device, function, argument string) (result int, err error) {
 	// This is a blocking call, but processed in handler routine.
 	s.funcCall <- [3]string{device, function, argument}
+	return s.waitForFunctionResult(device, function, argument)
+}
+
+func (s *SparkApi) CallFunctionAsync(device, function, argument string) {
+	// Queue request synchronously, then log results async.
+	// The sync'd queuing ensures in-order processing.
+	s.funcCall <- [3]string{device, function, argument}
+	go s.waitForFunctionResult(device, function, argument)
+}
+
+func (s *SparkApi) waitForFunctionResult(device, function, argument string) (result int, err error) {
 	fullResult := <-s.funcResponse
+
+	if fullResult.err == nil {
+		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, fullResult.result)
+	} else {
+		log.Printf("Spark %s.%s(%s) error: %s\n", device, function, argument, fullResult.err)
+	}
+
 	return fullResult.result, fullResult.err
 }
 

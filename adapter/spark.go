@@ -189,10 +189,8 @@ func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
 		log.Printf("  device: %s\n", device)
 		log.Printf("  target: %s\n", target)
 
-		// This call is very, very slow. Considered a background process, but that
-		// can lead to out of order invocations.
-		// We ignore error results, but callFunction will log them.
-		a.callFunction(device, target, string(argument))
+		// We ignore results, but they are logged.
+		a.SparkApiInterface.CallFunctionAsync(device, target, string(argument))
 
 		// Clear the target value. Again, ignore error. The most likely cause
 		// is that someone else updated the target again, which doesn't bother us.
@@ -272,7 +270,7 @@ OldNames:
 				// restart to allow current events to be resent.
 				if name == "refresh" {
 					// Request refresh in background, to avoid slowing devices update.
-					go a.callFunction(d.Name, "refresh", "")
+					a.SparkApiInterface.CallFunctionAsync(d.Name, "refresh", "")
 				}
 			}
 		}
@@ -315,16 +313,6 @@ func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e
 	}
 
 	// Log detailed results.
-	return a.callFunction(device, function, argument)
-}
-
-func (a sparkAdapter) callFunction(device, function, argument string) (e error) {
-	result, err := a.SparkApiInterface.CallFunction(device, function, argument)
-	if err == nil {
-		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, result)
-	} else {
-		log.Printf("Spark %s.%s(%s) error: %s\n", device, function, argument, err)
-	}
-
+	_, err = a.SparkApiInterface.CallFunction(device, function, argument)
 	return err
 }
