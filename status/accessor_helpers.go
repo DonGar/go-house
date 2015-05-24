@@ -188,3 +188,36 @@ func (s *Status) GetStrings(urls []string) (values []string, e error) {
 
 	return values, nil
 }
+
+func (s *Status) GetStringOrJson(url string) (string, int, error) {
+	// Fetch a URL as a string, if it is of type string, else return
+	// the value as a JSON encoded string.
+	rawValue, revision, err := s.Get(url)
+	if err != nil {
+		return "", 0, err
+	}
+
+	value, ok := rawValue.(string)
+	if ok {
+		return value, revision, err
+	}
+
+	valueJson, err := json.Marshal(rawValue)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return string(valueJson), revision, err
+}
+
+func (s *Status) SetJsonOrString(url, data string, revision int) error {
+	// If the data is json encoded, set it as the decoded structure.
+	// Otherwise, treat the data as a simple string.
+	var value interface{}
+	err := json.Unmarshal([]byte(data), &value)
+	if err != nil {
+		value = data
+	}
+
+	return s.Set(url, value, revision)
+}

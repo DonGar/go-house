@@ -96,37 +96,6 @@ func (a *sparkAdapter) Stop() {
 	a.base.Stop()
 }
 
-func (a sparkAdapter) getJsonOrString(url string) (string, int, error) {
-	// Save the given value into status. Try to handle the value as Json,
-	// but store as a string otherwise.
-	rawValue, revision, err := a.status.Get(url)
-	if err != nil {
-		return "", 0, err
-	}
-
-	value, ok := rawValue.(string)
-	if ok {
-		return value, revision, err
-	} else {
-		json, revision, err := a.status.GetJson(url)
-		return string(json), revision, err
-	}
-}
-
-func (a sparkAdapter) setJsonOrString(url, data string) {
-	// Save the given value into status. Try to handle the value as Json,
-	// but store as a string otherwise.
-	err := a.status.SetJson(url, []byte(data), status.UNCHECKED_REVISION)
-	if err != nil {
-		// Not valid JSON, treat as a simple string.
-		err = a.status.Set(url, data, status.UNCHECKED_REVISION)
-		if err != nil {
-			// Not possible/hard to handle
-			panic(err)
-		}
-	}
-}
-
 func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 
 	device_url := a.findDeviceUrl(event.CoreId)
@@ -148,14 +117,14 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 
 	// Event data may be in JSON.
 	data_url := event_url + "/data"
-	a.setJsonOrString(data_url, event.Data)
+	a.status.SetJsonOrString(data_url, event.Data, status.UNCHECKED_REVISION)
 	a.status.Set(event_url+"/published", event.Published_at, status.UNCHECKED_REVISION)
 
 	//
 	// Publish event as device property.
 	//
 	property_url := device_url + "/" + event.Name
-	a.setJsonOrString(property_url, event.Data)
+	a.status.SetJsonOrString(property_url, event.Data, status.UNCHECKED_REVISION)
 }
 
 func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
@@ -178,7 +147,7 @@ func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
 			continue
 		}
 
-		argument, revision, err := a.getJsonOrString(target_url)
+		argument, revision, err := a.status.GetStringOrJson(target_url)
 		if revision != raw_value.Revision || err != nil {
 			continue
 		}

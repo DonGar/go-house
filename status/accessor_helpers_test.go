@@ -339,3 +339,81 @@ func (s *MySuite) TestGetStrings(c *check.C) {
 	c.Check(value, check.IsNil)
 	c.Check(e, check.NotNil)
 }
+
+func (s *MySuite) TestGetStringOrJson(c *check.C) {
+	testStatus := Status{}
+	e := testStatus.SetJson(URL, []byte(`{"foo":"bar","other":"o","int":3}`), 0)
+	c.Check(e, check.IsNil)
+
+	// Good
+	value, revision, e := testStatus.GetStringOrJson("status://foo")
+	c.Check(value, check.Equals, `{"foo":"bar","int":3,"other":"o"}`)
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	value, revision, e = testStatus.GetStringOrJson("status://foo/foo")
+	c.Check(value, check.Equals, "bar")
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	value, revision, e = testStatus.GetStringOrJson("status://foo/int")
+	c.Check(value, check.Equals, "3")
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	// Bad URL
+	value, revision, e = testStatus.GetStringOrJson(BAD_URL)
+	c.Check(value, check.Equals, "")
+	c.Check(revision, check.Equals, 0)
+	c.Check(e, check.NotNil)
+
+	// Non-existent URL.
+	value, revision, e = testStatus.GetStringOrJson("status://foo/bogus")
+	c.Check(value, check.Equals, "")
+	c.Check(revision, check.Equals, 0)
+	c.Check(e, check.NotNil)
+}
+
+func (s *MySuite) TestSetStringOrJson(c *check.C) {
+	testStatus := Status{}
+
+	// Set the value.
+	e := testStatus.SetJsonOrString(URL, `{"foo":"bar","other":"o","int":3}`, 0)
+	c.Check(e, check.IsNil)
+
+	// Validate contents, several ways.
+	value, revision, e := testStatus.GetStringOrJson("status://foo")
+	c.Check(value, check.Equals, `{"foo":"bar","int":3,"other":"o"}`)
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	value, revision, e = testStatus.GetString("status://foo/foo")
+	c.Check(value, check.Equals, "bar")
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	int_value, revision, e := testStatus.GetInt("status://foo/int")
+	c.Check(int_value, check.Equals, 3)
+	c.Check(revision, check.Equals, 1)
+	c.Check(e, check.IsNil)
+
+	// Set the value.
+	e = testStatus.SetJsonOrString(URL, "foo", 1)
+	c.Check(e, check.IsNil)
+
+	value, revision, e = testStatus.GetStringOrJson(URL)
+	c.Check(value, check.Equals, `foo`)
+	c.Check(revision, check.Equals, 2)
+	c.Check(e, check.IsNil)
+
+	// Bad URL
+	e = testStatus.SetJsonOrString(BAD_URL, `{"foo":"bar","other":"o","int":3}`, 1)
+	c.Check(e, check.NotNil)
+
+	// Bad Revision.
+	e = testStatus.SetJsonOrString(URL, `{}`, 0)
+	c.Check(e, check.NotNil)
+}
+
+// func (s *Status) GetStringOrJson(url string) (string, int, error) {
+// func (s *Status) SetJsonOrString(url, data string, revision int) {
