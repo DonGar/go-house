@@ -21,12 +21,12 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 	//
 	// Look up config values.
 	//
-	username, e := b.config.GetString("status://username")
+	username, _, e := b.config.GetString("status://username")
 	if e != nil {
 		return nil, e
 	}
 
-	password, e := b.config.GetString("status://password")
+	password, _, e := b.config.GetString("status://password")
 	if e != nil {
 		return nil, e
 	}
@@ -234,7 +234,7 @@ func (a sparkAdapter) updateDeviceList(devices []sparkapi.Device) {
 	core_url := a.adapterUrl + "/core"
 
 	// Remove any old cores that don't exist any more.
-	oldNames, err := a.status.GetChildNames(core_url)
+	oldNames, _, err := a.status.GetChildNames(core_url)
 	if err != nil {
 		panic(err)
 	}
@@ -297,17 +297,17 @@ OldNames:
 }
 
 func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e error) {
-	device, err := action.GetString("status://device")
+	device, _, err := action.GetString("status://device")
 	if err != nil {
 		return err
 	}
 
-	function, err := action.GetString("status://function")
+	function, _, err := action.GetString("status://function")
 	if err != nil {
 		return err
 	}
 
-	argument, err := action.GetString("status://argument")
+	argument, _, err := action.GetString("status://argument")
 	if err != nil {
 		return err
 	}

@@ -45,7 +45,7 @@ func NewCondition(
 
 	case map[string]interface{}:
 		// We received a dictionary, this is (hopefully) a registered action.
-		conditionName, e := body.GetString("status://test")
+		conditionName, _, e := body.GetString("status://test")
 		if e != nil {
 			return nil, fmt.Errorf("Condition: No condition specified: %s", conditionName)
 		}

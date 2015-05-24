@@ -17,7 +17,7 @@ type fileAdapter struct {
 
 func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 
-	filename, e := base.config.GetString("status://filename")
+	filename, _, e := base.config.GetString("status://filename")
 	// Todo: if an error is present, verify it's for filename not existing.
 
 	// The default file name is based on the name of the adapter.
@@ -25,7 +25,7 @@ func newFileAdapter(m *Manager, base base) (a adapter, e error) {
 		filename = filepath.Base(base.adapterUrl) + ".json"
 	}
 
-	configDir, e := base.status.GetString(options.CONFIG_DIR)
+	configDir, _, e := base.status.GetString(options.CONFIG_DIR)
 	if e != nil {
 		return nil, e
 	}

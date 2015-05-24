@@ -33,12 +33,12 @@ func IntializeServerConfig(s *status.Status, arguments []string) (e error) {
 		return e
 	}
 
-	staticDir, e := s.GetString(STATIC_DIR)
+	staticDir, _, e := s.GetString(STATIC_DIR)
 	if e != nil {
 		return e
 	}
 
-	downloadsDir, e := s.GetString(DOWNLOADS_DIR)
+	downloadsDir, _, e := s.GetString(DOWNLOADS_DIR)
 	if e != nil {
 		return e
 	}

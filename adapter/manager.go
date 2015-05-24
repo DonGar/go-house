@@ -36,7 +36,7 @@ func NewManager(status *status.Status, actionsMgr *actions.Manager) (mgr *Manage
 
 func (m *Manager) createAdapters() error {
 	// Look for adapter configs.
-	adapterTypes, e := m.status.GetChildNames(options.ADAPTERS)
+	adapterTypes, _, e := m.status.GetChildNames(options.ADAPTERS)
 	if e != nil {
 		// If there are no adapters configured, just don't set any up.
 		adapterTypes = []string{}
@@ -44,7 +44,7 @@ func (m *Manager) createAdapters() error {
 
 	// Loop through the types of adapters.
 	for _, adapterType := range adapterTypes {
-		adapterNames, e := m.status.GetChildNames(options.ADAPTERS + "/" + adapterType)
+		adapterNames, _, e := m.status.GetChildNames(options.ADAPTERS + "/" + adapterType)
 		if e != nil {
 			return e
 		}

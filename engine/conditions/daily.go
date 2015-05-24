@@ -29,7 +29,7 @@ func newDailyCondition(s *status.Status, body *status.Status) (*dailyCondition, 
 	latitude := s.GetFloatWithDefault("status://server/latitude", 0.0)
 	longitude := s.GetFloatWithDefault("status://server/longitude", 0.0)
 
-	timeDescription, e := body.GetString("status://time")
+	timeDescription, _, e := body.GetString("status://time")
 	if e != nil {
 		return nil, e
 	}

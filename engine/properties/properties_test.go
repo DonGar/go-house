@@ -126,7 +126,7 @@ func (suite *MySuite) TestPropertyStartStop(c *check.C) {
 func validateTarget(c *check.C, s *status.Status, expected string) {
 	// We give the watcher a little time for a delayed update.
 	time.Sleep(1 * time.Millisecond)
-	target, e := s.GetString("status://target")
+	target, _, e := s.GetString("status://target")
 	c.Check(e, check.IsNil)
 	c.Check(target, check.Equals, expected)
 }
@@ -247,7 +247,7 @@ func (suite *MySuite) TestPropertyFireConditionMultipleNoDefault(c *check.C) {
 	p.start()
 
 	// Make sure default is not created at start up.
-	_, e := s.GetString("status://target")
+	_, _, e := s.GetString("status://target")
 	c.Check(e, check.NotNil)
 
 	mockCond[1].result <- true

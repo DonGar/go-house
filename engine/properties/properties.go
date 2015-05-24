@@ -32,7 +32,7 @@ func NewProperty(
 	body *status.Status) (*Property, error) {
 
 	// Look up the target URL.
-	targetUrl, e := body.GetString("status://target")
+	targetUrl, _, e := body.GetString("status://target")
 	if e != nil {
 		return nil, fmt.Errorf("No 'target' on property: %s", name)
 	}
@@ -48,7 +48,7 @@ func NewProperty(
 	}
 
 	// Look up the optional default value.
-	defaultValue, e := body.GetString("status://default")
+	defaultValue, _, e := body.GetString("status://default")
 	hasDefault := e == nil
 
 	result := &Property{

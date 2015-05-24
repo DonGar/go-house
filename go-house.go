@@ -30,7 +30,7 @@ func mainWork() error {
 	}
 
 	// Redirect logging to include a log file, if listed in options.
-	logfileName, err := status.GetString(options.LOG_FILE)
+	logfileName, _, err := status.GetString(options.LOG_FILE)
 	if err == nil {
 		logfile, err := os.Create(logfileName)
 		if err != nil {

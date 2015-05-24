@@ -34,7 +34,7 @@ func (m *mockActionResults) fail(s *status.Status, action *status.Status) error 
 }
 
 func (m *mockActionResults) fetch(s *status.Status, action *status.Status) error {
-	url, e := action.GetString("status://url")
+	url, _, e := action.GetString("status://url")
 	if e != nil {
 		return e
 	}

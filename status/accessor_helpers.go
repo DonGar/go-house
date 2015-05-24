@@ -63,15 +63,15 @@ func (s *Status) GetSubStatus(url string) (contents *Status, revision int, e err
 }
 
 // Get the names of the children of a given node.
-func (s *Status) GetChildNames(url string) (names []string, e error) {
-	value, _, e := s.Get(url)
+func (s *Status) GetChildNames(url string) (names []string, revision int, e error) {
+	value, revision, e := s.Get(url)
 	if e != nil {
-		return nil, e
+		return nil, 0, e
 	}
 
 	childMap, ok := value.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("Status: Node is %T not a map", value)
+		return nil, 0, fmt.Errorf("Status: Node is %T not a map", value)
 	}
 
 	names = make([]string, 0, len(childMap))
@@ -79,26 +79,26 @@ func (s *Status) GetChildNames(url string) (names []string, e error) {
 		names = append(names, childName)
 	}
 
-	return names, nil
+	return names, revision, nil
 }
 
 // Extract a string value.
-func (s *Status) GetString(url string) (value string, e error) {
-	rawValue, _, e := s.Get(url)
+func (s *Status) GetString(url string) (value string, revision int, e error) {
+	rawValue, revision, e := s.Get(url)
 	if e != nil {
-		return "", e
+		return "", 0, e
 	}
 
 	value, ok := rawValue.(string)
 	if !ok {
-		return "", fmt.Errorf("Status: %s is %T not string.", url, rawValue)
+		return "", 0, fmt.Errorf("Status: %s is %T not string.", url, rawValue)
 	}
 
-	return value, nil
+	return value, revision, nil
 }
 
 func (s *Status) GetStringWithDefault(url string, defaultValue string) (value string) {
-	v, e := s.GetString(url)
+	v, _, e := s.GetString(url)
 	if e == nil {
 		return v
 	} else {
@@ -106,22 +106,22 @@ func (s *Status) GetStringWithDefault(url string, defaultValue string) (value st
 	}
 }
 
-func (s *Status) GetBool(url string) (value bool, e error) {
-	rawValue, _, e := s.Get(url)
+func (s *Status) GetBool(url string) (value bool, revision int, e error) {
+	rawValue, revision, e := s.Get(url)
 	if e != nil {
-		return false, e
+		return false, 0, e
 	}
 
-	switch t := rawValue.(type) {
-	case bool:
-		return t, nil
-	default:
-		return false, fmt.Errorf("Status: %s is %T not bool.", url, rawValue)
+	value, ok := rawValue.(bool)
+	if !ok {
+		return false, 0, fmt.Errorf("Status: %s is %T not bool.", url, rawValue)
 	}
+
+	return value, revision, nil
 }
 
 func (s *Status) GetBoolWithDefault(url string, defaultValue bool) (value bool) {
-	v, e := s.GetBool(url)
+	v, _, e := s.GetBool(url)
 	if e == nil {
 		return v
 	} else {
@@ -129,24 +129,24 @@ func (s *Status) GetBoolWithDefault(url string, defaultValue bool) (value bool) 
 	}
 }
 
-func (s *Status) GetInt(url string) (value int, e error) {
-	rawValue, _, e := s.Get(url)
+func (s *Status) GetInt(url string) (value int, revision int, e error) {
+	rawValue, revision, e := s.Get(url)
 	if e != nil {
-		return 0, e
+		return 0, 0, e
 	}
 
 	switch t := rawValue.(type) {
 	case int:
-		return t, nil
+		return t, revision, nil
 	case float64:
-		return int(t), nil
+		return int(t), revision, nil
 	default:
-		return 0, fmt.Errorf("Status: %s is %T not int.", url, rawValue)
+		return 0, 0, fmt.Errorf("Status: %s is %T not int.", url, rawValue)
 	}
 }
 
 func (s *Status) GetIntWithDefault(url string, defaultValue int) (value int) {
-	v, e := s.GetInt(url)
+	v, _, e := s.GetInt(url)
 	if e == nil {
 		return v
 	} else {
@@ -154,22 +154,22 @@ func (s *Status) GetIntWithDefault(url string, defaultValue int) (value int) {
 	}
 }
 
-func (s *Status) GetFloat(url string) (value float64, e error) {
-	rawValue, _, e := s.Get(url)
+func (s *Status) GetFloat(url string) (value float64, revision int, e error) {
+	rawValue, revision, e := s.Get(url)
 	if e != nil {
-		return 0, e
+		return 0, 0, e
 	}
 
 	value, ok := rawValue.(float64)
 	if !ok {
-		return 0, fmt.Errorf("Status: %s is %T not float64.", url, rawValue)
+		return 0, 0, fmt.Errorf("Status: %s is %T not float64.", url, rawValue)
 	}
 
-	return value, nil
+	return value, revision, nil
 }
 
 func (s *Status) GetFloatWithDefault(url string, defaultValue float64) (value float64) {
-	v, e := s.GetFloat(url)
+	v, _, e := s.GetFloat(url)
 	if e == nil {
 		return v
 	} else {
@@ -180,7 +180,7 @@ func (s *Status) GetFloatWithDefault(url string, defaultValue float64) (value fl
 func (s *Status) GetStrings(urls []string) (values []string, e error) {
 	values = make([]string, len(urls))
 	for i, url := range urls {
-		values[i], e = s.GetString(url)
+		values[i], _, e = s.GetString(url)
 		if e != nil {
 			return nil, e
 		}

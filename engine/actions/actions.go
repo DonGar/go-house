@@ -106,7 +106,7 @@ func (am *Manager) FireAction(s *status.Status, action *status.Status) error {
 
 	case map[string]interface{}:
 		// We received a dictionary, this is (hopefully) a registered action.
-		actionName, e := action.GetString("status://action")
+		actionName, _, e := action.GetString("status://action")
 		if e != nil {
 			return fmt.Errorf("Action: No action specified: %s", actionName)
 		}

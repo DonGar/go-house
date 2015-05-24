@@ -31,7 +31,7 @@ func RunHttpServerForever(
 	adapterMgr *adapter.Manager,
 	cachedLogging *logging.CachedLogging) error {
 
-	staticDir, e := status.GetString(options.STATIC_DIR)
+	staticDir, _, e := status.GetString(options.STATIC_DIR)
 	if e != nil {
 		return e
 	}

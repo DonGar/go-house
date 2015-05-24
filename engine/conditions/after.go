@@ -31,7 +31,7 @@ func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, 
 		return nil, fmt.Errorf("After condition: (%#v): %s", subConditionBody, e.Error())
 	}
 
-	delayStr, e := body.GetString("status://delay")
+	delayStr, _, e := body.GetString("status://delay")
 	if e != nil {
 		return nil, e
 	}

@@ -13,7 +13,7 @@ type periodicCondition struct {
 
 func newPeriodicCondition(s *status.Status, body *status.Status) (*periodicCondition, error) {
 
-	interval, e := body.GetString("status://interval")
+	interval, _, e := body.GetString("status://interval")
 	if e != nil {
 		return nil, e
 	}

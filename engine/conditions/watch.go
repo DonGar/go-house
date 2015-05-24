@@ -16,7 +16,7 @@ type watchCondition struct {
 
 func newWatchCondition(s *status.Status, body *status.Status) (*watchCondition, error) {
 
-	watchUrl, e := body.GetString("status://watch")
+	watchUrl, _, e := body.GetString("status://watch")
 	if e != nil {
 		return nil, e
 	}

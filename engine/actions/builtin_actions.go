@@ -35,17 +35,17 @@ func errorHandler(e error) {
 
 // Implement the "set" action.
 func actionSet(s *status.Status, action *status.Status) (e error) {
-	componentUrl, e := action.GetString("status://component")
+	componentUrl, _, e := action.GetString("status://component")
 	if e != nil {
 		return e
 	}
 
-	dest, e := action.GetString("status://dest")
+	dest, _, e := action.GetString("status://dest")
 	if e != nil {
 		return e
 	}
 
-	value, e := action.GetString("status://value")
+	value, _, e := action.GetString("status://value")
 	if e != nil {
 		return e
 	}
@@ -76,7 +76,7 @@ func actionSet(s *status.Status, action *status.Status) (e error) {
 // Send a Wake On Lan request to a component. The component must have a "mac"
 // value defined with is the components network mac address.
 func actionWol(s *status.Status, action *status.Status) (e error) {
-	componentUrl, e := action.GetString("status://component")
+	componentUrl, _, e := action.GetString("status://component")
 	if e != nil {
 		return e
 	}
@@ -92,7 +92,7 @@ func actionWol(s *status.Status, action *status.Status) (e error) {
 		componentStatus.Set("status://", cMatch.Value, 0)
 
 		// If the host doesn't have a Mac, that's okay. Just quietly skip it.
-		mac, e := componentStatus.GetString("status://mac")
+		mac, _, e := componentStatus.GetString("status://mac")
 		if e != nil {
 			continue
 		}
@@ -108,7 +108,7 @@ func actionWol(s *status.Status, action *status.Status) (e error) {
 // name of the component is the name to ping. The "up" value is updated in the
 // background after an arbitrary delay, not right away.
 func actionPing(s *status.Status, action *status.Status) (e error) {
-	componentUrl, e := action.GetString("status://component")
+	componentUrl, _, e := action.GetString("status://component")
 	if e != nil {
 		return e
 	}
@@ -156,12 +156,12 @@ func actionFetch(s *status.Status, action *status.Status) (e error) {
 	// "url"
 	// "download_name"
 
-	url, e := action.GetString("status://url")
+	url, _, e := action.GetString("status://url")
 	if e != nil {
 		return e
 	}
 
-	fileName, _ := action.GetString("status://download_name")
+	fileName := action.GetStringWithDefault("status://download_name", "")
 	fileName = expandFileName(s, fileName)
 
 	// Fetch the file, and download to fileName if fileName != ""
@@ -351,7 +351,7 @@ func expandFileName(s *status.Status, fileName string) string {
 
 	// Append downloads directory.
 	if !filepath.IsAbs(fileName) {
-		downloadsDir, _ := s.GetString(options.DOWNLOADS_DIR)
+		downloadsDir := s.GetStringWithDefault(options.DOWNLOADS_DIR, "")
 		fileName = filepath.Join(downloadsDir, fileName)
 	}
 
