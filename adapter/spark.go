@@ -84,6 +84,20 @@ func (a *sparkAdapter) Stop() {
 	a.base.Stop()
 }
 
+func (a sparkAdapter) setJsonOrString(url, data string) {
+	// Save the given value into status. Try to handle the value as Json,
+	// but store as a string otherwise.
+	err := a.status.SetJson(url, []byte(data), status.UNCHECKED_REVISION)
+	if err != nil {
+		// Not valid JSON, treat as a simple string.
+		err = a.status.Set(url, data, status.UNCHECKED_REVISION)
+		if err != nil {
+			// Not possible/hard to handle
+			panic(err)
+		}
+	}
+}
+
 func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 
 	device_url := a.findDeviceUrl(event.CoreId)
@@ -98,20 +112,21 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 		return
 	}
 
+	//
+	// Publish detailed event information.
+	//
 	event_url := device_url + "/details/events/" + event.Name
 
 	// Event data may be in JSON.
 	data_url := event_url + "/data"
-	err := a.status.SetJson(data_url, []byte(event.Data), status.UNCHECKED_REVISION)
-	if err != nil {
-		// Not valid JSON, treat as a simple string.
-		err = a.status.Set(data_url, event.Data, status.UNCHECKED_REVISION)
-		if err != nil {
-			// Not possible/hard to handle
-			panic(err)
-		}
-	}
+	a.setJsonOrString(data_url, event.Data)
 	a.status.Set(event_url+"/published", event.Published_at, status.UNCHECKED_REVISION)
+
+	//
+	// Publish event as device property.
+	//
+	property_url := device_url + "/" + event.Name
+	a.setJsonOrString(property_url, event.Data)
 }
 
 func (a sparkAdapter) findDeviceUrl(id string) string {

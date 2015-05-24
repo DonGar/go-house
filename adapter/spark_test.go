@@ -270,13 +270,25 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 		`"connected":true,` +
 		`"events":{"standard":{"data":"value","published":"p_date"}},` +
 		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`}}}}`
+		`},` +
+		`"standard":"value"` +
+		`}}}`
 
 	adaptor_event_2 := `{"core":{"a":{"details":{` +
 		`"connected":true,` +
 		`"events":{"standard":{"data":"updated","published":"p_date"}},` +
 		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`}}}}`
+		`},` +
+		`"standard":"updated"` +
+		`}}}`
+
+	adaptor_event_json := `{"core":{"a":{"details":{` +
+		`"connected":true,` +
+		`"events":{"standard":{"data":[1,"1",3.1],"published":"p_date"}},` +
+		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
+		`},` +
+		`"standard":[1,"1",3.1]` +
+		`}}}`
 
 	// Create a device.
 	mock.devices <- []sparkapi.Device{deviceA}
@@ -301,6 +313,10 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 	// Send a system event to make sure it's ignored.
 	mock.events <- sparkapi.Event{"spark/status", "online", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_2)
+
+	// Update an event value.
+	mock.events <- sparkapi.Event{"standard", "[1, \"1\", 3.1]", "p_date", "aaa"}
+	checkAdaptorContents(c, &b, adaptor_event_json)
 
 	adaptor.Stop()
 	checkAdaptorContents(c, &b, `null`)
