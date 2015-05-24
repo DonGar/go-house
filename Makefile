@@ -8,6 +8,9 @@ run:
 test:
 	go test ./...
 
+network:
+	cd spark-api && go test -network .
+
 lint:
 	gofmt -s -l .
 	go vet ./...

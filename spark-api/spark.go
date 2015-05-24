@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var SPARK_IO_URL string = "https://api.spark.io/"
+var SPARK_IO_URL string = "https://api.particle.io/"
 
 type SparkApiInterface interface {
 	CallFunction(device, function, argument string) (int, error)
