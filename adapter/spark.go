@@ -12,8 +12,9 @@ import (
 type sparkAdapter struct {
 	base
 	sparkapi.SparkApiInterface
-	actionName string
-	actionsMgr *actions.Manager
+	actionName  string
+	actionsMgr  *actions.Manager
+	targetWatch <-chan status.UrlMatches
 }
 
 func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
@@ -30,12 +31,18 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 		return nil, e
 	}
 
+	watch, e := b.status.WatchForUpdate(b.adapterUrl + "/core/*/*")
+	if e != nil {
+		return nil, e
+	}
+
 	// Create an start adapter.
 	sa := &sparkAdapter{
 		b,
 		sparkapi.NewSparkApi(username, password),
 		filepath.Base(b.adapterUrl) + ".function",
 		m.actionsMgr,
+		watch,
 	}
 
 	go sa.Handler()
@@ -67,6 +74,10 @@ func (a *sparkAdapter) Handler() {
 			log.Printf("Spark: Got event. %+v\n", event)
 			a.updateFromEvent(event)
 
+		case matches := <-a.targetWatch:
+			log.Printf("Spark: Got matches. %+v\n", matches)
+			a.checkForTargetToFire(matches)
+
 		case <-a.StopChan:
 			err := a.actionsMgr.UnRegisterAction(a.actionName)
 			if err != nil {
@@ -81,7 +92,25 @@ func (a *sparkAdapter) Handler() {
 
 func (a *sparkAdapter) Stop() {
 	a.SparkApiInterface.Stop()
+	a.status.ReleaseWatch(a.targetWatch)
 	a.base.Stop()
+}
+
+func (a sparkAdapter) getJsonOrString(url string) (string, int, error) {
+	// Save the given value into status. Try to handle the value as Json,
+	// but store as a string otherwise.
+	rawValue, revision, err := a.status.Get(url)
+	if err != nil {
+		return "", 0, err
+	}
+
+	value, ok := rawValue.(string)
+	if ok {
+		return value, revision, err
+	} else {
+		json, revision, err := a.status.GetJson(url)
+		return string(json), revision, err
+	}
 }
 
 func (a sparkAdapter) setJsonOrString(url, data string) {
@@ -127,6 +156,48 @@ func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
 	//
 	property_url := device_url + "/" + event.Name
 	a.setJsonOrString(property_url, event.Data)
+}
+
+func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
+	for target_url, raw_value := range matches {
+		// If the target was updated to 'nil', we can ignore it.
+		if raw_value.Value == nil {
+			continue
+		}
+
+		// Parse URL to find device and target names.
+
+		inside_adapter := target_url[len(a.adapterUrl+"/core/"):]
+
+		// Valid inside_adapter is expected to be of the form: <device>/<property_target>
+		device_end := strings.Index(inside_adapter, "/")
+		device := inside_adapter[:device_end]
+		target := inside_adapter[device_end+1:]
+
+		if !strings.HasSuffix(target, "_target") {
+			continue
+		}
+
+		argument, revision, err := a.getJsonOrString(target_url)
+		if revision != raw_value.Revision || err != nil {
+			continue
+		}
+
+		log.Printf("Considering %s\n", target_url)
+		log.Printf("  argument: %s\n", argument)
+		log.Printf("  inside: %s\n", inside_adapter)
+		log.Printf("  device: %s\n", device)
+		log.Printf("  target: %s\n", target)
+
+		// This call is very, very slow. Considered a background process, but that
+		// can lead to out of order invocations.
+		// We ignore error results, but callFunction will log them.
+		a.callFunction(device, target, string(argument))
+
+		// Clear the target value. Again, ignore error. The most likely cause
+		// is that someone else updated the target again, which doesn't bother us.
+		a.status.Set(target_url, nil, raw_value.Revision)
+	}
 }
 
 func (a sparkAdapter) findDeviceUrl(id string) string {

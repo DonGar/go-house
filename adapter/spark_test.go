@@ -65,12 +65,18 @@ func (m mockSparkApi) Stop() {
 // Helper to setup an adaptor that uses the mock api.
 //
 
-func setupSparkAdaptorMockApi(m *Manager, b base) (mock *mockSparkApi, a *sparkAdapter) {
+func setupSparkAdaptorMockApi(m *Manager, b base) (*mockSparkApi, *sparkAdapter) {
 
 	mockApi := newMockSparkApi()
 
+	// This must be kept in sync with newSparkAdapter, especially the URL used.
+	watch, e := b.status.WatchForUpdate(b.adapterUrl + "/core/*/*")
+	if e != nil {
+		panic(e)
+	}
+
 	// Create an start adapter.
-	sa := &sparkAdapter{b, mockApi, "mock_action", m.actionsMgr}
+	sa := &sparkAdapter{b, mockApi, "mock_action", m.actionsMgr, watch}
 	go sa.Handler()
 	return mockApi, sa
 }
@@ -88,13 +94,13 @@ var deviceA sparkapi.Device = sparkapi.Device{
 	[]string{},
 }
 
-var deviceB sparkapi.Device = sparkapi.Device{
+var deviceFuncs sparkapi.Device = sparkapi.Device{
 	"bbb",
 	"b",
 	"date_time",
 	false,
 	map[string]interface{}{"var1": "val1", "var2": 2},
-	[]string{"func_a", "func_b"},
+	[]string{"func_a", "prop_target"},
 }
 
 func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
@@ -106,12 +112,12 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 
 	checkAdaptorContents(c, &b, `{"core":{}}`)
 
-	mock.devices <- []sparkapi.Device{deviceA, deviceB}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
 
 	checkAdaptorContents(c, &b,
 		`{"core":{`+
 			`"a":{"details":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}},`+
-			`"b":{"details":{"connected":false,"functions":["func_a","func_b"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}}`+
+			`"b":{"details":{"connected":false,"functions":["func_a","prop_target"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}}`+
 			`}}`)
 
 	adaptor.Stop()
@@ -127,7 +133,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
 	// Send to devices without a refresh method.
-	mock.devices <- []sparkapi.Device{deviceA, deviceB}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
@@ -144,7 +150,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	}
 
 	// Send a device with a refresh method.
-	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
@@ -152,7 +158,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Clear the mock, and send the same devices with connected status unchanged.
 	mock.actionArgs = mockFunctionCall{}
-	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
@@ -160,7 +166,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Take the refresh device offline.
 	deviceRefresh.Connected = false
-	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
@@ -168,7 +174,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Bring the device back online.
 	deviceRefresh.Connected = true
-	mock.devices <- []sparkapi.Device{deviceA, deviceB, deviceRefresh}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
@@ -185,7 +191,7 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 	// Create a spark adapter.
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
-	mock.devices <- []sparkapi.Device{deviceA, deviceB}
+	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
 
 	verifyFailure := func(actionContents map[string]interface{}) {
 		// Create action definition.
@@ -317,6 +323,81 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 	// Update an event value.
 	mock.events <- sparkapi.Event{"standard", "[1, \"1\", 3.1]", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_json)
+
+	adaptor.Stop()
+	checkAdaptorContents(c, &b, `null`)
+}
+
+func (suite *MySuite) TestSparkAdapterTargetHandling(c *check.C) {
+	_, mgr, b := setupTestAdapter(c,
+		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+
+	// Create a spark adapter.
+	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Send to devices with a target method.
+	mock.devices <- []sparkapi.Device{deviceFuncs}
+	time.Sleep(time.Microsecond)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	target_url := adaptor.adapterUrl + "/core/b/prop_target"
+	property_url := adaptor.adapterUrl + "/core/b/prop"
+	bad_target_url := adaptor.adapterUrl + "/core/b/bogus/prop_target"
+
+	// Set target to nil. Should have no effect.
+	mock.actionArgs = mockFunctionCall{}
+	err := adaptor.status.Set(target_url, nil, status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Set target to value. Should invoke function.
+	mock.actionArgs = mockFunctionCall{}
+	err = adaptor.status.Set(target_url, "foo", status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+
+	value, _, err := adaptor.status.Get(target_url)
+	c.Check(value, check.IsNil)
+	c.Assert(err, check.IsNil)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "foo"})
+
+	// Set target to value. Should invoke function.
+	mock.actionArgs = mockFunctionCall{}
+	err = adaptor.status.Set(target_url, "bar", status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+
+	value, _, err = adaptor.status.Get(target_url)
+	c.Check(value, check.IsNil)
+	c.Assert(err, check.IsNil)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "bar"})
+
+	// Set property to value. Should have no effect.
+	mock.actionArgs = mockFunctionCall{}
+	err = adaptor.status.Set(property_url, "prop_val", status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Set invalid thing that looks like target to value. Should have no effect.
+	mock.actionArgs = mockFunctionCall{}
+	err = adaptor.status.Set(bad_target_url, "prop_val", status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+
+	// Set target to Json value.
+	mock.actionArgs = mockFunctionCall{}
+	err = adaptor.status.SetJson(target_url, []byte("0"), status.UNCHECKED_REVISION)
+	c.Assert(err, check.IsNil)
+	time.Sleep(time.Microsecond)
+
+	value, _, err = adaptor.status.Get(target_url)
+	c.Check(value, check.IsNil)
+	c.Assert(err, check.IsNil)
+	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "0"})
 
 	adaptor.Stop()
 	checkAdaptorContents(c, &b, `null`)

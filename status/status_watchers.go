@@ -10,8 +10,8 @@ type watcher struct {
 // notification available immediately, and will receive another after every
 // change affecting the specified URL. If multiple updates happen and the
 // channel is not read from, then intermediate updates may be lost.
-func (s *Status) WatchForUpdate(url string) (Channel <-chan UrlMatches, e error) {
-	if _, e = parseUrl(url); e != nil {
+func (s *Status) WatchForUpdate(url string) (<-chan UrlMatches, error) {
+	if _, e := parseUrl(url); e != nil {
 		return nil, e
 	}
 
