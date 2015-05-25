@@ -224,45 +224,69 @@ OldNames:
 
 	// Add/update devices that exist.
 	for _, d := range devices {
-		device_details_url := core_url + "/" + d.Name + "/details"
+		a.updateDevice(d)
+	}
+}
 
-		wasConnected := a.status.GetBoolWithDefault(device_details_url+"/connected", false)
+func (a sparkAdapter) updateDevice(device sparkapi.Device) {
+	// Add/update devices that exist.
+	device_details_url := a.adapterUrl + "/core" + "/" + device.Name + "/details"
 
-		funcNames := make([]interface{}, len(d.Functions))
-		for i, name := range d.Functions {
-			funcNames[i] = name
-		}
+	wasConnected := a.status.GetBoolWithDefault(device_details_url+"/connected", false)
 
-		if d.Connected && !wasConnected {
-			for _, name := range d.Functions {
-				// Refresh is called for devices that just connected, and after server
-				// restart to allow current events to be resent.
-				if name == "refresh" {
-					// Request refresh in background, to avoid slowing devices update.
-					a.SparkApiInterface.CallFunctionAsync(d.Name, "refresh", "")
-				}
-			}
-		}
+	funcNames := make([]interface{}, len(device.Functions))
+	for i, name := range device.Functions {
+		funcNames[i] = name
+	}
 
-		coreDetails := map[string]interface{}{
-			"id":         d.Id,
-			"last_heard": d.LastHeard,
-			"connected":  d.Connected,
-			"variables":  d.Variables,
-			"functions":  funcNames,
-		}
+	if device.Connected && !wasConnected {
+		// Refresh is called for devices that just connected, and after server
+		// restart to allow current events to be resent.
+		a.callRefreshIfPresent(device)
+	}
 
-		// If the device existed, and we had events for it, preserve them.
-		events, _, _ := a.status.Get(device_details_url + "/events")
-		if events != nil {
-			coreDetails["events"] = events
-		}
+	deviceDetails := map[string]interface{}{
+		"id":         device.Id,
+		"last_heard": device.LastHeard,
+		"connected":  device.Connected,
+		"variables":  device.Variables,
+		"functions":  funcNames,
+	}
 
-		err = a.status.Set(device_details_url, coreDetails, status.UNCHECKED_REVISION)
-		if err != nil {
-			panic(err)
+	// If the device existed, and we had events for it, preserve them.
+	events, _, _ := a.status.Get(device_details_url + "/events")
+	if events != nil {
+		deviceDetails["events"] = events
+	}
+
+	err := a.status.Set(device_details_url, deviceDetails, status.UNCHECKED_REVISION)
+	if err != nil {
+		panic(err)
+	}
+
+	a.createEmptyTargets(device)
+}
+
+func (a sparkAdapter) callRefreshIfPresent(device sparkapi.Device) {
+	for _, name := range device.Functions {
+		if name == "refresh" {
+			// Request refresh in background, to avoid slowing devices update.
+			a.SparkApiInterface.CallFunctionAsync(device.Name, "refresh", "")
 		}
 	}
+}
+
+func (a sparkAdapter) createEmptyTargets(device sparkapi.Device) (e error) {
+	device_url := a.adapterUrl + "/core" + "/" + device.Name
+
+	for _, name := range device.Functions {
+		if strings.HasSuffix(name, "_target") {
+			target_url := device_url + "/" + name
+			// Ignore failures. They are expected if target existed.
+			_ = a.status.Set(target_url, nil, status.NONEXISTENT)
+		}
+	}
+	return nil
 }
 
 func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e error) {

@@ -121,7 +121,7 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 	checkAdaptorContents(c, &b,
 		`{"core":{`+
 			`"a":{"details":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}},`+
-			`"b":{"details":{"connected":false,"functions":["func_a","prop_target"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}}}`+
+			`"b":{"details":{"connected":false,"functions":["func_a","prop_target"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}},"prop_target":null}`+
 			`}}`)
 
 	adaptor.Stop()
