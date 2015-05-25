@@ -89,7 +89,6 @@ func checkAdaptorContents(c *check.C, adaptor *base, jsonValue string) {
 	// Let the background routine catchup.
 	time.Sleep(time.Microsecond)
 
-	v, _, e := adaptor.status.GetJson(adaptor.adapterUrl)
+	v := adaptor.status.PrettyDump(adaptor.adapterUrl)
 	c.Check(string(v), check.DeepEquals, jsonValue)
-	c.Check(e, check.IsNil)
 }

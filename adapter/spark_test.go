@@ -16,7 +16,9 @@ func (suite *MySuite) TestSparkAdapterStartStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// Make sure empty adaptor contents are created correctly.
-	checkAdaptorContents(c, &b, `{"core":{}}`)
+	checkAdaptorContents(c, &b, `{
+    "core": {}
+}`)
 
 	a.Stop()
 
@@ -114,15 +116,41 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 	// Create a spark adapter.
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
-	checkAdaptorContents(c, &b, `{"core":{}}`)
+	checkAdaptorContents(c, &b, `{
+    "core": {}
+}`)
 
 	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
 
-	checkAdaptorContents(c, &b,
-		`{"core":{`+
-			`"a":{"details":{"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}}},`+
-			`"b":{"details":{"connected":false,"functions":["func_a","prop_target"],"id":"bbb","last_heard":"date_time","variables":{"var1":"val1","var2":2}},"prop_target":null}`+
-			`}}`)
+	checkAdaptorContents(c, &b, `{
+    "core": {
+        "a": {
+            "details": {
+                "connected": true,
+                "functions": [],
+                "id": "aaa",
+                "last_heard": "date_time",
+                "variables": {}
+            }
+        },
+        "b": {
+            "details": {
+                "connected": false,
+                "functions": [
+                    "func_a",
+                    "prop_target"
+                ],
+                "id": "bbb",
+                "last_heard": "date_time",
+                "variables": {
+                    "var1": "val1",
+                    "var2": 2
+                }
+            },
+            "prop_target": null
+        }
+    }
+}`)
 
 	adaptor.Stop()
 
@@ -270,35 +298,94 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 	// Create a spark adapter.
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
-	checkAdaptorContents(c, &b, `{"core":{}}`)
+	checkAdaptorContents(c, &b, `{
+    "core": {}
+}`)
 
-	adaptor_no_event := `{"core":{"a":{"details":{` +
-		`"connected":true,"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`}}}}`
+	adaptor_no_event := `{
+    "core": {
+        "a": {
+            "details": {
+                "connected": true,
+                "functions": [],
+                "id": "aaa",
+                "last_heard": "date_time",
+                "variables": {}
+            }
+        }
+    }
+}`
 
-	adaptor_event_1 := `{"core":{"a":{"details":{` +
-		`"connected":true,` +
-		`"events":{"standard":{"data":"value","published":"p_date"}},` +
-		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`},` +
-		`"standard":"value"` +
-		`}}}`
+	adaptor_event_1 := `{
+    "core": {
+        "a": {
+            "details": {
+                "connected": true,
+                "events": {
+                    "standard": {
+                        "data": "value",
+                        "published": "p_date"
+                    }
+                },
+                "functions": [],
+                "id": "aaa",
+                "last_heard": "date_time",
+                "variables": {}
+            },
+            "standard": "value"
+        }
+    }
+}`
 
-	adaptor_event_2 := `{"core":{"a":{"details":{` +
-		`"connected":true,` +
-		`"events":{"standard":{"data":"updated","published":"p_date"}},` +
-		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`},` +
-		`"standard":"updated"` +
-		`}}}`
+	adaptor_event_2 := `{
+    "core": {
+        "a": {
+            "details": {
+                "connected": true,
+                "events": {
+                    "standard": {
+                        "data": "updated",
+                        "published": "p_date"
+                    }
+                },
+                "functions": [],
+                "id": "aaa",
+                "last_heard": "date_time",
+                "variables": {}
+            },
+            "standard": "updated"
+        }
+    }
+}`
 
-	adaptor_event_json := `{"core":{"a":{"details":{` +
-		`"connected":true,` +
-		`"events":{"standard":{"data":[1,"1",3.1],"published":"p_date"}},` +
-		`"functions":[],"id":"aaa","last_heard":"date_time","variables":{}` +
-		`},` +
-		`"standard":[1,"1",3.1]` +
-		`}}}`
+	adaptor_event_json := `{
+    "core": {
+        "a": {
+            "details": {
+                "connected": true,
+                "events": {
+                    "standard": {
+                        "data": [
+                            1,
+                            "1",
+                            3.1
+                        ],
+                        "published": "p_date"
+                    }
+                },
+                "functions": [],
+                "id": "aaa",
+                "last_heard": "date_time",
+                "variables": {}
+            },
+            "standard": [
+                1,
+                "1",
+                3.1
+            ]
+        }
+    }
+}`
 
 	// Create a device.
 	mock.devices <- []sparkapi.Device{deviceA}
