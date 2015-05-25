@@ -8,6 +8,7 @@ import (
 
 // When calling Set, use this revision to avoid revision checking.
 const UNCHECKED_REVISION = -1
+const NONEXISTENT = -2
 
 // The status structure.
 type Status struct {
@@ -318,17 +319,25 @@ func (s *Status) validRevision(urlPath []string, revision int) (e error) {
 
 	for _, u := range urlPath {
 		if current.revision == revision {
-			// If we found a revision match, there is no error.
+			// If we found a revision match, all children also match.
 			return nil
 		}
 
 		childMap, ok := current.value.(statusMap)
 		if !ok {
+			// If the current value is nil, that's treated an empty map.
+			if current.value == nil && revision == NONEXISTENT {
+				return nil
+			}
 			break
 		}
 
 		child, ok := childMap[u]
 		if !ok {
+			// If the relevant child doesn't exist, then NONEXISTENT.
+			if revision == NONEXISTENT {
+				return nil
+			}
 			break
 		}
 

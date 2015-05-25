@@ -148,14 +148,21 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	e = status.Set("status://unchecked_rev", "value", UNCHECKED_REVISION)
 	c.Check(e, check.IsNil)
 
+	// Set with a NONEXISTENT revision (value exists, this fails)
+	e = status.Set("status://unchecked_rev", "bad_value", NONEXISTENT)
+	c.Check(e, check.NotNil)
+
+	// Set with a NONEXISTENT revision (value doesn't exist, this works)
+	e = status.Set("status://nonexistent", "none", NONEXISTENT)
+	c.Check(e, check.IsNil)
+
 	// Set a value to the matching value. Ensure the revision doesn't change.
 	e = status.Set("status://sub1/sub2/int", 5, 10)
-	// TODO: Test complex type (will break today)
 
 	CheckGetFailure(c, &status, "status://foo")
 
 	// Check Revisions throughout the tree.
-	CheckRevision(c, &status, "status://", 10)
+	CheckRevision(c, &status, "status://", 11)
 	CheckRevision(c, &status, "status://sub1", 9)
 	CheckRevision(c, &status, "status://sub1/string", 7)
 	CheckRevision(c, &status, "status://sub1/sub2", 9)
@@ -164,6 +171,7 @@ func (s *MySuite) TestGetSet(c *check.C) {
 	CheckRevision(c, &status, "status://sub1/sub2/array", 8)
 	CheckRevision(c, &status, "status://sub1/sub2/nested", 9)
 	CheckRevision(c, &status, "status://unchecked_rev", 10)
+	CheckRevision(c, &status, "status://nonexistent", 11)
 
 	// Verify all contents.
 	CheckValue(c, &status, "status://",
@@ -177,8 +185,9 @@ func (s *MySuite) TestGetSet(c *check.C) {
 						"subnested": map[string]interface{}{}},
 				},
 				"string": "string value"},
-			"unchecked_rev": "value"},
-		10)
+			"unchecked_rev": "value",
+			"nonexistent":   "none"},
+		11)
 }
 
 func (s *MySuite) TestSetInvalidValue(c *check.C) {
@@ -407,11 +416,11 @@ func (s *MySuite) TestValidRevision(c *check.C) {
 	}
 
 	// Valid revisions for an empty status.
-	validInvalid("status://", []int{0}, []int{1, 12, 55})
-	validInvalid("status://foo/bar", []int{0}, []int{1, 12, 55})
+	validInvalid("status://", []int{0}, []int{1, 12, 55, NONEXISTENT})
+	validInvalid("status://foo/bar", []int{0, NONEXISTENT}, []int{1, 12, 55})
 
 	// Make the status non-empty.
-	e = status.Set("status://sub/one", "foo", UNCHECKED_REVISION)
+	e = status.Set("status://sub/one", "foo", NONEXISTENT)
 	c.Check(e, check.IsNil)
 	e = status.Set("status://sub/two", "foo", UNCHECKED_REVISION)
 	c.Check(e, check.IsNil)
@@ -449,6 +458,10 @@ func (s *MySuite) TestRemove(c *check.C) {
 
 	// Try to remove an invalid path.
 	e = status.Remove("status://foo/bar", UNCHECKED_REVISION)
+	c.Check(e, check.NotNil)
+
+	// Try to remove an invalid path.
+	e = status.Remove("status://foo/bar", NONEXISTENT)
 	c.Check(e, check.NotNil)
 
 	// Try to remove an invalid path.
