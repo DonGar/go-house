@@ -75,7 +75,7 @@ func (a *sparkAdapter) Handler() {
 			a.updateFromEvent(event)
 
 		case matches := <-a.targetWatch:
-			log.Printf("Spark: Got matches. %+v\n", matches)
+			// Don't log, since this often fires when there is no action to take.
 			a.checkForTargetToFire(matches)
 
 		case <-a.StopChan:
@@ -151,12 +151,6 @@ func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
 		if revision != raw_value.Revision || err != nil {
 			continue
 		}
-
-		log.Printf("Considering %s\n", target_url)
-		log.Printf("  argument: %s\n", argument)
-		log.Printf("  inside: %s\n", inside_adapter)
-		log.Printf("  device: %s\n", device)
-		log.Printf("  target: %s\n", target)
 
 		// We ignore results, but they are logged.
 		a.SparkApiInterface.CallFunctionAsync(device, target, string(argument))
