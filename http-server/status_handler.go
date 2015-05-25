@@ -97,11 +97,11 @@ func (s *StatusHandler) HandlePut(
 	w http.ResponseWriter, r *http.Request,
 	statusUrl string, revision int) {
 
-	// Verify URL against web adapters.
-	if !s.VerfiyStatusUrlAgainstAdapters(statusUrl) {
-		logAndHttpError(w, fmt.Sprintf("No adapter for %s.", statusUrl), http.StatusBadRequest)
-		return
-	}
+	// Verify URL against web adapters. (Disabled to allow web controls)
+	// if !s.VerfiyStatusUrlAgainstAdapters(statusUrl) {
+	// 	logAndHttpError(w, fmt.Sprintf("No adapter for %s.", statusUrl), http.StatusBadRequest)
+	// 	return
+	// }
 
 	// Read the body into memory.
 	body := bytes.NewBuffer(nil)

@@ -360,26 +360,26 @@ func (suite *MySuite) TestPutWildcardStatusPath(c *check.C) {
 		"Status: Wildcards not allowed here: status://adapter/*/foo\n")
 }
 
-func (suite *MySuite) TestPutNoneAdapterPath(c *check.C) {
-	statusHandler := setupStatusHandlerWithAdapter(c)
+// func (suite *MySuite) TestPutNoneAdapterPath(c *check.C) {
+// 	statusHandler := setupStatusHandlerWithAdapter(c)
 
-	request, e := http.NewRequest(
-		"PUT", "http://example.com/status/foo/", strings.NewReader(`{"foo": "bar"}`))
-	c.Assert(e, check.IsNil)
+// 	request, e := http.NewRequest(
+// 		"PUT", "http://example.com/status/foo/", strings.NewReader(`{"foo": "bar"}`))
+// 	c.Assert(e, check.IsNil)
 
-	response := httptest.NewRecorder()
+// 	response := httptest.NewRecorder()
 
-	// Perform the query
-	statusHandler.ServeHTTP(response, request)
+// 	// Perform the query
+// 	statusHandler.ServeHTTP(response, request)
 
-	// Validate the result.
-	c.Check(response.Code, check.Equals, 400)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
-	c.Check(
-		response.Body.String(),
-		check.Equals,
-		"No adapter for status://foo/.\n")
-}
+// 	// Validate the result.
+// 	c.Check(response.Code, check.Equals, 400)
+// 	c.Check(
+// 		response.HeaderMap,
+// 		check.DeepEquals,
+// 		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+// 	c.Check(
+// 		response.Body.String(),
+// 		check.Equals,
+// 		"No adapter for status://foo/.\n")
+// }
