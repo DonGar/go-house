@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"bufio"
@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-var SPARK_IO_URL string = "https://api.particle.io/"
+var PARTICLE_IO_URL string = "https://api.particle.io/"
 
-type SparkApiInterface interface {
+type ParticleApiInterface interface {
 	CallFunction(device, function, argument string) (int, error)
 	CallFunctionAsync(device, function, argument string)
 	Updates() (<-chan []Device, <-chan Event)
@@ -24,7 +24,7 @@ type funcResponse struct {
 	err    error
 }
 
-type SparkApi struct {
+type ParticleApi struct {
 	stoppable.Base
 
 	// Our connection information.
@@ -47,8 +47,8 @@ type SparkApi struct {
 	refreshDevices chan bool
 }
 
-func NewSparkApi(username, password string) *SparkApi {
-	a := &SparkApi{
+func NewParticleApi(username, password string) *ParticleApi {
+	a := &ParticleApi{
 		stoppable.NewBase(),
 		username, password, "",
 		[]Device{},
@@ -66,32 +66,32 @@ func NewSparkApi(username, password string) *SparkApi {
 	return a
 }
 
-func (a *SparkApi) CallFunction(device, function, argument string) (result int, err error) {
+func (a *ParticleApi) CallFunction(device, function, argument string) (result int, err error) {
 	// This is a blocking call, but processed in handler routine.
 	a.funcCall <- [3]string{device, function, argument}
 	return a.waitForFunctionResult(device, function, argument)
 }
 
-func (a *SparkApi) CallFunctionAsync(device, function, argument string) {
+func (a *ParticleApi) CallFunctionAsync(device, function, argument string) {
 	// Queue request synchronously, then log results async.
 	// The sync'd queuing ensures in-order processing.
 	a.funcCall <- [3]string{device, function, argument}
 	go a.waitForFunctionResult(device, function, argument)
 }
 
-func (a *SparkApi) waitForFunctionResult(device, function, argument string) (result int, err error) {
+func (a *ParticleApi) waitForFunctionResult(device, function, argument string) (result int, err error) {
 	fullResult := <-a.funcResponse
 
 	if fullResult.err == nil {
-		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, fullResult.result)
+		log.Printf("Particle %s.%s(%s) result: %d\n", device, function, argument, fullResult.result)
 	} else {
-		log.Printf("Spark %s.%s(%s) error: %s\n", device, function, argument, fullResult.err)
+		log.Printf("Particle %s.%s(%s) error: %s\n", device, function, argument, fullResult.err)
 	}
 
 	return fullResult.result, fullResult.err
 }
 
-func (a *SparkApi) Updates() (<-chan []Device, <-chan Event) {
+func (a *ParticleApi) Updates() (<-chan []Device, <-chan Event) {
 	if a.deviceUpdates == nil {
 		a.deviceUpdates = make(chan []Device)
 		a.events = make(chan Event)
@@ -102,7 +102,7 @@ func (a *SparkApi) Updates() (<-chan []Device, <-chan Event) {
 	return a.deviceUpdates, a.events
 }
 
-func (a *SparkApi) sendDevicesUpdate(devices []Device) {
+func (a *ParticleApi) sendDevicesUpdate(devices []Device) {
 
 	if devices == nil {
 		a.deviceUpdates <- nil
@@ -119,7 +119,7 @@ func (a *SparkApi) sendDevicesUpdate(devices []Device) {
 	a.deviceUpdates <- updateValue
 }
 
-func (a *SparkApi) readEvents(reader *bufio.Reader) error {
+func (a *ParticleApi) readEvents(reader *bufio.Reader) error {
 	for {
 		event, err := parseEvent(reader)
 		if err != nil {
@@ -131,7 +131,8 @@ func (a *SparkApi) readEvents(reader *bufio.Reader) error {
 		}
 
 		// If it's an update to a Core status, fully refresh.
-		if strings.HasPrefix(event.Name, "spark/") {
+		if strings.HasPrefix(event.Name, "spark/") ||
+			strings.HasPrefix(event.Name, "particle/") {
 			a.refreshDevices <- true
 		}
 
@@ -139,14 +140,14 @@ func (a *SparkApi) readEvents(reader *bufio.Reader) error {
 	}
 }
 
-func (a *SparkApi) reconnectAfterDelay() {
+func (a *ParticleApi) reconnectAfterDelay() {
 	// Try to reconnect the even listener, after a delay.
 	time.Sleep(60 * time.Second)
-	log.Println("Requesting new Spark API connection.")
+	log.Println("Requesting new Particle API connection.")
 	a.listenEvents <- true
 }
 
-func (a *SparkApi) handler() {
+func (a *ParticleApi) handler() {
 	var eventResponse *http.Response
 	var err error
 

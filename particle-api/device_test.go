@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"gopkg.in/check.v1"

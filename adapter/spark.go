@@ -2,7 +2,7 @@ package adapter
 
 import (
 	"github.com/DonGar/go-house/engine/actions"
-	"github.com/DonGar/go-house/spark-api"
+	"github.com/DonGar/go-house/particle-api"
 	"github.com/DonGar/go-house/status"
 	"log"
 	"path/filepath"
@@ -11,7 +11,7 @@ import (
 
 type sparkAdapter struct {
 	base
-	sparkapi.SparkApiInterface
+	particleapi.ParticleApiInterface
 	actionName  string
 	actionsMgr  *actions.Manager
 	targetWatch <-chan status.UrlMatches
@@ -39,7 +39,7 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 	// Create an start adapter.
 	sa := &sparkAdapter{
 		b,
-		sparkapi.NewSparkApi(username, password),
+		particleapi.NewParticleApi(username, password),
 		filepath.Base(b.adapterUrl) + ".function",
 		m.actionsMgr,
 		watch,
@@ -62,7 +62,7 @@ func (a *sparkAdapter) Handler() {
 		panic(err)
 	}
 
-	deviceUpdates, events := a.SparkApiInterface.Updates()
+	deviceUpdates, events := a.ParticleApiInterface.Updates()
 
 	for {
 		select {
@@ -91,12 +91,12 @@ func (a *sparkAdapter) Handler() {
 }
 
 func (a *sparkAdapter) Stop() {
-	a.SparkApiInterface.Stop()
+	a.ParticleApiInterface.Stop()
 	a.status.ReleaseWatch(a.targetWatch)
 	a.base.Stop()
 }
 
-func (a sparkAdapter) updateFromEvent(event sparkapi.Event) {
+func (a sparkAdapter) updateFromEvent(event particleapi.Event) {
 
 	device_url := a.findDeviceUrl(event.CoreId)
 	if device_url == "" {
@@ -153,7 +153,7 @@ func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
 		}
 
 		// We ignore results, but they are logged.
-		a.SparkApiInterface.CallFunctionAsync(device, target, string(argument))
+		a.ParticleApiInterface.CallFunctionAsync(device, target, string(argument))
 
 		// Clear the target value. Again, ignore error. The most likely cause
 		// is that someone else updated the target again, which doesn't bother us.
@@ -193,7 +193,7 @@ func (a sparkAdapter) findDeviceUrl(id string) string {
 	return ""
 }
 
-func (a sparkAdapter) updateDeviceList(devices []sparkapi.Device) {
+func (a sparkAdapter) updateDeviceList(devices []particleapi.Device) {
 	core_url := a.adapterUrl + "/core"
 
 	// Remove any old cores that don't exist any more.
@@ -222,7 +222,7 @@ OldNames:
 	}
 }
 
-func (a sparkAdapter) updateDevice(device sparkapi.Device) {
+func (a sparkAdapter) updateDevice(device particleapi.Device) {
 	// Add/update devices that exist.
 	device_details_url := a.adapterUrl + "/core" + "/" + device.Name + "/details"
 
@@ -261,16 +261,16 @@ func (a sparkAdapter) updateDevice(device sparkapi.Device) {
 	a.createEmptyTargets(device)
 }
 
-func (a sparkAdapter) callRefreshIfPresent(device sparkapi.Device) {
+func (a sparkAdapter) callRefreshIfPresent(device particleapi.Device) {
 	for _, name := range device.Functions {
 		if name == "refresh" {
 			// Request refresh in background, to avoid slowing devices update.
-			a.SparkApiInterface.CallFunctionAsync(device.Name, "refresh", "")
+			a.ParticleApiInterface.CallFunctionAsync(device.Name, "refresh", "")
 		}
 	}
 }
 
-func (a sparkAdapter) createEmptyTargets(device sparkapi.Device) (e error) {
+func (a sparkAdapter) createEmptyTargets(device particleapi.Device) (e error) {
 	device_url := a.adapterUrl + "/core" + "/" + device.Name
 
 	for _, name := range device.Functions {
@@ -300,6 +300,6 @@ func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e
 	}
 
 	// Log detailed results.
-	_, err = a.SparkApiInterface.CallFunction(device, function, argument)
+	_, err = a.ParticleApiInterface.CallFunction(device, function, argument)
 	return err
 }

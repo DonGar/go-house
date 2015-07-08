@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"encoding/json"
@@ -7,9 +7,9 @@ import (
 	"net/url"
 )
 
-var DEVICES_URL string = SPARK_IO_URL + "v1/devices"
+var DEVICES_URL string = PARTICLE_IO_URL + "v1/devices"
 
-func (a *SparkApi) findDevice(name string) *Device {
+func (a *ParticleApi) findDevice(name string) *Device {
 	// Find a current device, by name.
 	for _, d := range a.devices {
 		if d.Name == name {
@@ -20,7 +20,7 @@ func (a *SparkApi) findDevice(name string) *Device {
 	return nil
 }
 
-func (a *SparkApi) discoverDevices() ([]Device, error) {
+func (a *ParticleApi) discoverDevices() ([]Device, error) {
 	// Lookup the list of devices, and discoverDeviceDetails on each.
 
 	// Do the device lookup.
@@ -68,7 +68,7 @@ func (a *SparkApi) discoverDevices() ([]Device, error) {
 	return devices, nil
 }
 
-func (a *SparkApi) discoverDeviceDetails(device *Device) (e error) {
+func (a *ParticleApi) discoverDeviceDetails(device *Device) (e error) {
 	// Lookup the Variable and Function names for the given Device.
 	// Call lookupDeviceVariable for each variable.
 
@@ -119,7 +119,7 @@ func (a *SparkApi) discoverDeviceDetails(device *Device) (e error) {
 	return nil
 }
 
-func (a *SparkApi) lookupDeviceVariable(device *Device, variable string) (e error) {
+func (a *ParticleApi) lookupDeviceVariable(device *Device, variable string) (e error) {
 	// Lookup and fill in the current value for a given variable on the Device.
 
 	// Look up device details.
@@ -157,8 +157,8 @@ func (a *SparkApi) lookupDeviceVariable(device *Device, variable string) (e erro
 	return nil
 }
 
-func (a *SparkApi) callFunction(device *Device, function, argument string) (int, error) {
-	// Invoke a function on a Spark Core.
+func (a *ParticleApi) callFunction(device *Device, function, argument string) (int, error) {
+	// Invoke a function on a Particle Core.
 	postUrl := DEVICES_URL + "/" + device.Id + "/" + function
 
 	response, err := a.postToResponseWithTokenRefresh(postUrl, url.Values{"args": {argument}})

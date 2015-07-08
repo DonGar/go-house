@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var EVENTS_URL string = SPARK_IO_URL + "v1/devices/events"
+var EVENTS_URL string = PARTICLE_IO_URL + "v1/devices/events"
 
 type Event struct {
 	Name         string
@@ -27,7 +27,7 @@ func readLine(reader *bufio.Reader) (string, error) {
 	return strings.TrimSpace(line), nil
 }
 
-func (a *SparkApi) openEventConnection() (*http.Response, *bufio.Reader, error) {
+func (a *ParticleApi) openEventConnection() (*http.Response, *bufio.Reader, error) {
 	response, err := a.urlToResponseWithTokenRefresh(EVENTS_URL)
 	if err != nil {
 		return nil, nil, err

@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"gopkg.in/check.v1"
@@ -13,7 +13,7 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 
 	// We failed with a BadRequest error.
 	request, err := http.NewRequest("GET", DEVICES_URL, nil)
@@ -72,7 +72,7 @@ func (suite *MySuite) TestUrlToResponseBadUser(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi("", "")
+	sa := NewParticleApi("", "")
 
 	// Do a token refresh.
 	response, err := sa.urlToResponseWithTokenRefresh(DEVICES_URL)

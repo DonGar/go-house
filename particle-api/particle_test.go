@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"flag"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// go test -network (in spark-api dir, only)
+// go test -network (in particle-api dir, only)
 var network = flag.Bool("network", false, "Include networking tests")
 
 var TEST_USER string = "house@bgb.cc"
@@ -20,8 +20,8 @@ type MySuite struct{}
 var _ = check.Suite(&MySuite{})
 
 func (suite *MySuite) TestInterfaceCompliance(c *check.C) {
-	var sa *SparkApi = nil
-	var i SparkApiInterface
+	var sa *ParticleApi = nil
+	var i ParticleApiInterface
 
 	// Compile time interface conformance test.
 	i = sa
@@ -30,7 +30,7 @@ func (suite *MySuite) TestInterfaceCompliance(c *check.C) {
 
 func (suite *MySuite) TestStartStop(c *check.C) {
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 	sa.Stop()
 }
 
@@ -40,7 +40,7 @@ func (suite *MySuite) TestUpdates(c *check.C) {
 	}
 
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 
 	println("Blocking on devices.")
 	devicesChan, eventChan := sa.Updates()
@@ -60,7 +60,7 @@ func (suite *MySuite) TestUpdatesStop(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 	// Start and stop right away, without waiting for results.
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 	_, _ = sa.Updates()
 	sa.Stop()
 }
@@ -70,7 +70,7 @@ func (suite *MySuite) TestCallFunctionBadDevice(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 
 	// Invoke a function on a non-exitant device.
 	_, err := sa.CallFunction("device_name", "function", "argument")

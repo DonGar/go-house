@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"bufio"
@@ -42,7 +42,7 @@ func (suite *MySuite) TestOpenEventConnection(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
-	sa := NewSparkApi(TEST_USER, TEST_PASS)
+	sa := NewParticleApi(TEST_USER, TEST_PASS)
 	defer sa.Stop()
 
 	response, reader, err := sa.openEventConnection()

@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"encoding/json"
@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-var OAUTH_URL string = SPARK_IO_URL + "oauth/token"
-var TOKENS_URL string = SPARK_IO_URL + "v1/access_tokens"
+var OAUTH_URL string = PARTICLE_IO_URL + "oauth/token"
+var TOKENS_URL string = PARTICLE_IO_URL + "v1/access_tokens"
 
 //
 // Type to encode HTTP Errors.
@@ -45,7 +45,7 @@ func requestToResponse(request *http.Request) (*http.Response, error) {
 	return response, err
 }
 
-func (a *SparkApi) requestToResponseWithToken(request *http.Request) (*http.Response, error) {
+func (a *ParticleApi) requestToResponseWithToken(request *http.Request) (*http.Response, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization.
 	request.Header.Set("Authorization", "Bearer "+a.token)
@@ -53,7 +53,7 @@ func (a *SparkApi) requestToResponseWithToken(request *http.Request) (*http.Resp
 	return requestToResponse(request)
 }
 
-func (a *SparkApi) requestToResponseWithTokenRefresh(request *http.Request) (*http.Response, error) {
+func (a *ParticleApi) requestToResponseWithTokenRefresh(request *http.Request) (*http.Response, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization. Lookup/refresh
 	// the token as needed.
@@ -90,7 +90,7 @@ func (a *SparkApi) requestToResponseWithTokenRefresh(request *http.Request) (*ht
 	return a.requestToResponseWithToken(request)
 }
 
-func (a *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
+func (a *ParticleApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
 	// Perform requestToResponseWithTokenRefresh from a URL.
 
 	request, err := http.NewRequest("GET", requestUrl, nil)
@@ -101,7 +101,7 @@ func (a *SparkApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Respo
 	return a.requestToResponseWithTokenRefresh(request)
 }
 
-func (a *SparkApi) postToResponseWithTokenRefresh(postUrl string, postFormValues url.Values) (*http.Response, error) {
+func (a *ParticleApi) postToResponseWithTokenRefresh(postUrl string, postFormValues url.Values) (*http.Response, error) {
 	// Perform requestToResponseWithTokenRefresh from a URL.
 
 	request, err := http.NewRequest("POST", postUrl, strings.NewReader(postFormValues.Encode()))

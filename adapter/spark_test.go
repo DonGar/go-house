@@ -1,7 +1,7 @@
 package adapter
 
 import (
-	"github.com/DonGar/go-house/spark-api"
+	"github.com/DonGar/go-house/particle-api"
 	"github.com/DonGar/go-house/status"
 	"gopkg.in/check.v1"
 	"time"
@@ -36,16 +36,16 @@ type mockFunctionCall struct {
 
 // Conforms to SparkApiInterface
 type mockSparkApi struct {
-	devices      chan []sparkapi.Device
-	events       chan sparkapi.Event
+	devices      chan []particleapi.Device
+	events       chan particleapi.Event
 	actionResult error
 	actionArgs   mockFunctionCall
 }
 
 func newMockSparkApi() *mockSparkApi {
 	return &mockSparkApi{
-		make(chan []sparkapi.Device),
-		make(chan sparkapi.Event),
+		make(chan []particleapi.Device),
+		make(chan particleapi.Event),
 		nil,
 		mockFunctionCall{},
 	}
@@ -60,7 +60,7 @@ func (s *mockSparkApi) CallFunctionAsync(device, function, argument string) {
 	s.actionArgs = mockFunctionCall{device, function, argument}
 }
 
-func (m *mockSparkApi) Updates() (<-chan []sparkapi.Device, <-chan sparkapi.Event) {
+func (m *mockSparkApi) Updates() (<-chan []particleapi.Device, <-chan particleapi.Event) {
 	return m.devices, m.events
 }
 
@@ -91,7 +91,7 @@ func setupSparkAdaptorMockApi(m *Manager, b base) (*mockSparkApi, *sparkAdapter)
 // Tests that run against the Mock API.
 //
 
-var deviceA sparkapi.Device = sparkapi.Device{
+var deviceA particleapi.Device = particleapi.Device{
 	"aaa",
 	"a",
 	"date_time",
@@ -100,7 +100,7 @@ var deviceA sparkapi.Device = sparkapi.Device{
 	[]string{},
 }
 
-var deviceFuncs sparkapi.Device = sparkapi.Device{
+var deviceFuncs particleapi.Device = particleapi.Device{
 	"bbb",
 	"b",
 	"date_time",
@@ -120,7 +120,7 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
     "core": {}
 }`)
 
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
 
 	checkAdaptorContents(c, &b, `{
     "core": {
@@ -165,14 +165,14 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
 	// Send to devices without a refresh method.
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
 
 	// Define an online device with a refresh method.
-	deviceRefresh := sparkapi.Device{
+	deviceRefresh := particleapi.Device{
 		"ccc",
 		"c",
 		"date_time",
@@ -182,7 +182,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	}
 
 	// Send a device with a refresh method.
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
@@ -190,7 +190,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Clear the mock, and send the same devices with connected status unchanged.
 	mock.actionArgs = mockFunctionCall{}
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
@@ -198,7 +198,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Take the refresh device offline.
 	deviceRefresh.Connected = false
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
@@ -206,7 +206,7 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 
 	// Bring the device back online.
 	deviceRefresh.Connected = true
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs, deviceRefresh}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
 	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
@@ -223,7 +223,7 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 	// Create a spark adapter.
 	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
 
-	mock.devices <- []sparkapi.Device{deviceA, deviceFuncs}
+	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
 
 	verifyFailure := func(actionContents map[string]interface{}) {
 		// Create action definition.
@@ -388,31 +388,31 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 }`
 
 	// Create a device.
-	mock.devices <- []sparkapi.Device{deviceA}
+	mock.devices <- []particleapi.Device{deviceA}
 	checkAdaptorContents(c, &b, adaptor_no_event)
 
 	// Send an event for an unknown device (to be ignored).
-	mock.events <- sparkapi.Event{"standard", "value", "p_date", "bogus_core_id"}
+	mock.events <- particleapi.Event{"standard", "value", "p_date", "bogus_core_id"}
 	checkAdaptorContents(c, &b, adaptor_no_event)
 
 	// Send a valid event for device.
-	mock.events <- sparkapi.Event{"standard", "value", "p_date", "aaa"}
+	mock.events <- particleapi.Event{"standard", "value", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_1)
 
 	// Update device, verify event is still there.
-	mock.devices <- []sparkapi.Device{deviceA}
+	mock.devices <- []particleapi.Device{deviceA}
 	checkAdaptorContents(c, &b, adaptor_event_1)
 
 	// Update an event value.
-	mock.events <- sparkapi.Event{"standard", "updated", "p_date", "aaa"}
+	mock.events <- particleapi.Event{"standard", "updated", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_2)
 
 	// Send a system event to make sure it's ignored.
-	mock.events <- sparkapi.Event{"spark/status", "online", "p_date", "aaa"}
+	mock.events <- particleapi.Event{"spark/status", "online", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_2)
 
 	// Update an event value.
-	mock.events <- sparkapi.Event{"standard", "[1, \"1\", 3.1]", "p_date", "aaa"}
+	mock.events <- particleapi.Event{"standard", "[1, \"1\", 3.1]", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_json)
 
 	adaptor.Stop()
@@ -428,7 +428,7 @@ func (suite *MySuite) TestSparkAdapterTargetHandling(c *check.C) {
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
 
 	// Send to devices with a target method.
-	mock.devices <- []sparkapi.Device{deviceFuncs}
+	mock.devices <- []particleapi.Device{deviceFuncs}
 	time.Sleep(time.Microsecond)
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
 

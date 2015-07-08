@@ -1,4 +1,4 @@
-package sparkapi
+package particleapi
 
 import (
 	"gopkg.in/check.v1"
@@ -12,7 +12,7 @@ func (suite *MySuite) TestFindDevice(c *check.C) {
 	dev_a := Device{Name: "dev_a"}
 	dev_b := Device{Name: "dev_b"}
 
-	sa := SparkApi{}
+	sa := ParticleApi{}
 	sa.devices = []Device{dev_a, dev_b}
 
 	result := sa.findDevice("nonexistant")
