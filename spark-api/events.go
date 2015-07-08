@@ -27,8 +27,8 @@ func readLine(reader *bufio.Reader) (string, error) {
 	return strings.TrimSpace(line), nil
 }
 
-func (s *SparkApi) openEventConnection() (*http.Response, *bufio.Reader, error) {
-	response, err := s.urlToResponseWithTokenRefresh(EVENTS_URL)
+func (a *SparkApi) openEventConnection() (*http.Response, *bufio.Reader, error) {
+	response, err := a.urlToResponseWithTokenRefresh(EVENTS_URL)
 	if err != nil {
 		return nil, nil, err
 	}

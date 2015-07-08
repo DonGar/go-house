@@ -9,9 +9,9 @@ import (
 
 var DEVICES_URL string = SPARK_IO_URL + "v1/devices"
 
-func (s *SparkApi) findDevice(name string) *Device {
+func (a *SparkApi) findDevice(name string) *Device {
 	// Find a current device, by name.
-	for _, d := range s.devices {
+	for _, d := range a.devices {
 		if d.Name == name {
 			return &d
 		}
@@ -20,12 +20,12 @@ func (s *SparkApi) findDevice(name string) *Device {
 	return nil
 }
 
-func (s *SparkApi) discoverDevices() ([]Device, error) {
+func (a *SparkApi) discoverDevices() ([]Device, error) {
 	// Lookup the list of devices, and discoverDeviceDetails on each.
 
 	// Do the device lookup.
 	requestUrl := DEVICES_URL
-	response, err := s.urlToResponseWithTokenRefresh(requestUrl)
+	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *SparkApi) discoverDevices() ([]Device, error) {
 		devices[i].Connected = r.Connected
 
 		// Look up more details.
-		err = s.discoverDeviceDetails(&devices[i])
+		err = a.discoverDeviceDetails(&devices[i])
 		if err != nil {
 			return nil, err
 		}
@@ -68,13 +68,13 @@ func (s *SparkApi) discoverDevices() ([]Device, error) {
 	return devices, nil
 }
 
-func (s *SparkApi) discoverDeviceDetails(device *Device) (e error) {
+func (a *SparkApi) discoverDeviceDetails(device *Device) (e error) {
 	// Lookup the Variable and Function names for the given Device.
 	// Call lookupDeviceVariable for each variable.
 
-	// Look up device details.
+	// Look up device detaila.
 	requestUrl := DEVICES_URL + "/" + device.Id
-	response, err := s.urlToResponseWithTokenRefresh(requestUrl)
+	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (s *SparkApi) discoverDeviceDetails(device *Device) (e error) {
 	for variable := range parsedResponse.Variables {
 		device.Variables[variable] = nil
 
-		err = s.lookupDeviceVariable(device, variable)
+		err = a.lookupDeviceVariable(device, variable)
 		if err != nil {
 			return err
 		}
@@ -119,12 +119,12 @@ func (s *SparkApi) discoverDeviceDetails(device *Device) (e error) {
 	return nil
 }
 
-func (s *SparkApi) lookupDeviceVariable(device *Device, variable string) (e error) {
+func (a *SparkApi) lookupDeviceVariable(device *Device, variable string) (e error) {
 	// Lookup and fill in the current value for a given variable on the Device.
 
 	// Look up device details.
 	requestUrl := DEVICES_URL + "/" + device.Id + "/" + variable
-	response, err := s.urlToResponseWithTokenRefresh(requestUrl)
+	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
 	if err != nil {
 		return err
 	}
@@ -157,11 +157,11 @@ func (s *SparkApi) lookupDeviceVariable(device *Device, variable string) (e erro
 	return nil
 }
 
-func (s *SparkApi) callFunction(device *Device, function, argument string) (int, error) {
+func (a *SparkApi) callFunction(device *Device, function, argument string) (int, error) {
 	// Invoke a function on a Spark Core.
 	postUrl := DEVICES_URL + "/" + device.Id + "/" + function
 
-	response, err := s.postToResponseWithTokenRefresh(postUrl, url.Values{"args": {argument}})
+	response, err := a.postToResponseWithTokenRefresh(postUrl, url.Values{"args": {argument}})
 	if err != nil {
 		return -1, err
 	}

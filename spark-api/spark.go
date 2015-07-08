@@ -48,7 +48,7 @@ type SparkApi struct {
 }
 
 func NewSparkApi(username, password string) *SparkApi {
-	s := &SparkApi{
+	a := &SparkApi{
 		stoppable.NewBase(),
 		username, password, "",
 		[]Device{},
@@ -61,26 +61,26 @@ func NewSparkApi(username, password string) *SparkApi {
 	}
 
 	// Start our background thread.
-	go s.handler()
+	go a.handler()
 
-	return s
+	return a
 }
 
-func (s *SparkApi) CallFunction(device, function, argument string) (result int, err error) {
+func (a *SparkApi) CallFunction(device, function, argument string) (result int, err error) {
 	// This is a blocking call, but processed in handler routine.
-	s.funcCall <- [3]string{device, function, argument}
-	return s.waitForFunctionResult(device, function, argument)
+	a.funcCall <- [3]string{device, function, argument}
+	return a.waitForFunctionResult(device, function, argument)
 }
 
-func (s *SparkApi) CallFunctionAsync(device, function, argument string) {
+func (a *SparkApi) CallFunctionAsync(device, function, argument string) {
 	// Queue request synchronously, then log results async.
 	// The sync'd queuing ensures in-order processing.
-	s.funcCall <- [3]string{device, function, argument}
-	go s.waitForFunctionResult(device, function, argument)
+	a.funcCall <- [3]string{device, function, argument}
+	go a.waitForFunctionResult(device, function, argument)
 }
 
-func (s *SparkApi) waitForFunctionResult(device, function, argument string) (result int, err error) {
-	fullResult := <-s.funcResponse
+func (a *SparkApi) waitForFunctionResult(device, function, argument string) (result int, err error) {
+	fullResult := <-a.funcResponse
 
 	if fullResult.err == nil {
 		log.Printf("Spark %s.%s(%s) result: %d\n", device, function, argument, fullResult.result)
@@ -91,35 +91,35 @@ func (s *SparkApi) waitForFunctionResult(device, function, argument string) (res
 	return fullResult.result, fullResult.err
 }
 
-func (s *SparkApi) Updates() (<-chan []Device, <-chan Event) {
-	if s.deviceUpdates == nil {
-		s.deviceUpdates = make(chan []Device)
-		s.events = make(chan Event)
+func (a *SparkApi) Updates() (<-chan []Device, <-chan Event) {
+	if a.deviceUpdates == nil {
+		a.deviceUpdates = make(chan []Device)
+		a.events = make(chan Event)
 		// Start listening for events, which also kicks off device refresh.
-		go func() { s.listenEvents <- true }()
+		go func() { a.listenEvents <- true }()
 	}
 
-	return s.deviceUpdates, s.events
+	return a.deviceUpdates, a.events
 }
 
-func (s *SparkApi) sendDevicesUpdate(devices []Device) {
+func (a *SparkApi) sendDevicesUpdate(devices []Device) {
 
 	if devices == nil {
-		s.deviceUpdates <- nil
+		a.deviceUpdates <- nil
 		return
 	}
 
 	// Make a copy of our Devices structure.
 	updateValue := make([]Device, len(devices))
-	for i := range s.devices {
+	for i := range a.devices {
 		updateValue[i] = devices[i].Copy()
 	}
 
 	// Send out our Devices copy.
-	s.deviceUpdates <- updateValue
+	a.deviceUpdates <- updateValue
 }
 
-func (s *SparkApi) readEvents(reader *bufio.Reader) error {
+func (a *SparkApi) readEvents(reader *bufio.Reader) error {
 	for {
 		event, err := parseEvent(reader)
 		if err != nil {
@@ -132,21 +132,21 @@ func (s *SparkApi) readEvents(reader *bufio.Reader) error {
 
 		// If it's an update to a Core status, fully refresh.
 		if strings.HasPrefix(event.Name, "spark/") {
-			s.refreshDevices <- true
+			a.refreshDevices <- true
 		}
 
-		s.events <- *event
+		a.events <- *event
 	}
 }
 
-func (s *SparkApi) reconnectAfterDelay() {
+func (a *SparkApi) reconnectAfterDelay() {
 	// Try to reconnect the even listener, after a delay.
 	time.Sleep(60 * time.Second)
 	log.Println("Requesting new Spark API connection.")
-	s.listenEvents <- true
+	a.listenEvents <- true
 }
 
-func (s *SparkApi) handler() {
+func (a *SparkApi) handler() {
 	var eventResponse *http.Response
 	var err error
 
@@ -156,62 +156,62 @@ func (s *SparkApi) handler() {
 	// Start our event handling loop.
 	for {
 		select {
-		case <-s.StopChan:
+		case <-a.StopChan:
 			refreshTimer.Stop()
 			if eventResponse != nil {
 				eventResponse.Body.Close()
 			}
 
-			s.StopChan <- true
+			a.StopChan <- true
 			return
 
-		case args := <-s.funcCall:
+		case args := <-a.funcCall:
 			device, function, argument := args[0], args[1], args[2]
-			d := s.findDevice(device)
+			d := a.findDevice(device)
 
 			if d != nil {
-				result, err := s.callFunction(d, function, argument)
-				s.funcResponse <- funcResponse{result, err}
+				result, err := a.callFunction(d, function, argument)
+				a.funcResponse <- funcResponse{result, err}
 			} else {
 				err = fmt.Errorf("Can't find device '%s' to invoke %s\n", device, function)
-				s.funcResponse <- funcResponse{-1, err}
+				a.funcResponse <- funcResponse{-1, err}
 			}
 
 		case <-refreshTimer.C:
 			// Refresh our device list, at least once a day.
 			go func() {
-				if s.deviceUpdates != nil {
-					s.refreshDevices <- true
+				if a.deviceUpdates != nil {
+					a.refreshDevices <- true
 				}
 			}()
 
-		case <-s.refreshDevices:
-			s.devices, err = s.discoverDevices()
+		case <-a.refreshDevices:
+			a.devices, err = a.discoverDevices()
 			if err != nil {
 				log.Println("discoverDevices failed: ", err.Error())
 			}
-			s.sendDevicesUpdate(s.devices)
+			a.sendDevicesUpdate(a.devices)
 
-		case <-s.listenEvents:
+		case <-a.listenEvents:
 			var reader *bufio.Reader
 
-			eventResponse, reader, err = s.openEventConnection()
+			eventResponse, reader, err = a.openEventConnection()
 			if err != nil {
 				log.Println("openEventConnection failed: ", err.Error())
-				go s.reconnectAfterDelay()
+				go a.reconnectAfterDelay()
 				continue
 			}
 
 			// We opened an event connection, listen to it.
 			go func() {
-				s.refreshDevices <- true
+				a.refreshDevices <- true
 
 				// readEvents never returns without an error.
-				err = s.readEvents(reader)
+				err = a.readEvents(reader)
 				log.Println("readEvents failed: ", err.Error())
 
 				// Always reconnect.
-				s.reconnectAfterDelay()
+				a.reconnectAfterDelay()
 			}()
 		}
 	}
