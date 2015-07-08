@@ -17,10 +17,11 @@ type Manager struct {
 
 // Map type name to factory method.
 var adapterFactories = map[string]newAdapter{
-	"base":  newBaseAdapter,
-	"file":  newFileAdapter,
-	"spark": newSparkAdapter,
-	"web":   newWebAdapter,
+	"base":     newBaseAdapter,
+	"file":     newFileAdapter,
+	"spark":    newParticleAdapter,
+	"particle": newParticleAdapter,
+	"web":      newWebAdapter,
 }
 
 func NewManager(status *status.Status, actionsMgr *actions.Manager) (mgr *Manager, e error) {

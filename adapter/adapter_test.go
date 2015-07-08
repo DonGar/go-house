@@ -36,10 +36,16 @@ func setupTestStatus(c *check.C) (s *status.Status) {
               "filename": "TestFile.json"
             }
           },
-          "spark": {
-            "TestSpark": {
+          "particle": {
+            "TestParticle": {
             	"username": "foo",
             	"password": "bar"
+            }
+          },
+          "spark": {
+            "TestSpark": {
+            	"username": "foo2",
+            	"password": "bar2"
             }
           },
           "web": {

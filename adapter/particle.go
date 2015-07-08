@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type sparkAdapter struct {
+type particleAdapter struct {
 	base
 	particleapi.ParticleApiInterface
 	actionName  string
@@ -17,7 +17,7 @@ type sparkAdapter struct {
 	targetWatch <-chan status.UrlMatches
 }
 
-func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
+func newParticleAdapter(m *Manager, b base) (a adapter, e error) {
 	//
 	// Look up config values.
 	//
@@ -37,7 +37,7 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 	}
 
 	// Create an start adapter.
-	sa := &sparkAdapter{
+	sa := &particleAdapter{
 		b,
 		particleapi.NewParticleApi(username, password),
 		filepath.Base(b.adapterUrl) + ".function",
@@ -50,7 +50,7 @@ func newSparkAdapter(m *Manager, b base) (a adapter, e error) {
 	return sa, nil
 }
 
-func (a *sparkAdapter) Handler() {
+func (a *particleAdapter) Handler() {
 	err := a.actionsMgr.RegisterAction(a.actionName, a.functionAction)
 	if err != nil {
 		panic(err)
@@ -67,11 +67,11 @@ func (a *sparkAdapter) Handler() {
 	for {
 		select {
 		case devices := <-deviceUpdates:
-			log.Printf("Spark: Got devices. %+v\n", devices)
+			log.Printf("Particle: Got devices. %+v\n", devices)
 			a.updateDeviceList(devices)
 
 		case event := <-events:
-			log.Printf("Spark: Got event. %+v\n", event)
+			log.Printf("Particle: Got event. %+v\n", event)
 			a.updateFromEvent(event)
 
 		case matches := <-a.targetWatch:
@@ -90,23 +90,24 @@ func (a *sparkAdapter) Handler() {
 	}
 }
 
-func (a *sparkAdapter) Stop() {
+func (a *particleAdapter) Stop() {
 	a.ParticleApiInterface.Stop()
 	a.status.ReleaseWatch(a.targetWatch)
 	a.base.Stop()
 }
 
-func (a sparkAdapter) updateFromEvent(event particleapi.Event) {
+func (a particleAdapter) updateFromEvent(event particleapi.Event) {
 
 	device_url := a.findDeviceUrl(event.CoreId)
 	if device_url == "" {
 		// If we have no associated device (yet), ignore the event.
-		log.Println("Spark: Received event from unknown device: ", event.CoreId)
+		log.Println("Particle: Received event from unknown device: ", event.CoreId)
 		return
 	}
 
-	if strings.HasPrefix(event.Name, "spark") {
-		log.Printf("Spark: Ignoring system event %s from %s.\n", event.Name, event.CoreId)
+	if strings.HasPrefix(event.Name, "spark/") ||
+		strings.HasPrefix(event.Name, "particle/") {
+		log.Printf("Particle: Ignoring system event %s from %s.\n", event.Name, event.CoreId)
 		return
 	}
 
@@ -127,7 +128,7 @@ func (a sparkAdapter) updateFromEvent(event particleapi.Event) {
 	a.status.SetJsonOrString(property_url, event.Data, status.UNCHECKED_REVISION)
 }
 
-func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
+func (a *particleAdapter) checkForTargetToFire(matches status.UrlMatches) {
 	for target_url, raw_value := range matches {
 		// If the target was updated to 'nil', we can ignore it.
 		if raw_value.Value == nil {
@@ -161,7 +162,7 @@ func (a *sparkAdapter) checkForTargetToFire(matches status.UrlMatches) {
 	}
 }
 
-func (a sparkAdapter) findDeviceUrl(id string) string {
+func (a particleAdapter) findDeviceUrl(id string) string {
 
 	// Find the id's of all devices.
 	devices_url := a.adapterUrl + "/core/*/details/id"
@@ -193,7 +194,7 @@ func (a sparkAdapter) findDeviceUrl(id string) string {
 	return ""
 }
 
-func (a sparkAdapter) updateDeviceList(devices []particleapi.Device) {
+func (a particleAdapter) updateDeviceList(devices []particleapi.Device) {
 	core_url := a.adapterUrl + "/core"
 
 	// Remove any old cores that don't exist any more.
@@ -222,7 +223,7 @@ OldNames:
 	}
 }
 
-func (a sparkAdapter) updateDevice(device particleapi.Device) {
+func (a particleAdapter) updateDevice(device particleapi.Device) {
 	// Add/update devices that exist.
 	device_details_url := a.adapterUrl + "/core" + "/" + device.Name + "/details"
 
@@ -261,7 +262,7 @@ func (a sparkAdapter) updateDevice(device particleapi.Device) {
 	a.createEmptyTargets(device)
 }
 
-func (a sparkAdapter) callRefreshIfPresent(device particleapi.Device) {
+func (a particleAdapter) callRefreshIfPresent(device particleapi.Device) {
 	for _, name := range device.Functions {
 		if name == "refresh" {
 			// Request refresh in background, to avoid slowing devices update.
@@ -270,7 +271,7 @@ func (a sparkAdapter) callRefreshIfPresent(device particleapi.Device) {
 	}
 }
 
-func (a sparkAdapter) createEmptyTargets(device particleapi.Device) (e error) {
+func (a particleAdapter) createEmptyTargets(device particleapi.Device) (e error) {
 	device_url := a.adapterUrl + "/core" + "/" + device.Name
 
 	for _, name := range device.Functions {
@@ -283,7 +284,7 @@ func (a sparkAdapter) createEmptyTargets(device particleapi.Device) (e error) {
 	return nil
 }
 
-func (a sparkAdapter) functionAction(s *status.Status, action *status.Status) (e error) {
+func (a particleAdapter) functionAction(s *status.Status, action *status.Status) (e error) {
 	device, _, err := action.GetString("status://device")
 	if err != nil {
 		return err

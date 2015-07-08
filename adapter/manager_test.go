@@ -52,7 +52,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
-	c.Check(len(mgr.adapters), check.Equals, 5)
+	c.Check(len(mgr.adapters), check.Equals, 6)
 
 	mgr.Stop()
 
@@ -62,7 +62,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	// Verify Status Contents
 	adapterUrls := []string{
 		"status://TestBase", "status://TestFile", "status://TestFileSpecified",
-		"status://TestSpark", "status://TestWeb",
+		"status://TestParticle", "status://TestWeb",
 	}
 
 	for _, url := range adapterUrls {

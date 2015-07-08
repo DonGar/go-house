@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-func (suite *MySuite) TestSparkAdapterStartStop(c *check.C) {
+func (suite *MySuite) TestParticleAdapterStartStop(c *check.C) {
 	_, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	a, e := newSparkAdapter(mgr, b)
+	// Create a particle adapter.
+	a, e := newParticleAdapter(mgr, b)
 	c.Assert(e, check.IsNil)
 
 	// Make sure empty adaptor contents are created correctly.
@@ -27,23 +27,23 @@ func (suite *MySuite) TestSparkAdapterStartStop(c *check.C) {
 }
 
 //
-// Create a mockSparkApi to help test the adaptor.
+// Create a mockParticleApi to help test the adaptor.
 //
 
 type mockFunctionCall struct {
 	device, function, argument string
 }
 
-// Conforms to SparkApiInterface
-type mockSparkApi struct {
+// Conforms to ParticleApiInterface
+type mockParticleApi struct {
 	devices      chan []particleapi.Device
 	events       chan particleapi.Event
 	actionResult error
 	actionArgs   mockFunctionCall
 }
 
-func newMockSparkApi() *mockSparkApi {
-	return &mockSparkApi{
+func newMockParticleApi() *mockParticleApi {
+	return &mockParticleApi{
 		make(chan []particleapi.Device),
 		make(chan particleapi.Event),
 		nil,
@@ -51,38 +51,38 @@ func newMockSparkApi() *mockSparkApi {
 	}
 }
 
-func (s *mockSparkApi) CallFunction(device, function, argument string) (int, error) {
+func (s *mockParticleApi) CallFunction(device, function, argument string) (int, error) {
 	s.actionArgs = mockFunctionCall{device, function, argument}
 	return 0, s.actionResult
 }
 
-func (s *mockSparkApi) CallFunctionAsync(device, function, argument string) {
+func (s *mockParticleApi) CallFunctionAsync(device, function, argument string) {
 	s.actionArgs = mockFunctionCall{device, function, argument}
 }
 
-func (m *mockSparkApi) Updates() (<-chan []particleapi.Device, <-chan particleapi.Event) {
+func (m *mockParticleApi) Updates() (<-chan []particleapi.Device, <-chan particleapi.Event) {
 	return m.devices, m.events
 }
 
-func (m mockSparkApi) Stop() {
+func (m mockParticleApi) Stop() {
 }
 
 //
 // Helper to setup an adaptor that uses the mock api.
 //
 
-func setupSparkAdaptorMockApi(m *Manager, b base) (*mockSparkApi, *sparkAdapter) {
+func setupParticleAdaptorMockApi(m *Manager, b base) (*mockParticleApi, *particleAdapter) {
 
-	mockApi := newMockSparkApi()
+	mockApi := newMockParticleApi()
 
-	// This must be kept in sync with newSparkAdapter, especially the URL used.
+	// This must be kept in sync with newParticleAdapter, especially the URL used.
 	watch, e := b.status.WatchForUpdate(b.adapterUrl + "/core/*/*")
 	if e != nil {
 		panic(e)
 	}
 
 	// Create an start adapter.
-	sa := &sparkAdapter{b, mockApi, "mock_action", m.actionsMgr, watch}
+	sa := &particleAdapter{b, mockApi, "mock_action", m.actionsMgr, watch}
 	go sa.Handler()
 	return mockApi, sa
 }
@@ -109,12 +109,12 @@ var deviceFuncs particleapi.Device = particleapi.Device{
 	[]string{"func_a", "prop_target"},
 }
 
-func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
+func (suite *MySuite) TestParticleAdapterStartStopMock(c *check.C) {
 	_, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	// Create a particle adapter.
+	mock, adaptor := setupParticleAdaptorMockApi(mgr, b)
 
 	checkAdaptorContents(c, &b, `{
     "core": {}
@@ -157,12 +157,12 @@ func (suite *MySuite) TestSparkAdapterStartStopMock(c *check.C) {
 	checkAdaptorContents(c, &b, `null`)
 }
 
-func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
+func (suite *MySuite) TestParticleAdapterRefreshCalled(c *check.C) {
 	_, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	// Create a particle adapter.
+	mock, adaptor := setupParticleAdaptorMockApi(mgr, b)
 
 	// Send to devices without a refresh method.
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
@@ -215,13 +215,13 @@ func (suite *MySuite) TestSparkAdapterRefreshCalled(c *check.C) {
 	adaptor.Stop()
 }
 
-func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
+func (suite *MySuite) TestParticleAdapterAction(c *check.C) {
 
 	s, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	// Create a particle adapter.
+	mock, adaptor := setupParticleAdaptorMockApi(mgr, b)
 
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
 
@@ -291,12 +291,12 @@ func (suite *MySuite) TestSparkAdapterAction(c *check.C) {
 	verifySuccess("dev", "func", "arg")
 }
 
-func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
+func (suite *MySuite) TestParticleAdapterEventHandling(c *check.C) {
 	_, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	// Create a particle adapter.
+	mock, adaptor := setupParticleAdaptorMockApi(mgr, b)
 
 	checkAdaptorContents(c, &b, `{
     "core": {}
@@ -411,6 +411,10 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 	mock.events <- particleapi.Event{"spark/status", "online", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_2)
 
+	// Send a system event to make sure it's ignored.
+	mock.events <- particleapi.Event{"particle/status", "online", "p_date", "aaa"}
+	checkAdaptorContents(c, &b, adaptor_event_2)
+
 	// Update an event value.
 	mock.events <- particleapi.Event{"standard", "[1, \"1\", 3.1]", "p_date", "aaa"}
 	checkAdaptorContents(c, &b, adaptor_event_json)
@@ -419,12 +423,12 @@ func (suite *MySuite) TestSparkAdapterEventHandling(c *check.C) {
 	checkAdaptorContents(c, &b, `null`)
 }
 
-func (suite *MySuite) TestSparkAdapterTargetHandling(c *check.C) {
+func (suite *MySuite) TestParticleAdapterTargetHandling(c *check.C) {
 	_, mgr, b := setupTestAdapter(c,
-		"status://server/adapters/spark/TestSpark", "status://TestSpark")
+		"status://server/adapters/particle/TestParticle", "status://TestParticle")
 
-	// Create a spark adapter.
-	mock, adaptor := setupSparkAdaptorMockApi(mgr, b)
+	// Create a particle adapter.
+	mock, adaptor := setupParticleAdaptorMockApi(mgr, b)
 	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
 
 	// Send to devices with a target method.
