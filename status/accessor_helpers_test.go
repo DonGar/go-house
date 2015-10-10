@@ -70,15 +70,26 @@ func (s *MySuite) TestSetGetJson(c *check.C) {
 }
 
 func (s *MySuite) TestPrettyDump(c *check.C) {
+	compressedJson := `{"foo":"bar","int":3,
+	                    "sub1": {"sub2": {"foo": "bar"}}
+	                   }`
+
 	testStatus := Status{}
-	e := testStatus.SetJson(URL, []byte(`{"foo":"bar","int":3}`), 0)
+	e := testStatus.SetJson(URL, []byte(compressedJson), 0)
 	c.Check(e, check.IsNil)
 
 	value := testStatus.PrettyDump(URL)
 	c.Check(value, check.Equals, `{
     "foo": "bar",
-    "int": 3
+    "int": 3,
+    "sub1": {
+        "sub2": {
+            "foo": "bar"
+        }
+    }
 }`)
+
+	c.Check(value, check.Equals, NormalizeJson(compressedJson))
 }
 
 func (s *MySuite) TestGetSubStatus(c *check.C) {

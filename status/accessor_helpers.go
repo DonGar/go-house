@@ -31,20 +31,6 @@ func (s *Status) GetJson(url string) (valueJson []byte, revision int, e error) {
 	return valueJson, revision, e
 }
 
-func (s *Status) PrettyDump(url string) string {
-	value, _, e := s.Get(url)
-	if e != nil {
-		panic(e)
-	}
-
-	valueJson, e := json.MarshalIndent(value, "", "    ")
-	if e != nil {
-		panic(e)
-	}
-
-	return string(valueJson)
-}
-
 // Returns a copy of a sub-tree as a new Status object.
 // Useful if you need a sub-tree that's frozen with friendly accessors.
 func (s *Status) GetSubStatus(url string) (contents *Status, revision int, e error) {
@@ -220,4 +206,35 @@ func (s *Status) SetJsonOrString(url, data string, revision int) error {
 	}
 
 	return s.Set(url, value, revision)
+}
+
+func (s *Status) PrettyDump(url string) string {
+	// Return a status value as a nicely formatted Json string.
+	// Mostly used for unittests.
+
+	result, _, e := s.GetJson(url)
+	if e != nil {
+		panic(e)
+	}
+
+	return NormalizeJson(string(result))
+}
+
+func NormalizeJson(valueJson string) string {
+	// Format a Json string to look like PrettyDump output.
+	// Most useful for unittests.
+	valueBytes := []byte(valueJson)
+
+	var value interface{}
+	e := json.Unmarshal(valueBytes, &value)
+	if e != nil {
+		panic(e)
+	}
+
+	valueBytes, e = json.MarshalIndent(value, "", "    ")
+	if e != nil {
+		panic(e)
+	}
+
+	return string(valueBytes)
 }
