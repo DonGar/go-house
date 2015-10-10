@@ -176,7 +176,10 @@ func (a particleAdapter) findDeviceUrl(id string) string {
 
 	// Find the device with our requested id.
 	for search_url, raw_search_id := range matches {
-		search_id := raw_search_id.Value.(string)
+		search_id, ok := raw_search_id.Value.(string)
+		if !ok {
+			continue
+		}
 
 		// If we found it.
 		if search_id == id {
