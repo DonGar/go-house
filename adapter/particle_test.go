@@ -67,6 +67,23 @@ func (m *mockParticleApi) Updates() (<-chan []particleapi.Device, <-chan particl
 func (m mockParticleApi) Stop() {
 }
 
+func (m *mockParticleApi) checkActionArgs(c *check.C, expected mockFunctionCall) {
+	// We are usually sending an event, and waiting for an out of band update. We
+	// check for the expected result, and if we don't get it, keep checking until
+	// we reach timeout.
+	timeout := time.Now().Add(100 * time.Millisecond)
+	for time.Now().Before(timeout) {
+		if m.actionArgs == expected {
+			break
+		}
+
+		// If we didn't match, wait and try again.
+		time.Sleep(time.Microsecond)
+	}
+
+	c.Check(m.actionArgs, check.DeepEquals, expected)
+}
+
 //
 // Helper to setup an adaptor that uses the mock api.
 //
@@ -166,10 +183,9 @@ func (suite *MySuite) TestParticleAdapterRefreshCalled(c *check.C) {
 
 	// Send to devices without a refresh method.
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs}
-	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Define an online device with a refresh method.
 	deviceRefresh := particleapi.Device{
@@ -183,34 +199,30 @@ func (suite *MySuite) TestParticleAdapterRefreshCalled(c *check.C) {
 
 	// Send a device with a refresh method.
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
-	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"c", "refresh", ""})
+	mock.checkActionArgs(c, mockFunctionCall{"c", "refresh", ""})
 
 	// Clear the mock, and send the same devices with connected status unchanged.
 	mock.actionArgs = mockFunctionCall{}
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
-	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Take the refresh device offline.
 	deviceRefresh.Connected = false
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
-	time.Sleep(time.Microsecond)
 
 	// Check that no refresh method was called.
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Bring the device back online.
 	deviceRefresh.Connected = true
 	mock.devices <- []particleapi.Device{deviceA, deviceFuncs, deviceRefresh}
-	time.Sleep(time.Microsecond)
 
 	// Check that refresh method was called.
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"c", "refresh", ""})
+	mock.checkActionArgs(c, mockFunctionCall{"c", "refresh", ""})
 
 	adaptor.Stop()
 }
@@ -433,8 +445,7 @@ func (suite *MySuite) TestParticleAdapterTargetHandling(c *check.C) {
 
 	// Send to devices with a target method.
 	mock.devices <- []particleapi.Device{deviceFuncs}
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	target_url := adaptor.adapterUrl + "/core/b/prop_target"
 	property_url := adaptor.adapterUrl + "/core/b/prop"
@@ -444,55 +455,49 @@ func (suite *MySuite) TestParticleAdapterTargetHandling(c *check.C) {
 	mock.actionArgs = mockFunctionCall{}
 	err := adaptor.status.Set(target_url, nil, status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Set target to value. Should invoke function.
 	mock.actionArgs = mockFunctionCall{}
 	err = adaptor.status.Set(target_url, "foo", status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
 
+	mock.checkActionArgs(c, mockFunctionCall{"b", "prop_target", "foo"})
 	value, _, err := adaptor.status.Get(target_url)
 	c.Check(value, check.IsNil)
 	c.Assert(err, check.IsNil)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "foo"})
 
 	// Set target to value. Should invoke function.
 	mock.actionArgs = mockFunctionCall{}
 	err = adaptor.status.Set(target_url, "bar", status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
 
+	mock.checkActionArgs(c, mockFunctionCall{"b", "prop_target", "bar"})
 	value, _, err = adaptor.status.Get(target_url)
 	c.Check(value, check.IsNil)
 	c.Assert(err, check.IsNil)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "bar"})
 
 	// Set property to value. Should have no effect.
 	mock.actionArgs = mockFunctionCall{}
 	err = adaptor.status.Set(property_url, "prop_val", status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Set invalid thing that looks like target to value. Should have no effect.
 	mock.actionArgs = mockFunctionCall{}
 	err = adaptor.status.Set(bad_target_url, "prop_val", status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
+	mock.checkActionArgs(c, mockFunctionCall{})
 
 	// Set target to Json value.
 	mock.actionArgs = mockFunctionCall{}
 	err = adaptor.status.SetJson(target_url, []byte("0"), status.UNCHECKED_REVISION)
 	c.Assert(err, check.IsNil)
-	time.Sleep(time.Microsecond)
 
+	mock.checkActionArgs(c, mockFunctionCall{"b", "prop_target", "0"})
 	value, _, err = adaptor.status.Get(target_url)
 	c.Check(value, check.IsNil)
 	c.Assert(err, check.IsNil)
-	c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{"b", "prop_target", "0"})
 
 	adaptor.Stop()
 	checkAdaptorContents(c, &b, `null`)

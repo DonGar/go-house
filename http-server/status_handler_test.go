@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+// Define as a shared constant, partly because it varies by Go version.
+var STD_HEADER = http.Header{
+	"X-Content-Type-Options": []string{"nosniff"},
+	"Content-Type":           []string{"text/plain; charset=utf-8"}}
+
 func setupStatusHandler(c *check.C) (statusHandler *StatusHandler) {
 	status := &status.Status{}
 	actionsMgr := actions.NewManager()
@@ -66,10 +71,7 @@ func (suite *MySuite) TestUnknownMethod(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 405)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(
 		response.Body.String(),
 		check.Equals,
@@ -168,10 +170,7 @@ func (suite *MySuite) TestGetUnknownStatusPath(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 404)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(
 		response.Body.String(),
 		check.Equals,
@@ -191,10 +190,7 @@ func (suite *MySuite) TestGetWildcardStatusPath(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 400)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(
 		response.Body.String(),
 		check.Equals,
@@ -268,10 +264,7 @@ func (suite *MySuite) TestPostUnknownStatusPath(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 404)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(
 		response.Body.String(),
 		check.Equals,
@@ -314,7 +307,7 @@ func (suite *MySuite) TestPutRevisionMismatch(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 400)
-	c.Check(response.HeaderMap, check.DeepEquals, http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(response.Body.String(), check.Equals, "Status: Invalid Revision: 33 - status://adapter. Expected 2\n")
 }
 
@@ -350,10 +343,7 @@ func (suite *MySuite) TestPutWildcardStatusPath(c *check.C) {
 
 	// Validate the result.
 	c.Check(response.Code, check.Equals, 400)
-	c.Check(
-		response.HeaderMap,
-		check.DeepEquals,
-		http.Header{"Content-Type": []string{"text/plain; charset=utf-8"}})
+	c.Check(response.HeaderMap, check.DeepEquals, STD_HEADER)
 	c.Check(
 		response.Body.String(),
 		check.Equals,

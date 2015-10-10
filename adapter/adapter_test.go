@@ -92,9 +92,22 @@ func (suite *MySuite) TestBaseStop(c *check.C) {
 }
 
 func checkAdaptorContents(c *check.C, adaptor *base, jsonValue string) {
-	// Let the background routine catchup.
-	time.Sleep(time.Microsecond)
+	// We are usually sending an event, and waiting for an out of band update. We
+	// check for the expected result, and if we don't get it, keep checking until
+	// we reach timeout.
 
-	v := adaptor.status.PrettyDump(adaptor.adapterUrl)
-	c.Check(string(v), check.DeepEquals, jsonValue)
+	v := string(adaptor.status.PrettyDump(adaptor.adapterUrl))
+
+	timeout := time.Now().Add(100 * time.Millisecond)
+	for time.Now().Before(timeout) {
+		if v == jsonValue {
+			break
+		}
+
+		// If we didn't match, wait and try again.
+		time.Sleep(time.Microsecond)
+		v = string(adaptor.status.PrettyDump(adaptor.adapterUrl))
+	}
+
+	c.Assert(v, check.DeepEquals, jsonValue)
 }
