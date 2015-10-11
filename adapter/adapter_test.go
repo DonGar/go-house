@@ -91,16 +91,14 @@ func (suite *MySuite) TestBaseStop(c *check.C) {
 	c.Check(e, check.IsNil)
 }
 
-func checkAdaptorContents(c *check.C, adaptor *base, jsonValue string) {
-	// We are usually sending an event, and waiting for an out of band update. We
-	// check for the expected result, and if we don't get it, keep checking until
-	// we reach timeout.
+func checkAdaptorContents(c *check.C, adaptor *base, expectedJson string) {
+	expectedJson = status.NormalizeJson(expectedJson)
 
 	v := string(adaptor.status.PrettyDump(adaptor.adapterUrl))
 
 	timeout := time.Now().Add(100 * time.Millisecond)
 	for time.Now().Before(timeout) {
-		if v == jsonValue {
+		if v == expectedJson {
 			break
 		}
 
@@ -109,5 +107,5 @@ func checkAdaptorContents(c *check.C, adaptor *base, jsonValue string) {
 		v = string(adaptor.status.PrettyDump(adaptor.adapterUrl))
 	}
 
-	c.Assert(v, check.DeepEquals, jsonValue)
+	c.Assert(v, check.DeepEquals, expectedJson)
 }
