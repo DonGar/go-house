@@ -1,0 +1,22 @@
+{
+  "Using_2G": 0,
+  "comment": "",
+  "dataversion": 958637941,
+  "devices": [
+    {
+      "altid": "40",
+      "comment": "",
+      "id": "117",
+      "kwh": "16.1530",
+      "parent": "1",
+      "room": "4",
+      "state": "-1",
+      "status": "1",
+      "subcategory": "1",
+      "watts": "1.649"
+    }
+  ],
+  "full": 0,
+  "loadtime": 1455972866,
+  "state": -1
+}

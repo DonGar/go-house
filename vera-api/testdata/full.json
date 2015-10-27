@@ -1,0 +1,975 @@
+{
+  "categories": [
+    {
+      "id": 2,
+      "name": "Dimmable Switch"
+    },
+    {
+      "id": 3,
+      "name": "On/Off Switch"
+    },
+    {
+      "id": 4,
+      "name": "Sensor"
+    },
+    {
+      "id": 7,
+      "name": "Doorlock"
+    },
+    {
+      "id": 12,
+      "name": "Generic Sensor"
+    },
+    {
+      "id": 16,
+      "name": "Humidity Sensor"
+    },
+    {
+      "id": 17,
+      "name": "Temperature Sensor"
+    },
+    {
+      "id": 18,
+      "name": "Light Sensor"
+    }
+  ],
+  "comment": "",
+  "dataversion": 958637939,
+  "devices": [
+    {
+      "altid": "19",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 22,
+      "name": "Bedroom Bath Light",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "18",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 21,
+      "level": "0",
+      "name": "Bedroom Fan",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "48",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 68,
+      "name": "Bedroom Light",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e2",
+      "armed": "0",
+      "armedtripped": "0",
+      "category": 18,
+      "id": 61,
+      "lasttrip": "1429718883",
+      "light": "26",
+      "name": "Bedroom Light Sensor",
+      "parent": 58,
+      "room": 4,
+      "subcategory": 0,
+      "tripped": "0"
+    },
+    {
+      "altid": "e1",
+      "armed": "1",
+      "armedtripped": "0",
+      "category": 4,
+      "id": 60,
+      "lasttrip": "1455971875",
+      "name": "Bedroom Motion",
+      "parent": 58,
+      "room": 4,
+      "subcategory": 3,
+      "tripped": "0"
+    },
+    {
+      "altid": "44",
+      "armed": "1",
+      "armedtripped": "0",
+      "batterylevel": "86",
+      "category": 12,
+      "commFailure": "0",
+      "comment": "",
+      "id": 58,
+      "kwh": "0.0000",
+      "lasttrip": "1434744889",
+      "name": "Bedroom Sensor",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "0",
+      "subcategory": 3,
+      "tripped": "0",
+      "watts": ""
+    },
+    {
+      "altid": "e3",
+      "armed": "0",
+      "armedtripped": "0",
+      "category": 17,
+      "id": 62,
+      "lasttrip": "1429718883",
+      "name": "Bedroom Temp",
+      "parent": 58,
+      "room": 4,
+      "subcategory": 0,
+      "temperature": "70.3",
+      "tripped": "0"
+    },
+    {
+      "altid": "20",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 23,
+      "name": "Bedroom Tower",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "0",
+      "subcategory": 1
+    },
+    {
+      "altid": "40",
+      "category": 3,
+      "comment": "",
+      "id": 117,
+      "kwh": "16.1530",
+      "name": "CPAP",
+      "parent": 1,
+      "room": 4,
+      "state": -1,
+      "status": "1",
+      "subcategory": 1,
+      "watts": "1.653"
+    },
+    {
+      "altid": "27",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 30,
+      "level": "0",
+      "name": "Dining Room Spots",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "24",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 27,
+      "name": "Downstairs Bathroom",
+      "parent": 1,
+      "room": 7,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "25",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 28,
+      "name": "Downstairs Hall Light",
+      "parent": 1,
+      "room": 7,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "55",
+      "category": 3,
+      "comment": "",
+      "id": 118,
+      "name": "Fish Tank",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "60",
+      "batterylevel": "98",
+      "category": 7,
+      "commFailure": "0",
+      "comment": "",
+      "id": 124,
+      "locked": "1",
+      "name": "Front Door Lock",
+      "parent": 1,
+      "pincodes": "<VERSION=3>4\t1,1,2015-12-11 20:55:27,,5862,Don;\t2,1,2015-12-11 20:56:05,,7127,Kim;\t3,0;\t4,0;\t5,0;\t6,0;\t7,0;\t8,0;\t9,0;\t10,0;\t11,0;\t12,0;\t13,0;\t14,0;\t15,0;\t16,0;\t17,0;\t18,0;\t19,0;\t20,0;\t21,0;\t22,0;\t23,0;\t24,0;\t25,0;\t26,0;\t27,0;\t28,0;\t29,0;\t30,0;\t31,0;\t32,0;\t33,0;\t34,0;\t35,0;\t36,0;\t37,0;\t38,0;\t39,0;\t40,0;\t41,0;\t42,0;\t43,0;\t44,0;\t45,0;\t46,0;\t47,0;\t48,0;\t49,0;\t50,0;\t51,0;\t52,0;\t53,0;\t54,0;\t55,0;\t56,0;\t57,0;\t58,0;\t59,0;\t60,0;\t61,0;\t62,0;\t63,0;\t64,0;\t65,0;\t66,0;\t67,0;\t68,0;\t69,0;\t70,0;\t71,0;\t72,0;\t73,0;\t74,0;\t75,0;\t76,0;\t77,0;\t78,0;\t79,0;\t80,0;\t81,0;\t82,0;\t83,0;\t84,0;\t85,0;\t86,0;\t87,0;\t88,0;\t89,0;\t90,0;\t91,0;\t92,0;\t93,0;\t94,0;\t95,0;\t96,0;\t97,0;\t98,0;\t99,0;\t100,0;\t101,0;\t102,0;\t103,0;\t104,0;\t105,0;\t106,0;\t107,0;\t108,0;\t109,0;\t110,0;\t111,0;\t112,0;\t113,0;\t114,0;\t115,0;\t116,0;\t117,0;\t118,0;\t119,0;\t120,0;\t121,0;\t122,0;\t123,0;\t124,0;\t125,0;\t126,0;\t127,0;\t128,0;\t129,0;\t130,0;\t131,0;\t132,0;\t133,0;\t134,0;\t135,0;\t136,0;\t137,0;\t138,0;\t139,0;\t140,0;\t141,0;\t142,0;\t143,0;\t144,0;\t145,0;\t146,0;\t147,0;\t148,0;\t149,0;\t150,0;\t151,0;\t152,0;\t153,0;\t154,0;\t155,0;\t156,0;\t157,0;\t158,0;\t159,0;\t160,0;\t161,0;\t162,0;\t163,0;\t164,0;\t165,0;\t166,0;\t167,0;\t168,0;\t169,0;\t170,0;\t171,0;\t172,0;\t173,0;\t174,0;\t175,0;\t176,0;\t177,0;\t178,0;\t179,0;\t180,0;\t181,0;\t182,0;\t183,0;\t184,0;\t185,0;\t186,0;\t187,0;\t188,0;\t189,0;\t190,0;\t191,0;\t192,0;\t193,0;\t194,0;\t195,0;\t196,0;\t197,0;\t198,0;\t199,0;\t200,0;\t201,0;\t202,0;\t203,0;\t204,0;\t205,0;\t206,0;\t207,0;\t208,0;\t209,0;\t210,0;\t211,0;\t212,0;\t213,0;\t214,0;\t215,0;\t216,0;\t217,0;\t218,0;\t219,0;\t220,0;\t221,0;\t222,0;\t223,0;\t224,0;\t225,0;\t226,0;\t227,0;\t228,0;\t229,0;\t230,0;\t231,0;\t232,0;\t233,0;\t234,0;\t235,0;\t236,0;\t237,0;\t238,0;\t239,0;\t240,0;\t241,0;\t242,0;\t243,0;\t244,0;\t245,0;\t246,0;\t247,0;\t248,0;\t249,0;\t250,0;\t",
+      "room": 5,
+      "state": -1,
+      "subcategory": 0
+    },
+    {
+      "altid": "36",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 51,
+      "name": "Garage Light",
+      "parent": 1,
+      "room": 10,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "38",
+      "batterylevel": "73",
+      "category": 7,
+      "commFailure": "0",
+      "comment": "",
+      "id": 54,
+      "locked": "1",
+      "name": "Garage Lock",
+      "parent": 1,
+      "pincodes": "<VERSION=3>20\t1,1,2014-09-29 08:34:01,,5862,Don;\t2,1,2014-09-29 08:34:26,,7127,Kim;\t3,0;\t4,0;\t5,0;\t6,0;\t7,0;\t8,0;\t9,0;\t10,0;\t11,0;\t12,0;\t13,0;\t14,0;\t15,0;\t16,0;\t17,0;\t18,0;\t19,0;\t20,0;\t21,0;\t22,0;\t23,0;\t24,0;\t25,0;\t26,0;\t27,0;\t28,0;\t29,0;\t30,0;\t31,0;\t32,0;\t33,0;\t34,0;\t35,0;\t36,0;\t37,0;\t38,0;\t39,0;\t40,0;\t41,0;\t42,0;\t43,0;\t44,0;\t45,0;\t46,0;\t47,0;\t48,0;\t49,0;\t50,0;\t51,0;\t52,0;\t53,0;\t54,0;\t55,0;\t56,0;\t57,0;\t58,0;\t59,0;\t60,0;\t61,0;\t62,0;\t63,0;\t64,0;\t65,0;\t66,0;\t67,0;\t68,0;\t69,0;\t70,0;\t71,0;\t72,0;\t73,0;\t74,0;\t75,0;\t76,0;\t77,0;\t78,0;\t79,0;\t80,0;\t81,0;\t82,0;\t83,0;\t84,0;\t85,0;\t86,0;\t87,0;\t88,0;\t89,0;\t90,0;\t91,0;\t92,0;\t93,0;\t94,0;\t95,0;\t96,0;\t97,0;\t98,0;\t99,0;\t100,0;\t101,0;\t102,0;\t103,0;\t104,0;\t105,0;\t106,0;\t107,0;\t108,0;\t109,0;\t110,0;\t111,0;\t112,0;\t113,0;\t114,0;\t115,0;\t116,0;\t117,0;\t118,0;\t119,0;\t120,0;\t121,0;\t122,0;\t123,0;\t124,0;\t125,0;\t126,0;\t127,0;\t128,0;\t129,0;\t130,0;\t131,0;\t132,0;\t133,0;\t134,0;\t135,0;\t136,0;\t137,0;\t138,0;\t139,0;\t140,0;\t141,0;\t142,0;\t143,0;\t144,0;\t145,0;\t146,0;\t147,0;\t148,0;\t149,0;\t150,0;\t151,0;\t152,0;\t153,0;\t154,0;\t155,0;\t156,0;\t157,0;\t158,0;\t159,0;\t160,0;\t161,0;\t162,0;\t163,0;\t164,0;\t165,0;\t166,0;\t167,0;\t168,0;\t169,0;\t170,0;\t171,0;\t172,0;\t173,0;\t174,0;\t175,0;\t176,0;\t177,0;\t178,0;\t179,0;\t180,0;\t181,0;\t182,0;\t183,0;\t184,0;\t185,0;\t186,0;\t187,0;\t188,0;\t189,0;\t190,0;\t191,0;\t192,0;\t193,0;\t194,0;\t195,0;\t196,0;\t197,0;\t198,0;\t199,0;\t200,0;\t201,0;\t202,0;\t203,0;\t204,0;\t205,0;\t206,0;\t207,0;\t208,0;\t209,0;\t210,0;\t211,0;\t212,0;\t213,0;\t214,0;\t215,0;\t216,0;\t217,0;\t218,0;\t219,0;\t220,0;\t221,0;\t222,0;\t223,0;\t224,0;\t225,0;\t226,0;\t227,0;\t228,0;\t229,0;\t230,0;\t231,0;\t232,0;\t233,0;\t234,0;\t235,0;\t236,0;\t237,0;\t238,0;\t239,0;\t240,0;\t241,0;\t242,0;\t243,0;\t244,0;\t245,0;\t246,0;\t247,0;\t248,0;\t249,0;\t250,0;\t",
+      "room": 10,
+      "state": -1,
+      "subcategory": 0
+    },
+    {
+      "altid": "57",
+      "armed": "1",
+      "armedtripped": "0",
+      "batterylevel": "100",
+      "category": 4,
+      "comment": "",
+      "id": 119,
+      "lasttrip": "1455935668",
+      "name": "Garage Motion",
+      "parent": 1,
+      "room": 10,
+      "state": -1,
+      "subcategory": 3,
+      "tripped": "0"
+    },
+    {
+      "altid": "15",
+      "category": 3,
+      "comment": "",
+      "id": 18,
+      "name": "Guest Closet Light",
+      "parent": 1,
+      "room": 3,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "14",
+      "armed": "0",
+      "armedtripped": "1",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 17,
+      "lasttrip": "1414807611",
+      "level": "0",
+      "name": "Guest Fan",
+      "parent": 1,
+      "room": 3,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0,
+      "tripped": "1"
+    },
+    {
+      "altid": "31",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 34,
+      "name": "Kitchen Bar Spots",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "26",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 29,
+      "name": "Kitchen Camera Power",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "1",
+      "subcategory": 1
+    },
+    {
+      "altid": "29",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 32,
+      "name": "Kitchen Counter Spots",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e2",
+      "category": 18,
+      "id": 122,
+      "light": "20",
+      "name": "Kitchen Light",
+      "parent": 120,
+      "room": 6,
+      "subcategory": 0
+    },
+    {
+      "altid": "e1",
+      "armed": "1",
+      "armedtripped": "0",
+      "category": 4,
+      "id": 121,
+      "lasttrip": "1455972291",
+      "name": "Kitchen Motion",
+      "parent": 120,
+      "room": 6,
+      "subcategory": 3,
+      "tripped": "0"
+    },
+    {
+      "altid": "58",
+      "batterylevel": "100",
+      "category": 12,
+      "comment": "",
+      "id": 120,
+      "name": "Kitchen Sensor",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "subcategory": 0
+    },
+    {
+      "altid": "30",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 33,
+      "name": "Kitchen Spots",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e3",
+      "category": 17,
+      "id": 123,
+      "name": "Kitchen Temp",
+      "parent": 120,
+      "room": 6,
+      "subcategory": 0,
+      "temperature": "71.3"
+    },
+    {
+      "altid": "28",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 31,
+      "name": "Laundry Lights",
+      "parent": 1,
+      "room": 6,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e2",
+      "category": 18,
+      "id": 82,
+      "light": "38",
+      "name": "Living Room Light",
+      "parent": 24,
+      "room": 5,
+      "subcategory": 0
+    },
+    {
+      "altid": "e1",
+      "armed": "1",
+      "armedtripped": "0",
+      "category": 4,
+      "id": 37,
+      "lasttrip": "1455963110",
+      "name": "Living Room Motion Sensor",
+      "parent": 24,
+      "room": 5,
+      "subcategory": 3,
+      "tripped": "0"
+    },
+    {
+      "altid": "21",
+      "armed": "1",
+      "armedtripped": "1",
+      "batterylevel": "100",
+      "category": 12,
+      "commFailure": "0",
+      "comment": "",
+      "id": 24,
+      "lasttrip": "1434767948",
+      "name": "Living Room Sensor",
+      "parent": 1,
+      "room": 5,
+      "state": -1,
+      "status": "0",
+      "subcategory": 3,
+      "tripped": "1"
+    },
+    {
+      "altid": "23",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 26,
+      "level": "0",
+      "name": "Living Room Spots",
+      "parent": 1,
+      "room": 5,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e3",
+      "category": 17,
+      "id": 84,
+      "name": "Living Room Temp",
+      "parent": 24,
+      "room": 5,
+      "subcategory": 0
+    },
+    {
+      "altid": "6",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 9,
+      "level": "100",
+      "name": "Office Desk Lamp",
+      "parent": 1,
+      "room": 1,
+      "state": -1,
+      "status": "1",
+      "subcategory": 0
+    },
+    {
+      "altid": "4",
+      "category": 2,
+      "commFailure": "0",
+      "comment": "",
+      "id": 69,
+      "level": "0",
+      "name": "Office Fan",
+      "parent": 1,
+      "room": 1,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "2",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 3,
+      "name": "Office Light",
+      "parent": 1,
+      "room": 1,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "e2",
+      "category": 18,
+      "id": 130,
+      "light": "32",
+      "name": "Office Light Sensor",
+      "parent": 128,
+      "room": 1,
+      "subcategory": 0
+    },
+    {
+      "altid": "e1",
+      "armed": "1",
+      "armedtripped": "1",
+      "category": 4,
+      "id": 129,
+      "lasttrip": "1455971130",
+      "name": "Office Motion",
+      "parent": 128,
+      "room": 1,
+      "subcategory": 3,
+      "tripped": "1"
+    },
+    {
+      "altid": "3",
+      "batterylevel": "100",
+      "category": 12,
+      "comment": "",
+      "id": 128,
+      "name": "Office Sensor",
+      "parent": 1,
+      "room": 1,
+      "state": -1,
+      "status": "1",
+      "subcategory": 0
+    },
+    {
+      "altid": "e3",
+      "category": 17,
+      "id": 131,
+      "name": "Office Temp",
+      "parent": 128,
+      "room": 1,
+      "subcategory": 0,
+      "temperature": "74.9"
+    },
+    {
+      "altid": "32",
+      "category": 3,
+      "comment": "",
+      "id": 35,
+      "name": "Patio Light",
+      "parent": 1,
+      "room": 8,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "22",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 25,
+      "name": "Porch Light",
+      "parent": 1,
+      "room": 9,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "16",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 19,
+      "name": "Stairs Light",
+      "parent": 1,
+      "room": 2,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    },
+    {
+      "altid": "",
+      "armed": "1",
+      "armedtripped": "0",
+      "category": 0,
+      "id": 16,
+      "lasttrip": "1455950328",
+      "name": "TV Sensor",
+      "parent": 0,
+      "room": 5,
+      "status": "1",
+      "subcategory": -1,
+      "tripped": "0"
+    },
+    {
+      "altid": "m5",
+      "category": 16,
+      "humidity": "51",
+      "id": 14,
+      "name": "Upstairs Hall Humidity Sensor",
+      "parent": 11,
+      "room": 2,
+      "subcategory": 0
+    },
+    {
+      "altid": "47",
+      "armed": "0",
+      "armedtripped": "0",
+      "category": 3,
+      "commFailure": "0",
+      "comment": "",
+      "id": 67,
+      "name": "Upstairs Hall Light",
+      "parent": 1,
+      "room": 2,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0,
+      "tripped": "0"
+    },
+    {
+      "altid": "m3",
+      "category": 18,
+      "id": 13,
+      "light": "4",
+      "name": "Upstairs Hall Light Sensor",
+      "parent": 11,
+      "room": 2,
+      "subcategory": 0
+    },
+    {
+      "altid": "7",
+      "armed": "1",
+      "armedtripped": "1",
+      "batterylevel": "100",
+      "category": 4,
+      "commFailure": "1",
+      "comment": "",
+      "humidity": "51",
+      "id": 11,
+      "lasttrip": "1454194679",
+      "light": "4",
+      "name": "Upstairs Hall Motion Sensor",
+      "parent": 1,
+      "room": 2,
+      "state": -1,
+      "status": "0",
+      "subcategory": 3,
+      "temperature": "70.3",
+      "tripped": "1"
+    },
+    {
+      "altid": "m1",
+      "category": 17,
+      "id": 12,
+      "name": "Upstairs Hall Temp",
+      "parent": 11,
+      "room": 2,
+      "subcategory": 0,
+      "temperature": "70.3"
+    },
+    {
+      "altid": "54",
+      "category": 3,
+      "comment": "",
+      "id": 114,
+      "name": "Guest Light",
+      "parent": 1,
+      "room": 3,
+      "state": -1,
+      "status": "0",
+      "subcategory": 0
+    }
+  ],
+  "full": 1,
+  "fwd1": "vera-us-oem-relay41.mios.com",
+  "fwd2": "vera-us-oem-relay11.mios.com",
+  "ir": 0,
+  "irtx": "",
+  "loadtime": 1455972866,
+  "mode": 1,
+  "model": "Sercomm NA301",
+  "rooms": [
+    {
+      "id": 7,
+      "name": "1 Downstairs Hall",
+      "section": 1
+    },
+    {
+      "id": 6,
+      "name": "1 Kitchen",
+      "section": 1
+    },
+    {
+      "id": 5,
+      "name": "1 Living Room",
+      "section": 1
+    },
+    {
+      "id": 4,
+      "name": "2 Bedroom",
+      "section": 1
+    },
+    {
+      "id": 3,
+      "name": "2 Guest Room",
+      "section": 1
+    },
+    {
+      "id": 1,
+      "name": "2 Office",
+      "section": 1
+    },
+    {
+      "id": 2,
+      "name": "2 Upstairs Hall",
+      "section": 1
+    },
+    {
+      "id": 10,
+      "name": "Garage",
+      "section": 1
+    },
+    {
+      "id": 8,
+      "name": "Patio",
+      "section": 1
+    },
+    {
+      "id": 9,
+      "name": "Porch",
+      "section": 1
+    }
+  ],
+  "scenes": [
+    {
+      "active": 0,
+      "id": 19,
+      "name": "Beddy Bye",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "comment": "",
+      "id": 24,
+      "name": "Bedroom Auto Light Disable",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 1,
+      "id": 28,
+      "name": "Bedroom Auto Light Enable",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "comment": "",
+      "id": 23,
+      "name": "Bedroom Motion Off",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "comment": "",
+      "id": 22,
+      "name": "Bedroom Motion On",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "comment": "",
+      "id": 33,
+      "name": "Camera Restart",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "id": 31,
+      "name": "Door Lock Batteries Low",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "id": 14,
+      "name": "Fishtank Off",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 13,
+      "name": "Fishtank On",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "id": 12,
+      "name": "Garage Motion Off",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 11,
+      "name": "Garage Motion On",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 34,
+      "name": "Garage Sensor Battery",
+      "room": 10
+    },
+    {
+      "active": 1,
+      "comment": "",
+      "id": 7,
+      "name": "Kitchen Motion Off",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "comment": "",
+      "id": 5,
+      "name": "Kitchen Motion On",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 1,
+      "comment": "",
+      "id": 15,
+      "name": "Laundry Timer",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "id": 18,
+      "name": "Leaving",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "comment": "",
+      "id": 8,
+      "name": "Living Room Motion Off",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 0,
+      "comment": "",
+      "id": 6,
+      "name": "Living Room Motion On",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 1,
+      "id": 21,
+      "name": "Lock Doors",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "id": 35,
+      "name": "Midnight",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 2,
+      "name": "Office Motion Off",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "comment": "",
+      "id": 1,
+      "name": "Office Motion On",
+      "room": 0,
+      "state": -1
+    },
+    {
+      "active": 1,
+      "id": 20,
+      "name": "Open Up",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 32,
+      "name": "Reboot",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "id": 17,
+      "name": "TV Off",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 16,
+      "name": "TV On",
+      "room": 0
+    },
+    {
+      "active": 1,
+      "id": 4,
+      "name": "Upstairs Hall Light Off",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 3,
+      "name": "Upstairs Hall Light On",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 30,
+      "name": "sunrise",
+      "room": 0
+    },
+    {
+      "active": 0,
+      "id": 29,
+      "name": "sunset",
+      "room": 0
+    }
+  ],
+  "sections": [
+    {
+      "id": 1,
+      "name": "My Home"
+    }
+  ],
+  "serial_number": "45004657",
+  "skin": "mios",
+  "state": -1,
+  "temperature": "F",
+  "version": "*1.7.1707*",
+  "zwave_heal": 1
+}

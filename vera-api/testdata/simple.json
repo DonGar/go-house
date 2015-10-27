@@ -1,0 +1,58 @@
+{
+  "sections": [
+    {
+      "name": "My Home",
+      "id": 1
+    }
+  ],
+  "rooms": [
+    {
+      "name": "2 Office",
+      "id": 1,
+      "section": 1
+    }
+  ],
+  "scenes": [],
+  "devices": [
+    {
+      "name": "Office Light",
+      "altid": "2",
+      "id": 3,
+      "category": 3,
+      "subcategory": 0,
+      "room": 1,
+      "parent": 1,
+      "status": "0"
+    },
+    {
+      "name": "Fully Populated",
+      "altid": "2",
+      "id": 4,
+      "category": 3,
+      "subcategory": 0,
+      "room": 1,
+      "parent": 1,
+      "armed": "1",
+      "armedtripped": "0",
+      "lasttrip": "1235763",
+      "tripped": "0",
+      "temperature": "76.2",
+      "light": "78",
+      "humidity": "23",
+      "status": "1",
+      "level": "65",
+      "locked": "0",
+      "batterylevel": "23",
+      "watts": "1.75"
+    }
+  ],
+  "categories": [
+    {
+      "name": "On/Off Switch",
+      "id": 3
+    }
+  ],
+  "full": 1,
+  "loadtime": 1446822100,
+  "dataversion": 822142501
+}
