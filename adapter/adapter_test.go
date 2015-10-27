@@ -49,6 +49,11 @@ func setupTestStatus(c *check.C) (s *status.Status) {
             	"password": "bar2"
             }
           },
+          "vera": {
+            "TestVera": {
+              "hostname": "vera_host"
+            }
+          },
           "web": {
             "TestWeb": {
             }
@@ -74,7 +79,7 @@ func setupTestAdapter(c *check.C, configUrl string, adapterUrl string) (s *statu
 	// We need just enough of a manager for our tests.
 	mgr = &Manager{actionsMgr: actions.NewManager(), webUrls: map[string]adapter{}}
 
-	return
+	return s, mgr, b
 }
 
 func (suite *MySuite) TestBaseStop(c *check.C) {
@@ -96,6 +101,8 @@ func checkAdaptorContents(c *check.C, adaptor *base, expectedJson string) {
 	// We are usually sending an event, and waiting for an out of band update. We
 	// check for the expected result, and if we don't get it, keep checking until
 	// we reach timeout.
+
+	expectedJson = status.NormalizeJson(expectedJson)
 
 	readyTest := func() bool {
 		return string(adaptor.status.PrettyDump(adaptor.adapterUrl)) == expectedJson

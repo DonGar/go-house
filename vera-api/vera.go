@@ -113,6 +113,11 @@ func (a *VeraApi) handler() {
 
 func (a *VeraApi) handleRefreshError(step string, err error) {
 	log.Printf("refreshDevices %s failed: %s", step, err.Error())
+
+	// Force a full request next time.
+	a.loadtime = 0
+	a.dataversion = 0
+
 	a.refreshTimer.Reset(30 * time.Second)
 }
 

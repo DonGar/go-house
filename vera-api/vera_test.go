@@ -111,3 +111,6 @@ func (suite *MySuite) TestUpdateFullResponse(c *check.C) {
 		"http://fake-vera-hostname:3480/data_request?id=sdata",
 	})
 }
+
+// Need Tests for Timed behavior, and partial updates.
+// Check timer values, then set to zero, as needed.
