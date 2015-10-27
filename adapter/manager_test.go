@@ -52,7 +52,7 @@ func (suite *MySuite) TestMgrAllAdaptersStop(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// We created the right number of adapters.
-	c.Check(len(mgr.adapters), check.Equals, 6)
+	c.Check(len(mgr.adapters), check.Equals, 7)
 
 	mgr.Stop()
 

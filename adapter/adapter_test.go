@@ -48,6 +48,11 @@ func setupTestStatus(c *check.C) (s *status.Status) {
             	"password": "bar2"
             }
           },
+          "vera": {
+            "TestVera": {
+              "hostname": "vera_host"
+            }
+          },
           "web": {
             "TestWeb": {
             }

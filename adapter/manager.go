@@ -21,6 +21,7 @@ var adapterFactories = map[string]newAdapter{
 	"file":     newFileAdapter,
 	"spark":    newParticleAdapter,
 	"particle": newParticleAdapter,
+	"vera":     newVeraAdapter,
 	"web":      newWebAdapter,
 }
 
