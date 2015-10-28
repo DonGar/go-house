@@ -97,10 +97,7 @@ func (am *Manager) FireAction(s *status.Status, action *status.Status) error {
 			subActionStatus := &status.Status{}
 			subActionStatus.Set("status://", subActionValue, 0)
 
-			e = am.FireAction(s, subActionStatus)
-			if e != nil {
-				return e
-			}
+			am.FireAction(s, subActionStatus)
 		}
 		return nil
 

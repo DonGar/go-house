@@ -188,8 +188,8 @@ func (suite *MySuite) TestFireActionArrayFailure(c *check.C) {
 
 	e := r.mgr().FireAction(s, a)
 
-	c.Check(e, check.ErrorMatches, MOCK_FAILURE_MSG)
-	c.Check(r.successCalls, check.Equals, 1)
+	c.Check(e, check.IsNil)
+	c.Check(r.successCalls, check.Equals, 2)
 	c.Check(r.failCalls, check.Equals, 1)
 	c.Check(r.httpCalls, check.Equals, 0)
 }
