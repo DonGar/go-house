@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
+	"log"
 	"strings"
 	"sync"
 )
@@ -60,63 +61,75 @@ func (a *Manager) lookupAction(name string) (action Action, err error) {
 }
 
 // This method should always be used to fire any action.
-func (am *Manager) FireAction(s *status.Status, action *status.Status) error {
-	actionValue, _, e := action.Get("status://")
-	if e != nil {
-		return e
+func (am *Manager) FireAction(s *status.Status, action *status.Status) {
+
+	var err error
+
+	// If we exit with an error, we log it.
+	defer func() {
+		if err != nil {
+			log.Println("Fire error: ", err)
+		}
+	}()
+
+	actionValue, _, err := action.Get("status://")
+	if err != nil {
+		return
 	}
 
 	switch typedAction := actionValue.(type) {
 	case string:
 		// A string represents a redirection to another part of status.
-		redirectAction, _, e := s.GetSubStatus(typedAction)
+		redirectAction, _, err := s.GetSubStatus(typedAction)
 
-		if e != nil {
+		if err != nil {
 
 			// If the redirection URL isn't a status URL, it might be an HTTP
 			// url. Retry as an HTTP fetch action.
-			if strings.HasPrefix(e.Error(), "Status: Invalid status url:") {
+			if strings.HasPrefix(err.Error(), "Status: Invalid status url:") {
 				fetchStatus := &status.Status{}
 				fetchStatus.Set("status://action", "fetch", 0)
 				fetchStatus.Set("status://url", typedAction, 1)
 
 				// Recurse. This let's us lookup and fire the fetch action normally.
-				return am.FireAction(s, fetchStatus)
+				am.FireAction(s, fetchStatus)
 			}
 
 			// Some other error, probably that the status URL doesn't exist.
-			return e
+			return
 		}
 
 		// We found it, fire it off!
-		return am.FireAction(s, redirectAction)
+		am.FireAction(s, redirectAction)
 
 	case []interface{}:
 		// An array of actions means fire each one in order.
+		// We do NOT return error results.
 		for _, subActionValue := range typedAction {
 			subActionStatus := &status.Status{}
 			subActionStatus.Set("status://", subActionValue, 0)
 
 			am.FireAction(s, subActionStatus)
 		}
-		return nil
 
 	case map[string]interface{}:
 		// We received a dictionary, this is (hopefully) a registered action.
-		actionName, _, e := action.GetString("status://action")
-		if e != nil {
-			return fmt.Errorf("Action: No action specified: %s", actionName)
+		actionName, _, err := action.GetString("status://action")
+		if err != nil {
+			err = fmt.Errorf("Action: No action specified: %s", actionName)
+			return
 		}
 
-		actionMethod, e := am.lookupAction(actionName)
-		if e != nil {
-			return e
+		actionMethod, err := am.lookupAction(actionName)
+		if err != nil {
+			return
 		}
 
 		// Fire the looked up action.
-		return actionMethod(s, action)
+		log.Println("Firing action: ", actionName)
+		err = actionMethod(s, action)
 
 	default:
-		return fmt.Errorf("Action: Can't perform %#v", actionValue)
+		err = fmt.Errorf("Action: Can't perform %#v", actionValue)
 	}
 }

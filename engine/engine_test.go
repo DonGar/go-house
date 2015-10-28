@@ -75,7 +75,7 @@ func (suite *MySuite) TestEngineStartStopPopulated(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// We give the watcher a little time to finish initializing.
-	time.Sleep(time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	c.Check(len(engine.rules.active), check.Equals, 2)
 
 	// Stop it.

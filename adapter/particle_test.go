@@ -244,9 +244,8 @@ func (suite *MySuite) TestParticleAdapterAction(c *check.C) {
 		c.Assert(err, check.IsNil)
 
 		// Fire Action
-		err = adaptor.actionsMgr.FireAction(s, action)
-
-		c.Check(err, check.NotNil)
+		adaptor.actionsMgr.FireAction(s, action)
+		c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{})
 	}
 
 	verifySuccess := func(device, function, argument string) {
@@ -262,8 +261,7 @@ func (suite *MySuite) TestParticleAdapterAction(c *check.C) {
 		c.Assert(err, check.IsNil)
 
 		// Fire Action
-		err = adaptor.actionsMgr.FireAction(s, action)
-		c.Check(err, check.IsNil)
+		adaptor.actionsMgr.FireAction(s, action)
 		c.Check(mock.actionArgs, check.DeepEquals, mockFunctionCall{device, function, argument})
 	}
 

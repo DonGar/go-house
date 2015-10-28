@@ -172,7 +172,7 @@ func (suite *MySuite) TestRuleOnActionOnly(c *check.C) {
 	rule := &Rule{
 		s,
 		mockActions.registrar,
-		"Test Rule Repeated",
+		"Test Rule OnActionOnly",
 		mockCondition,
 		mockActions.actionOnBody,
 		nil,
@@ -200,7 +200,7 @@ func (suite *MySuite) TestRuleOffActionOnly(c *check.C) {
 	rule := &Rule{
 		s,
 		mockActions.registrar,
-		"Test Rule Repeated",
+		"Test Rule OffActionOnly",
 		mockCondition,
 		nil,
 		mockActions.actionOffBody,
