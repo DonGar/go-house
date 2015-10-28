@@ -4,6 +4,7 @@ import (
 	"github.com/DonGar/go-house/engine/actions"
 	"github.com/DonGar/go-house/status"
 	"github.com/DonGar/go-house/stoppable"
+	"github.com/DonGar/go-house/wait"
 	"gopkg.in/check.v1"
 	"testing"
 	"time"
@@ -96,18 +97,12 @@ func checkAdaptorContents(c *check.C, adaptor *base, jsonValue string) {
 	// check for the expected result, and if we don't get it, keep checking until
 	// we reach timeout.
 
-	v := string(adaptor.status.PrettyDump(adaptor.adapterUrl))
-
-	timeout := time.Now().Add(100 * time.Millisecond)
-	for time.Now().Before(timeout) {
-		if v == jsonValue {
-			break
-		}
-
-		// If we didn't match, wait and try again.
-		time.Sleep(time.Microsecond)
-		v = string(adaptor.status.PrettyDump(adaptor.adapterUrl))
+	readyTest := func() bool {
+		return string(adaptor.status.PrettyDump(adaptor.adapterUrl)) == jsonValue
 	}
+	wait.Wait(100*time.Millisecond, readyTest)
 
-	c.Assert(v, check.DeepEquals, jsonValue)
+	c.Check(string(adaptor.status.PrettyDump(adaptor.adapterUrl)),
+		check.DeepEquals,
+		jsonValue)
 }
