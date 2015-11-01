@@ -20,6 +20,7 @@ install:
 	sudo install -d /usr/local/go-house/ /usr/local/go-house/static/
 	sudo install -t /usr/local/go-house/ $(GOPATH)/bin/go-house
 	sudo install -t /usr/local/go-house/static/ $(GOPATH)/static/*
+	sudo /etc/init.d/go-house restart
 
 clean:
 	go clean
