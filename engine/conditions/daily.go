@@ -3,7 +3,6 @@ package conditions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
-	"github.com/cpucycle/astrotime"
 	"time"
 )
 
@@ -89,14 +88,10 @@ func (c *dailyCondition) findNextFireTime(now time.Time) (fireTime time.Time) {
 	findFireTime := func(now time.Time) time.Time {
 		switch c.timeType {
 		case sunrise:
-			// Push the time back by 5 minutes so rounding errors don't cause us to
-			// fire more than once in a day.
-			return astrotime.CalcSunrise(now, c.latitude, c.longitude)
+			return findNextSunrise(now, c.latitude, c.longitude)
 
 		case sunset:
-			// Push the time back by 5 minutes so rounding errors don't cause us to
-			// fire more than once in a day.
-			return astrotime.CalcSunset(now, c.latitude, c.longitude)
+			return findNextSunset(now, c.latitude, c.longitude)
 
 		case fixed:
 			year, month, day := now.Date()
@@ -124,7 +119,7 @@ func (c *dailyCondition) Handler() {
 	c.sendResult(false)
 
 	now := time.Now()
-	timer := time.NewTimer(c.findNextFireTime(now).Sub(now))
+	timer := time.NewTimer(c.findNextFireTime(now).Sub(now) + 5*time.Minute)
 
 	for {
 		select {
@@ -136,7 +131,7 @@ func (c *dailyCondition) Handler() {
 			// Set timer for the next firing. Add 5 minutes to work around
 			// sunrise/sunset calculation vagueness.
 			now := time.Now()
-			timer.Reset(c.findNextFireTime(now.Add(5 * time.Minute)).Sub(now))
+			timer.Reset(c.findNextFireTime(now).Sub(now) + 5*time.Minute)
 
 		case <-c.StopChan:
 			timer.Stop()

@@ -134,7 +134,7 @@ func (suite *MySuite) TestDailyFindFireTimeForDateSunrise(c *check.C) {
 func (suite *MySuite) TestDailyFindFireTimeForDateSunset(c *check.C) {
 	cond := setupTimeCondition(c, "sunset")
 
-	sunsetToday := time.Date(2014, time.June, 12, 3, 30, 00, 0, time.UTC)
+	sunsetToday := time.Date(2014, time.June, 12, 3, 29, 00, 0, time.UTC)
 	sunsetTomorrow := time.Date(2014, time.June, 13, 3, 30, 00, 0, time.UTC)
 
 	// Test before sunset.

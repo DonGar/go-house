@@ -61,6 +61,10 @@ func NewCondition(
 			return newAndCondition(s, body)
 		case "daily":
 			return newDailyCondition(s, body)
+		case "day":
+			return newDaylightCondition(s, body, true)
+		case "night":
+			return newDaylightCondition(s, body, false)
 		case "periodic":
 			return newPeriodicCondition(s, body)
 		case "watch":
