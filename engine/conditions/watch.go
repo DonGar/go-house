@@ -66,12 +66,12 @@ func (c *watchCondition) Handler() {
 				triggered := c.triggerInMatches(matches)
 				if currentResult != triggered {
 					currentResult = triggered
-					c.result <- triggered
+					c.sendResult(triggered)
 				}
 			} else {
 				// We got an update... notify our rule!
-				c.result <- true
-				c.result <- false
+				c.sendResult(true)
+				c.sendResult(false)
 			}
 
 		case <-c.StopChan:

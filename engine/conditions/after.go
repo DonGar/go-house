@@ -9,10 +9,8 @@ import (
 type afterCondition struct {
 	base
 
-	currentResult   bool
-	conditionResult bool
-	condition       Condition
-	delay           time.Duration
+	condition Condition
+	delay     time.Duration
 }
 
 func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, error) {
@@ -42,7 +40,7 @@ func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, 
 	}
 
 	// Create our condition.
-	c := &afterCondition{newBase(s), false, false, condition, delay}
+	c := &afterCondition{newBase(s), condition, delay}
 
 	c.start()
 	return c, nil
@@ -60,13 +58,6 @@ func (c *afterCondition) Stop() {
 	c.base.Stop()
 }
 
-func (c *afterCondition) updateTarget(newResult bool) {
-	if c.currentResult != newResult {
-		c.currentResult = newResult
-		c.result <- newResult
-	}
-}
-
 func (c *afterCondition) Handler() {
 	// Create the timer with a long timeout, then stop it.
 	// We'll reset, when we're ready to really start it.
@@ -76,19 +67,15 @@ func (c *afterCondition) Handler() {
 	for {
 		select {
 		case condValue := <-c.condition.Result():
-			if condValue != c.conditionResult {
-				c.conditionResult = condValue
-
-				if condValue {
-					timer.Reset(c.delay)
-				} else {
-					timer.Stop()
-					c.updateTarget(false)
-				}
+			if condValue {
+				timer.Reset(c.delay)
+			} else {
+				timer.Stop()
+				c.sendResult(false)
 			}
 
 		case <-timer.C:
-			c.updateTarget(true)
+			c.sendResult(true)
 
 		case <-c.StopChan:
 			c.StopChan <- true

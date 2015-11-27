@@ -38,8 +38,8 @@ func (c *periodicCondition) Handler() {
 	for {
 		select {
 		case <-ticker.C:
-			c.result <- true
-			c.result <- false
+			c.sendResult(true)
+			c.sendResult(false)
 		case <-c.StopChan:
 			ticker.Stop()
 			c.StopChan <- true

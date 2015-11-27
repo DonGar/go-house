@@ -88,7 +88,7 @@ func (c *andCondition) updateTarget() {
 	if c.currentResult != newResult {
 		log.Println("And condition sending result: ", newResult)
 		c.currentResult = newResult
-		c.result <- newResult
+		c.sendResult(newResult)
 	}
 }
 

@@ -129,8 +129,8 @@ func (c *dailyCondition) Handler() {
 		select {
 		case <-timer.C:
 			// We turned true again.
-			c.result <- true
-			c.result <- false
+			c.sendResult(true)
+			c.sendResult(false)
 
 			// Set timer for the next firing. Add 5 minutes to work around
 			// sunrise/sunset calculation vagueness.

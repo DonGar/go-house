@@ -8,7 +8,7 @@ import (
 
 // Actual tests.
 
-func (suite *MySuite) TestAfterValidateStartStop(c *check.C) {
+func (suite *MySuite) TestAfterStartStop(c *check.C) {
 	good := []string{
 		`{
 			  "test": "after",
@@ -61,7 +61,7 @@ func (suite *MySuite) TestAfterMock(c *check.C) {
 	mockCond := &mockCondition{make(chan bool)}
 
 	cond := &afterCondition{
-		newBase(s), false, false, mockCond, 10 * time.Millisecond}
+		newBase(s), mockCond, 10 * time.Millisecond}
 	cond.start()
 
 	validateChannelEmpty(c, cond)

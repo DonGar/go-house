@@ -75,17 +75,40 @@ func NewCondition(
 
 // The base type all rules should compose with.
 type base struct {
-	status *status.Status
-	result chan bool // This will be sent on all condition result transitions.
+	status      *status.Status
+	initialSent bool
+	lastSent    bool
+	resultChan  chan bool
 	stoppable.Base
 }
 
 func newBase(s *status.Status) base {
-	return base{s, make(chan bool), stoppable.NewBase()}
+	return base{s, false, false, make(chan bool, 2), stoppable.NewBase()}
 }
 
 func (b *base) Result() <-chan bool {
-	return b.result
+	return b.resultChan
+}
+
+func (b *base) sendResult(result bool) {
+	// Handler routines should use this to send out results.
+
+	// If we have already sent the current value, don't resend.
+	if b.initialSent && result == b.lastSent {
+		return
+	}
+
+	b.initialSent = true
+	b.lastSent = result
+
+	select {
+	case b.resultChan <- b.lastSent:
+		// Send if we can.
+	default:
+		// If we were blocked, clear one value from the channel buffer, then send.
+		<-b.resultChan
+		b.resultChan <- b.lastSent
+	}
 }
 
 // This only exists for testing, it should not be used by classes that compose
