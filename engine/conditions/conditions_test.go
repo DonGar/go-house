@@ -3,8 +3,10 @@ package conditions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
+	"github.com/DonGar/go-house/wait"
 	"gopkg.in/check.v1"
 	"testing"
+	"time"
 )
 
 // Hook up gocheck into the "go test" runner.
@@ -17,19 +19,48 @@ var _ = check.Suite(&MySuite{})
 //
 // Helpers for all condition test code.
 //
-func validateChannelRead(c *check.C, cond Condition, expected bool) {
-	result, ok := <-cond.Result()
+func channelRead(cond Condition) (result, received bool) {
+	select {
+	case result = <-cond.Result():
+		return result, true
+	default:
+		return false, false
+	}
+}
 
-	c.Assert(ok, check.Equals, true)
-	c.Assert(result, check.Equals, expected)
+func validateChannelRead(c *check.C, cond Condition, expected bool) {
+	result, received := false, false
+
+	updateObserved := func() bool {
+		result, received = channelRead(cond)
+		return received
+	}
+
+	// Retry until there is a value on the channel.
+	wait.Wait(100*time.Millisecond, updateObserved)
+
+	c.Check(received, check.Equals, true)
+	c.Check(result, check.Equals, expected)
 }
 
 func validateChannelEmpty(c *check.C, cond Condition) {
-	select {
-	case result := <-cond.Result():
-		c.Fatal("Result() channel not empty: ", result)
-	default:
+	for {
+		// Sleep a little for things to see if extra results are generated.
+		time.Sleep(5 * time.Millisecond)
+		result, received := channelRead(cond)
+		if received {
+			c.Error("Unexpected result received: ", result)
+		} else {
+			return
+		}
 	}
+}
+
+func validateChannelSequence(c *check.C, cond Condition, expected []bool) {
+	for _, exp := range expected {
+		validateChannelRead(c, cond, exp)
+	}
+	validateChannelEmpty(c, cond)
 }
 
 // Mock condition for mocking inner conditions.
@@ -87,7 +118,7 @@ func validateConditionBadJson(c *check.C, condJson string) {
 	c.Check(e, check.NotNil)
 }
 
-func (suite *MySuite) TestBadConditionParsing(c *check.C) {
+func (suite *MySuite) TestConditionParsingBad(c *check.C) {
 	validateConditionBadJson(c, `"foo"`)
 	validateConditionBadJson(c, `"status://bogus"`)
 	validateConditionBadJson(c, `["foo"]`)
@@ -139,7 +170,7 @@ func (suite *MySuite) TestBaseConditionStartStop(c *check.C) {
 	cond.Stop()
 }
 
-func (suite *MySuite) TestBadConditionTest(c *check.C) {
+func (suite *MySuite) TestBaseConditionBad(c *check.C) {
 	s := &status.Status{}
 
 	cBody := &status.Status{}

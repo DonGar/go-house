@@ -70,7 +70,11 @@ func (suite *MySuite) TestAfterMock(c *check.C) {
 	mockCond.result <- true
 
 	// We should go true, but only after a delay.
-	validateChannelEmpty(c, cond)
+	result, received := channelRead(cond)
+	if received {
+		c.Error("After did not delay as expected: ", result)
+	}
+
 	validateChannelRead(c, cond, true)
 	validateChannelEmpty(c, cond)
 

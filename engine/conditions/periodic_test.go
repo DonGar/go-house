@@ -27,7 +27,7 @@ func (suite *MySuite) TestPeriodicFire(c *check.C) {
 
 	// 10 ms seems to be long enough to be safe when all tests are run in
 	// parallel.
-	period := 10 * time.Millisecond
+	period := 50 * time.Millisecond
 
 	start := time.Now()
 
