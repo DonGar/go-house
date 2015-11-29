@@ -3,7 +3,6 @@ package conditions
 import (
 	"fmt"
 	"github.com/DonGar/go-house/status"
-	"log"
 	"reflect"
 )
 
@@ -14,9 +13,7 @@ type conditionValue struct {
 
 type andCondition struct {
 	base
-
-	currentResult bool
-	conditions    []conditionValue
+	conditions []conditionValue
 }
 
 func newAndCondition(s *status.Status, body *status.Status) (*andCondition, error) {
@@ -32,7 +29,7 @@ func newAndCondition(s *status.Status, body *status.Status) (*andCondition, erro
 	}
 
 	// Create our condition.
-	c := &andCondition{newBase(s), false, conditionValues}
+	c := &andCondition{newBase(s), conditionValues}
 
 	c.start()
 	return c, nil
@@ -78,29 +75,30 @@ func (c *andCondition) Stop() {
 	c.base.Stop()
 }
 
-func (c *andCondition) updateTarget() {
+func (c *andCondition) currentValue() bool {
 	newResult := true
 
 	for _, condValue := range c.conditions {
 		newResult = newResult && condValue.result
 	}
 
-	if c.currentResult != newResult {
-		log.Println("And condition sending result: ", newResult)
-		c.currentResult = newResult
-		c.sendResult(newResult)
-	}
+	return newResult
 }
 
 func (c *andCondition) Handler() {
-	// Set with default, if present.
-	c.updateTarget()
+	// Read initial state from all conditions, and send out our initial state.
+	for i := range c.conditions {
+		c.conditions[i].result = <-c.conditions[i].condition.Result()
+	}
+	c.sendResult(c.currentValue())
 
-	// We listen on all condition result channels.
+	// Build reflect list of all condition channels to listen for.
 	channels := make([]reflect.SelectCase, len(c.conditions)+1)
-	for i, c := range c.conditions {
+	for i := range c.conditions {
 		channels[i] = reflect.SelectCase{
-			Dir: reflect.SelectRecv, Chan: reflect.ValueOf(c.condition.Result())}
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(c.conditions[i].condition.Result()),
+		}
 	}
 
 	// We also listen to the stop channel.
@@ -113,7 +111,7 @@ func (c *andCondition) Handler() {
 		if receivedOnChannel < len(c.conditions) {
 			// One of our conditions updated it's result. Update ours accordingly.
 			c.conditions[receivedOnChannel].result = value.Bool()
-			c.updateTarget()
+			c.sendResult(c.currentValue())
 		} else {
 			// If it's after the conditions, it's the stop channel.
 			c.StopChan <- true

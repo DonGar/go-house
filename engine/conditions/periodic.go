@@ -33,6 +33,7 @@ func newPeriodicCondition(s *status.Status, body *status.Status) (*periodicCondi
 }
 
 func (c *periodicCondition) Handler() {
+	c.sendResult(false)
 	ticker := time.NewTicker(c.period)
 
 	for {

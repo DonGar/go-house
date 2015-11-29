@@ -7,7 +7,7 @@ import (
 
 // Actual tests.
 
-func validateAndParseStartStop(c *check.C, conditionsJson string, trueStart bool) {
+func validateAndParseStartStop(c *check.C, conditionsJson string, expectedValue bool) {
 	s := &status.Status{}
 
 	body := &status.Status{}
@@ -17,9 +17,7 @@ func validateAndParseStartStop(c *check.C, conditionsJson string, trueStart bool
 	cond, e := NewCondition(s, body)
 	c.Assert(e, check.IsNil)
 
-	if trueStart {
-		validateChannelRead(c, cond, true)
-	}
+	validateChannelRead(c, cond, expectedValue)
 	validateChannelEmpty(c, cond)
 
 	cond.Stop()
@@ -54,7 +52,7 @@ func (suite *MySuite) TestAndOneMock(c *check.C) {
 
 	conditionValues := []conditionValue{{mockCond, false}}
 
-	cond := &andCondition{newBase(s), false, conditionValues}
+	cond := &andCondition{newBase(s), conditionValues}
 	cond.start()
 
 	validateChannelEmpty(c, cond)
@@ -67,6 +65,11 @@ func (suite *MySuite) TestAndOneMock(c *check.C) {
 	mockCond.result <- false
 
 	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
+
+	mockCond.result <- true
+
+	validateChannelRead(c, cond, true)
 	validateChannelEmpty(c, cond)
 
 	cond.Stop()
@@ -85,7 +88,7 @@ func (suite *MySuite) TestAndThreeMock(c *check.C) {
 		conditionValues[i] = conditionValue{mockCond[i], false}
 	}
 
-	cond := &andCondition{newBase(s), false, conditionValues}
+	cond := &andCondition{newBase(s), conditionValues}
 	cond.start()
 
 	validateChannelEmpty(c, cond)

@@ -57,17 +57,16 @@ func (c *watchCondition) triggerInMatches(matches status.UrlMatches) bool {
 
 func (c *watchCondition) Handler() {
 
-	currentResult := false
+	// If there is no trigger, then always send an initial update.
+	if !c.hasTrigger {
+		c.sendResult(false)
+	}
 
 	for {
 		select {
 		case matches := <-c.watchChan:
 			if c.hasTrigger {
-				triggered := c.triggerInMatches(matches)
-				if currentResult != triggered {
-					currentResult = triggered
-					c.sendResult(triggered)
-				}
+				c.sendResult(c.triggerInMatches(matches))
 			} else {
 				// We got an update... notify our rule!
 				c.sendResult(true)

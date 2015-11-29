@@ -25,7 +25,7 @@ func (suite *MySuite) TestAfterStartStop(c *check.C) {
 	}
 
 	for _, g := range good {
-		validateConditionJson(c, "", g, false)
+		validateConditionJson(c, "", g, []bool{false})
 	}
 
 	bad := []string{
@@ -64,6 +64,7 @@ func (suite *MySuite) TestAfterMock(c *check.C) {
 		newBase(s), mockCond, 10 * time.Millisecond}
 	cond.start()
 
+	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
 	// Set the source to true, we become true, after the delay.

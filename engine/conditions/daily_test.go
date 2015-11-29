@@ -27,6 +27,8 @@ func setupTimeCondition(c *check.C, time string) *dailyCondition {
 
 func (suite *MySuite) TestDailyStartStop(c *check.C) {
 	cond := setupTimeCondition(c, "12:00")
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
@@ -98,7 +100,7 @@ func (suite *MySuite) TestDailyParseTime(c *check.C) {
 	c.Check(e, check.IsNil)
 }
 
-func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
+func (suite *MySuite) TestDailyFindFireTimeForDateSunrise(c *check.C) {
 	cond := setupTimeCondition(c, "sunrise")
 
 	sunriseToday := time.Date(2014, time.June, 12, 12, 47, 00, 0, time.UTC)
@@ -124,10 +126,12 @@ func (suite *MySuite) TestFindFireTimeForDateSunrise(c *check.C) {
 	fireTime = cond.findNextFireTime(now)
 	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
 
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
-func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
+func (suite *MySuite) TestDailyFindFireTimeForDateSunset(c *check.C) {
 	cond := setupTimeCondition(c, "sunset")
 
 	sunsetToday := time.Date(2014, time.June, 12, 3, 30, 00, 0, time.UTC)
@@ -153,10 +157,12 @@ func (suite *MySuite) TestFindFireTimeForDateSunset(c *check.C) {
 	fireTime = cond.findNextFireTime(now)
 	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
 
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
-func (suite *MySuite) TestFixedFindFireDelay(c *check.C) {
+func (suite *MySuite) TestDailyFixedFindFireDelay(c *check.C) {
 	cond := setupTimeCondition(c, "11:00")
 
 	fixedToday := time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
@@ -187,6 +193,8 @@ func (suite *MySuite) TestFixedFindFireDelay(c *check.C) {
 	fireTime = cond.findNextFireTime(now)
 	c.Check(fireTime, check.Equals, fixedTomorrow)
 
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 

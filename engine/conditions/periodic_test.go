@@ -20,6 +20,8 @@ func setupPeriodicRule(c *check.C, time string) *periodicCondition {
 
 func (suite *MySuite) TestPeriodicStartStop(c *check.C) {
 	cond := setupPeriodicRule(c, "1s")
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
@@ -33,6 +35,7 @@ func (suite *MySuite) TestPeriodicFire(c *check.C) {
 
 	cond := setupPeriodicRule(c, period.String())
 
+	validateChannelRead(c, cond, false)
 	validateChannelRead(c, cond, true)
 	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)

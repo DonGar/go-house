@@ -36,12 +36,16 @@ func setupTriggerWatchCondition(c *check.C, url string, trigger interface{}) (*s
 func (suite *MySuite) TestWatchStartStop(c *check.C) {
 	_, cond := setupWatchCondition(c, "status://foo")
 	c.Check(cond.hasTrigger, check.Equals, false)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
-func (suite *MySuite) TestTriggerWatchStartStop(c *check.C) {
+func (suite *MySuite) TestWatchTriggerStartStop(c *check.C) {
 	_, cond := setupTriggerWatchCondition(c, "status://foo", "foo")
 	c.Check(cond.hasTrigger, check.Equals, true)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
@@ -69,6 +73,7 @@ func (suite *MySuite) TestWatchBadUrl(c *check.C) {
 func (suite *MySuite) TestWatchWithUpdates(c *check.C) {
 	s, cond := setupWatchCondition(c, "status://foo")
 
+	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
 	s.Set("status://foo", 1, status.UNCHECKED_REVISION)
@@ -81,42 +86,6 @@ func (suite *MySuite) TestWatchWithUpdates(c *check.C) {
 
 	validateChannelRead(c, cond, true)
 	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
-
-	cond.Stop()
-}
-
-func helperTestTrigger(c *check.C, trigger interface{}, badValues ...interface{}) {
-	url := "status://foo"
-
-	s, cond := setupTriggerWatchCondition(c, url, trigger)
-
-	validateChannelEmpty(c, cond)
-	validateChannelEmpty(c, cond)
-
-	for _, badValue := range badValues {
-		s.Set(url, badValue, status.UNCHECKED_REVISION)
-		validateChannelEmpty(c, cond)
-	}
-
-	s.Set(url, trigger, status.UNCHECKED_REVISION)
-	validateChannelRead(c, cond, true)
-	validateChannelEmpty(c, cond)
-
-	s.Set(url, badValues[0], status.UNCHECKED_REVISION)
-	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
-
-	for _, badValue := range badValues {
-		s.Set(url, badValue, status.UNCHECKED_REVISION)
-		validateChannelEmpty(c, cond)
-	}
-
-	s.Set(url, trigger, status.UNCHECKED_REVISION)
-	validateChannelRead(c, cond, true)
-	validateChannelEmpty(c, cond)
-
-	s.Set(url, trigger, status.UNCHECKED_REVISION)
 	validateChannelEmpty(c, cond)
 
 	cond.Stop()
@@ -168,6 +137,7 @@ func (suite *MySuite) TestWatchWithTriggersInitialFalse(c *check.C) {
 	cond, e := newWatchCondition(s, body)
 	c.Assert(e, check.IsNil)
 
+	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
 	s.Set(url, true, status.UNCHECKED_REVISION)
@@ -177,7 +147,43 @@ func (suite *MySuite) TestWatchWithTriggersInitialFalse(c *check.C) {
 	cond.Stop()
 }
 
-func (suite *MySuite) TestWatchWithTriggers(c *check.C) {
+func helperTestTrigger(c *check.C, trigger interface{}, badValues ...interface{}) {
+	url := "status://foo"
+
+	s, cond := setupTriggerWatchCondition(c, url, trigger)
+
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
+
+	for _, badValue := range badValues {
+		s.Set(url, badValue, status.UNCHECKED_REVISION)
+		validateChannelEmpty(c, cond)
+	}
+
+	s.Set(url, trigger, status.UNCHECKED_REVISION)
+	validateChannelRead(c, cond, true)
+	validateChannelEmpty(c, cond)
+
+	s.Set(url, badValues[0], status.UNCHECKED_REVISION)
+	validateChannelRead(c, cond, false)
+	validateChannelEmpty(c, cond)
+
+	for _, badValue := range badValues {
+		s.Set(url, badValue, status.UNCHECKED_REVISION)
+		validateChannelEmpty(c, cond)
+	}
+
+	s.Set(url, trigger, status.UNCHECKED_REVISION)
+	validateChannelRead(c, cond, true)
+	validateChannelEmpty(c, cond)
+
+	s.Set(url, trigger, status.UNCHECKED_REVISION)
+	validateChannelEmpty(c, cond)
+
+	cond.Stop()
+}
+
+func (suite *MySuite) TestWatchTriggerUpdates(c *check.C) {
 	helperTestTrigger(c, true, false)
 	helperTestTrigger(c, 1, 0, 2, 3)
 	helperTestTrigger(c, nil, 0, 2, 3, "foo")
@@ -202,6 +208,7 @@ func (suite *MySuite) TestWatchWithPresetValue(c *check.C) {
 	c.Assert(e, check.IsNil)
 
 	// Make sure we don't set true, if the value was set before we start.
+	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 
 	cond.Stop()

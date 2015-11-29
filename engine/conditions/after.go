@@ -64,6 +64,8 @@ func (c *afterCondition) Handler() {
 	timer := time.NewTimer(time.Hour)
 	timer.Stop()
 
+	c.sendResult(false)
+
 	for {
 		select {
 		case condValue := <-c.condition.Result():

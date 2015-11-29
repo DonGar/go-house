@@ -121,6 +121,7 @@ func (c *dailyCondition) findNextFireTime(now time.Time) (fireTime time.Time) {
 }
 
 func (c *dailyCondition) Handler() {
+	c.sendResult(false)
 
 	now := time.Now()
 	timer := time.NewTimer(c.findNextFireTime(now).Sub(now))

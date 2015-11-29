@@ -24,9 +24,6 @@ func (c *constCondition) start() {
 }
 
 func (c *constCondition) Handler() {
-	if c.result {
-		c.sendResult(c.result)
-	}
-
+	c.sendResult(c.result)
 	c.base.Handler()
 }

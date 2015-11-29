@@ -19,12 +19,12 @@ func (suite *MySuite) TestConstStartStopTrue(c *check.C) {
 	cond := setupConstCondition(c, true)
 	validateChannelRead(c, cond, true)
 	validateChannelEmpty(c, cond)
-
 	cond.Stop()
 }
 
 func (suite *MySuite) TestConstStartStopFalse(c *check.C) {
 	cond := setupConstCondition(c, false)
+	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 	cond.Stop()
 }

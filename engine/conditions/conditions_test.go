@@ -79,7 +79,7 @@ func (m *mockCondition) Stop() {
 // Condition Parsing Tests
 //
 
-func validateConditionJson(c *check.C, statusJson, condJson string, expectedValue bool) {
+func validateConditionJson(c *check.C, statusJson, condJson string, expected []bool) {
 	fmt.Println("Running validateConditionJson: ", condJson)
 
 	s := &status.Status{}
@@ -95,11 +95,7 @@ func validateConditionJson(c *check.C, statusJson, condJson string, expectedValu
 	cond, e := NewCondition(s, body)
 	c.Check(e, check.IsNil)
 
-	if expectedValue {
-		validateChannelRead(c, cond, true)
-	}
-	validateChannelEmpty(c, cond)
-
+	validateChannelSequence(c, cond, expected)
 	cond.Stop()
 }
 
@@ -139,19 +135,19 @@ func (suite *MySuite) TestConditionStartStop(c *check.C) {
 		"empty": []
 	}`
 
-	validateConditionJson(c, statusJson, `{ "test": "true" }`, true)
-	validateConditionJson(c, statusJson, `{ "test": "false" }`, false)
+	validateConditionJson(c, statusJson, `{ "test": "true" }`, []bool{true})
+	validateConditionJson(c, statusJson, `{ "test": "false" }`, []bool{false})
 
-	validateConditionJson(c, statusJson, `[]`, true)
-	validateConditionJson(c, statusJson, `[{ "test": "true" }]`, true)
-	validateConditionJson(c, statusJson, `[{ "test": "false" }, { "test": "false" }, { "test": "false" }]`, false)
+	validateConditionJson(c, statusJson, `[]`, []bool{true})
+	validateConditionJson(c, statusJson, `[{ "test": "true" }]`, []bool{true})
+	validateConditionJson(c, statusJson, `[{ "test": "false" }, { "test": "false" }, { "test": "false" }]`, []bool{false})
 
-	validateConditionJson(c, statusJson, `"status://true"`, true)
-	validateConditionJson(c, statusJson, `"status://false"`, false)
-	validateConditionJson(c, statusJson, `"status://list"`, true)
-	validateConditionJson(c, statusJson, `"status://rlist"`, true)
-	validateConditionJson(c, statusJson, `"status://flist"`, false)
-	validateConditionJson(c, statusJson, `"status://empty"`, true)
+	validateConditionJson(c, statusJson, `"status://true"`, []bool{true})
+	validateConditionJson(c, statusJson, `"status://false"`, []bool{false})
+	validateConditionJson(c, statusJson, `"status://list"`, []bool{true})
+	validateConditionJson(c, statusJson, `"status://rlist"`, []bool{true})
+	validateConditionJson(c, statusJson, `"status://flist"`, []bool{false})
+	validateConditionJson(c, statusJson, `"status://empty"`, []bool{true})
 }
 
 //

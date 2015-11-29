@@ -76,10 +76,12 @@ func NewCondition(
 
 // The base type all rules should compose with.
 type base struct {
-	status      *status.Status
+	status *status.Status
+
 	initialSent bool
 	lastSent    bool
-	resultChan  chan bool
+
+	resultChan chan bool
 	stoppable.Base
 }
 
