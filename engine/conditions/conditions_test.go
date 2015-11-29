@@ -131,56 +131,29 @@ func (suite *MySuite) TestConditionParsingBad(c *check.C) {
 
 func (suite *MySuite) TestConditionStartStop(c *check.C) {
 	statusJson := `{
-		"base": { "test": "base" },
-		"list": [{ "test": "base" }, { "test": "base" }],
-		"rlist": ["status://base", "status://list", { "test": "base" }],
+    "true": { "test": "true" },
+    "false": { "test": "false" },
+		"list": [{ "test": "true" }, { "test": "true" }],
+    "rlist": ["status://true", "status://list", { "test": "true" }],
+    "flist": ["status://true", "status://rlist", { "test": "false" }],
 		"empty": []
 	}`
 
-	validateConditionJson(c, statusJson, `"status://base"`, false)
-	validateConditionJson(c, statusJson, `"status://list"`, false)
-	validateConditionJson(c, statusJson, `"status://rlist"`, false)
-	validateConditionJson(c, statusJson, `"status://empty"`, true)
+	validateConditionJson(c, statusJson, `{ "test": "true" }`, true)
+	validateConditionJson(c, statusJson, `{ "test": "false" }`, false)
 
 	validateConditionJson(c, statusJson, `[]`, true)
-	validateConditionJson(c, statusJson, `[{ "test": "base" }]`, false)
-	validateConditionJson(c, statusJson, `[{ "test": "base" }, { "test": "base" }, { "test": "base" }]`, false)
+	validateConditionJson(c, statusJson, `[{ "test": "true" }]`, true)
+	validateConditionJson(c, statusJson, `[{ "test": "false" }, { "test": "false" }, { "test": "false" }]`, false)
 
-	validateConditionJson(c, statusJson, `{ "test": "base" }`, false)
+	validateConditionJson(c, statusJson, `"status://true"`, true)
+	validateConditionJson(c, statusJson, `"status://false"`, false)
+	validateConditionJson(c, statusJson, `"status://list"`, true)
+	validateConditionJson(c, statusJson, `"status://rlist"`, true)
+	validateConditionJson(c, statusJson, `"status://flist"`, false)
+	validateConditionJson(c, statusJson, `"status://empty"`, true)
 }
 
 //
 // Base condition tests.
 //
-
-func (suite *MySuite) TestBaseConditionStartStop(c *check.C) {
-	s := &status.Status{}
-
-	cBody := &status.Status{}
-	e := cBody.Set(
-		"status://",
-		map[string]interface{}{"test": "base"},
-		0)
-	c.Assert(e, check.IsNil)
-
-	cond, e := NewCondition(s, cBody)
-	c.Check(e, check.IsNil)
-	c.Check(cond.Result(), check.NotNil)
-
-	cond.Stop()
-}
-
-func (suite *MySuite) TestBaseConditionBad(c *check.C) {
-	s := &status.Status{}
-
-	cBody := &status.Status{}
-	e := cBody.Set(
-		"status://",
-		map[string]interface{}{"test": "bogus"},
-		0)
-	c.Assert(e, check.IsNil)
-
-	cond, e := NewCondition(s, cBody)
-	c.Check(cond, check.IsNil)
-	c.Check(e, check.NotNil)
-}

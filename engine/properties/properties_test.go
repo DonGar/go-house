@@ -63,16 +63,16 @@ func (suite *MySuite) TestPropertyStartStop(c *check.C) {
 		`{
 			"target": "status://target",
 			"values": [
-			  { "condition": { "test": "base" }, "value": "foo"	}
+			  { "condition": { "test": "false" }, "value": "foo"	}
 			],
 			"default": "bar"
 		}`,
 		`{
 			"target": "status://target",
 			"values": [
-			  { "condition": { "test": "base" }, "value": "foo"	},
-			  { "condition": { "test": "base" }, "value": "bar"	},
-			  { "condition": { "test": "base" }, "value": "baz"	}
+			  { "condition": { "test": "false" }, "value": "foo"	},
+			  { "condition": { "test": "false" }, "value": "bar"	},
+			  { "condition": { "test": "false" }, "value": "baz"	}
 			]
 		}`,
 	}
@@ -105,7 +105,7 @@ func (suite *MySuite) TestPropertyStartStop(c *check.C) {
 		`{
 			"target": "status://target",
 			"values": [
-			  { "condition": { "test": "base" }	}
+			  { "condition": { "test": "false" }	}
 			]
 			}`,
 		// Invalid condition in values.

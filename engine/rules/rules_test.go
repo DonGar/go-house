@@ -97,7 +97,7 @@ func (suite *MySuite) TestRuleStartStop(c *check.C) {
 		"status://",
 		[]byte(`{
 			"condition": {
-				"test": "base"
+				"test": "false"
 			},
 			"on": null
 		}`),

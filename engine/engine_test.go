@@ -33,13 +33,13 @@ func setupTestStatus(c *check.C) (s *status.Status) {
       	"rule": {
     			"RuleOne": {
     				"condition": {
-    					"test": "base"
+    					"test": "false"
     				},
     				"on": null
 					},
     			"RuleTwo": {
     				"condition": {
-    					"test": "base"
+    					"test": "false"
     				},
     				"off": null
 					}

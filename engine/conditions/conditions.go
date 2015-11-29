@@ -51,9 +51,6 @@ func NewCondition(
 		}
 
 		switch conditionName {
-		case "base":
-			// This type only exists for basic testing.
-			return newBaseCondition(s), nil
 		case "true":
 			return newConstCondition(s, body, true)
 		case "false":

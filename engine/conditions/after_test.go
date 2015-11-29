@@ -14,7 +14,7 @@ func (suite *MySuite) TestAfterStartStop(c *check.C) {
 			  "test": "after",
 			  "delay": "2ms",
 			  "condition": {
-			    "test": "base"
+			    "test": "false"
 			  }
 		}`,
 		`{
@@ -41,7 +41,7 @@ func (suite *MySuite) TestAfterStartStop(c *check.C) {
 			  "test": "after",
 			  "delay": "2",
 			  "condition": {
-			    "test": "base"
+			    "test": "true"
 			  }
 		}`,
 		`{
