@@ -54,6 +54,10 @@ func NewCondition(
 		case "base":
 			// This type only exists for basic testing.
 			return newBaseCondition(s), nil
+		case "true":
+			return newConstCondition(s, body, true)
+		case "false":
+			return newConstCondition(s, body, false)
 		case "after":
 			return newAfterCondition(s, body)
 		case "and":
