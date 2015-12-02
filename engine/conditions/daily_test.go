@@ -6,196 +6,195 @@ import (
 	"time"
 )
 
-func setupTimeCondition(c *check.C, time string) *dailyCondition {
+func setupTimeCondition(c *check.C, time, duration string) *dailyCondition {
 	s := &status.Status{}
 
-	e := s.Set("status://server/latitude", 37.3861, 0)
-	c.Assert(e, check.IsNil)
-
-	e = s.Set("status://server/longitude", 122.0839, 1)
-	c.Assert(e, check.IsNil)
-
 	body := &status.Status{}
-	e = body.Set("status://", map[string]interface{}{"time": time}, 0)
-	c.Assert(e, check.IsNil)
+	err := body.Set("status://time", time, 0)
+	c.Assert(err, check.IsNil)
 
-	cond, e := newDailyCondition(s, body)
-	c.Assert(e, check.IsNil)
+	if duration != "" {
+		err := body.Set("status://duration", duration, 1)
+		c.Assert(err, check.IsNil)
+	}
+
+	cond, err := newDailyCondition(s, body)
+	c.Assert(err, check.IsNil)
 
 	return cond
 }
 
 func (suite *MySuite) TestDailyStartStop(c *check.C) {
-	cond := setupTimeCondition(c, "12:00")
+	// The 0 duration, means the condition is always false.
+	cond := setupTimeCondition(c, "12:00", "0s")
 	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
 func (suite *MySuite) TestDailyParseTime(c *check.C) {
-	var timeType timeType
-	var fixedOffset time.Duration
-	var e error
+	var timeOfDay time.Duration
+	var err error
 
-	timeType, fixedOffset, e = parseTime("foo")
-	c.Check(timeType, check.Equals, sunset)
-	c.Check(fixedOffset, check.Equals, time.Duration(0))
-	c.Check(e, check.NotNil)
+	timeOfDay, err = parseTime("foo")
+	c.Check(timeOfDay, check.Equals, time.Duration(0))
+	c.Check(err, check.NotNil)
 
-	timeType, fixedOffset, e = parseTime("sunset")
-	c.Check(timeType, check.Equals, sunset)
-	c.Check(fixedOffset, check.Equals, time.Duration(0))
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("11:00:00AM")
+	c.Check(timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("sunrise")
-	c.Check(timeType, check.Equals, sunrise)
-	c.Check(fixedOffset, check.Equals, time.Duration(0))
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("12:34:56AM")
+	c.Check(timeOfDay, check.Equals, time.Duration(34*time.Minute+56*time.Second))
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("11:00:00AM")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 11*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("11:00AM")
+	c.Check(timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("12:34:56AM")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, time.Duration(34*time.Minute+56*time.Second))
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("23:00")
+	c.Check(timeOfDay, check.Equals, 23*time.Hour)
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("11:00AM")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 11*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("12:00AM")
+	c.Check(timeOfDay, check.Equals, 0*time.Hour)
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("23:00")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 23*time.Hour)
-	c.Check(e, check.IsNil)
-
-	timeType, fixedOffset, e = parseTime("12:00AM")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 0*time.Hour)
-	c.Check(e, check.IsNil)
-
-	timeType, fixedOffset, e = parseTime("11:00:00")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 11*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("11:00:00")
+	c.Check(timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(err, check.IsNil)
 
 	// Midnight
-	timeType, fixedOffset, e = parseTime("00:00")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 0*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("00:00")
+	c.Check(timeOfDay, check.Equals, 0*time.Hour)
+	c.Check(err, check.IsNil)
 
-	timeType, fixedOffset, e = parseTime("8:00")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 8*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("8:00")
+	c.Check(timeOfDay, check.Equals, 8*time.Hour)
+	c.Check(err, check.IsNil)
 
 	// Noon
-	timeType, fixedOffset, e = parseTime("12:00")
-	c.Check(timeType, check.Equals, fixed)
-	c.Check(fixedOffset, check.Equals, 12*time.Hour)
-	c.Check(e, check.IsNil)
+	timeOfDay, err = parseTime("12:00")
+	c.Check(timeOfDay, check.Equals, 12*time.Hour)
+	c.Check(err, check.IsNil)
 }
 
-func (suite *MySuite) TestDailyFindFireTimeForDateSunrise(c *check.C) {
-	cond := setupTimeCondition(c, "sunrise")
+func (suite *MySuite) TestFindFireState(c *check.C) {
+	cond := setupTimeCondition(c, "11:00", "")
 
-	sunriseToday := time.Date(2014, time.June, 12, 12, 47, 00, 0, time.UTC)
-	sunriseTomorrow := time.Date(2014, time.June, 13, 12, 47, 00, 0, time.UTC)
+	// Verify that time/duration were parsed correctly.
+	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(cond.duration, check.Equals, 1*time.Minute)
 
-	// Test before sunrise.
-	now := sunriseToday.Add(-5 * time.Minute)
-	fireTime := cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseToday)
+	var now time.Time
+	var active bool
+	var delay time.Duration
 
-	// Test 5 min after sunrise.
-	now = sunriseToday.Add(5 * time.Minute)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
+	// Almost start time.
+	now = time.Date(2014, time.June, 12, 10, 57, 12, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 2*time.Minute+48*time.Second)
 
-	// Test after sunrise.
-	now = sunriseToday.Add(12 * time.Hour)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
+	// Start time.
+	now = time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, true)
+	c.Check(delay, check.Equals, 60*time.Second)
 
-	// Test way after sunrise.
-	now = sunriseToday.Add(12 * time.Hour).Add(59 * time.Minute)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunriseTomorrow)
+	// Almost end time.
+	now = time.Date(2014, time.June, 12, 11, 00, 59, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, true)
+	c.Check(delay, check.Equals, 1*time.Second)
 
-	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
-	cond.Stop()
-}
+	// End time.
+	now = time.Date(2014, time.June, 12, 11, 01, 0, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 23*time.Hour+59*time.Minute)
 
-func (suite *MySuite) TestDailyFindFireTimeForDateSunset(c *check.C) {
-	cond := setupTimeCondition(c, "sunset")
-
-	sunsetToday := time.Date(2014, time.June, 12, 3, 29, 00, 0, time.UTC)
-	sunsetTomorrow := time.Date(2014, time.June, 13, 3, 30, 00, 0, time.UTC)
-
-	// Test before sunset.
-	now := sunsetToday.Add(-10 * time.Hour)
-	fireTime := cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetToday)
-
-	// Test 5 min after sunset. Round since time of sunset is approximate.
-	now = sunsetToday.Add(5 * time.Minute)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
-
-	// Test after sunset.
-	now = sunsetToday.Add(12 * time.Hour)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
-
-	// Test after sunset.
-	now = sunsetToday.Add(12 * time.Hour).Add(59 * time.Minute)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime.Round(time.Minute), check.Equals, sunsetTomorrow)
-
-	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
-	cond.Stop()
-}
-
-func (suite *MySuite) TestDailyFixedFindFireDelay(c *check.C) {
-	cond := setupTimeCondition(c, "11:00")
-
-	fixedToday := time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
-	fixedTomorrow := time.Date(2014, time.June, 13, 11, 00, 00, 0, time.Local)
-
-	// Typical short deay.
-	now := time.Date(2014, time.June, 12, 10, 57, 12, 0, time.Local)
-	fireTime := cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, fixedToday)
+	// After end time.
+	now = time.Date(2014, time.June, 12, 11, 01, 2, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 23*time.Hour+58*time.Minute+58*time.Second)
 
 	// When now is midnight.
 	now = time.Date(2014, time.June, 12, 0, 0, 0, 0, time.Local)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, fixedToday)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 11*time.Hour)
 
-	// Very, very short fireTime.
-	now = time.Date(2014, time.June, 12, 10, 59, 59, 200, time.Local)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, fixedToday)
-
-	// Delay is zero.
-	now = time.Date(2014, time.June, 12, 11, 0, 0, 0, time.Local)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, fixedTomorrow)
-
-	// Just past deadline.
-	now = time.Date(2014, time.June, 12, 11, 59, 0, 0, time.Local)
-	fireTime = cond.findNextFireTime(now)
-	c.Check(fireTime, check.Equals, fixedTomorrow)
-
-	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
 	cond.Stop()
 }
 
-// TODO: Figure out how to mock time.Now() and test rule firing.
+func (suite *MySuite) TestFindFireStateDuration(c *check.C) {
+	cond := setupTimeCondition(c, "11:00", "12s")
+
+	// Verify that time/duration were parsed correctly.
+	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(cond.duration, check.Equals, 12*time.Second)
+
+	var now time.Time
+	var active bool
+	var delay time.Duration
+
+	// Almost start time.
+	now = time.Date(2014, time.June, 12, 10, 57, 12, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 2*time.Minute+48*time.Second)
+
+	// Start time.
+	now = time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, true)
+	c.Check(delay, check.Equals, 12*time.Second)
+
+	// Almost end time.
+	now = time.Date(2014, time.June, 12, 11, 00, 11, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, true)
+	c.Check(delay, check.Equals, 1*time.Second)
+
+	// End time.
+	now = time.Date(2014, time.June, 12, 11, 00, 12, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 23*time.Hour+59*time.Minute+48*time.Second)
+
+	// After end time.
+	now = time.Date(2014, time.June, 12, 11, 01, 00, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 23*time.Hour+59*time.Minute)
+
+	// When now is midnight.
+	now = time.Date(2014, time.June, 12, 0, 0, 0, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 11*time.Hour)
+
+	cond.Stop()
+}
+
+func (suite *MySuite) TestFindFireStateZeroDuration(c *check.C) {
+	cond := setupTimeCondition(c, "11:00", "0s")
+
+	// Verify that time/duration were parsed correctly.
+	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
+	c.Check(cond.duration, check.Equals, 0*time.Second)
+
+	var now time.Time
+	var active bool
+	var delay time.Duration
+
+	// Even at start/end time, we never actually fire.
+	now = time.Date(2014, time.June, 12, 11, 00, 00, 0, time.Local)
+	active, delay = cond.findFireState(now)
+	c.Check(active, check.Equals, false)
+	c.Check(delay, check.Equals, 24*time.Hour)
+
+	cond.Stop()
+}

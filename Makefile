@@ -6,7 +6,7 @@ run:
 	go run go-house.go --config_dir $(SANDBOX_DIR)/config
 
 test:
-	go test ./...
+	go test -timeout 5s ./...
 
 network:
 	cd spark-api && go test -network .
