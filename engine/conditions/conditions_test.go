@@ -86,9 +86,7 @@ func (m *mockCondition) Stop() {
 // Condition Parsing Tests
 //
 
-func validateConditionJson(c *check.C, statusJson, condJson string, expected bool) {
-	fmt.Println("Running validateConditionJson: ", condJson)
-
+func constructConditionJson(c *check.C, statusJson, condJson string) (cond Condition, err error) {
 	s := &status.Status{}
 	if statusJson != "" {
 		e := s.SetJson("status://", []byte(statusJson), 0)
@@ -99,7 +97,12 @@ func validateConditionJson(c *check.C, statusJson, condJson string, expected boo
 	e := body.SetJson("status://", []byte(condJson), 0)
 	c.Assert(e, check.IsNil)
 
-	cond, e := NewCondition(s, body)
+	return NewCondition(s, body)
+}
+
+func validateConditionJson(c *check.C, statusJson, condJson string, expected bool) {
+	fmt.Println("Testing Good Json: ", condJson)
+	cond, e := constructConditionJson(c, statusJson, condJson)
 	c.Check(e, check.IsNil)
 
 	validateChannelRead(c, cond, expected)
@@ -108,15 +111,8 @@ func validateConditionJson(c *check.C, statusJson, condJson string, expected boo
 }
 
 func validateConditionBadJson(c *check.C, condJson string) {
-	fmt.Println("Running validateConditionBadJson: ", condJson)
-
-	s := &status.Status{}
-
-	body := &status.Status{}
-	e := body.SetJson("status://", []byte(condJson), 0)
-	c.Assert(e, check.IsNil)
-
-	cond, e := NewCondition(s, body)
+	fmt.Println("Testing Bad Json: ", condJson)
+	cond, e := constructConditionJson(c, "{}", condJson)
 
 	c.Check(cond, check.IsNil)
 	c.Check(e, check.NotNil)
