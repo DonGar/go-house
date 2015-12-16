@@ -56,6 +56,15 @@ func validateChannelEmpty(c *check.C, cond Condition) {
 	}
 }
 
+func validateChannelEmptyInstant(c *check.C, cond Condition) {
+	// Validate that the channel is empty right now, but don't wait for things
+	// to settle. Meant for testing things with timers.
+	result, received := channelRead(cond)
+	if received {
+		c.Error("Channel has a value queued: ", result)
+	}
+}
+
 func validateChannelSequence(c *check.C, cond Condition, expected []bool) {
 	for _, exp := range expected {
 		validateChannelRead(c, cond, exp)
