@@ -11,6 +11,7 @@ type afterCondition struct {
 
 	condition Condition
 	delay     time.Duration
+	repeat    time.Duration
 }
 
 func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, error) {
@@ -39,8 +40,17 @@ func newAfterCondition(s *status.Status, body *status.Status) (*afterCondition, 
 		return nil, e
 	}
 
+	var repeat time.Duration
+	repeatStr, _, e := body.GetString("status://repeat")
+	if e == nil {
+		repeat, e = time.ParseDuration(repeatStr)
+		if e != nil {
+			return nil, e
+		}
+	}
+
 	// Create our condition.
-	c := &afterCondition{newBase(s), condition, delay}
+	c := &afterCondition{newBase(s), condition, delay, repeat}
 
 	c.start()
 	return c, nil
@@ -77,7 +87,14 @@ func (c *afterCondition) Handler() {
 			}
 
 		case <-timer.C:
+			// If we are repeating, we force a switch to false so true registers.
+			c.sendResult(false)
 			c.sendResult(true)
+
+			// If we repeat after being true,
+			if c.repeat != 0 {
+				timer.Reset(c.repeat)
+			}
 
 		case <-c.StopChan:
 			c.StopChan <- true
