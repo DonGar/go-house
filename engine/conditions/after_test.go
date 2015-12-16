@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-// Actual tests.
-
 func (suite *MySuite) TestAfterStartStop(c *check.C) {
 	good := []string{
 		`{

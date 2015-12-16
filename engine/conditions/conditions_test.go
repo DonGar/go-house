@@ -16,6 +16,11 @@ type MySuite struct{}
 
 var _ = check.Suite(&MySuite{})
 
+const (
+	READ_DELAY  time.Duration = 100 * time.Millisecond
+	EMPTY_DELAY time.Duration = 5 * time.Millisecond
+)
+
 //
 // Helpers for all condition test code.
 //
@@ -37,7 +42,7 @@ func validateChannelRead(c *check.C, cond Condition, expected bool) {
 	}
 
 	// Retry until there is a value on the channel.
-	wait.Wait(100*time.Millisecond, updateObserved)
+	wait.Wait(READ_DELAY, updateObserved)
 
 	c.Check(received, check.Equals, true)
 	c.Check(result, check.Equals, expected)
@@ -46,7 +51,7 @@ func validateChannelRead(c *check.C, cond Condition, expected bool) {
 func validateChannelEmpty(c *check.C, cond Condition) {
 	for {
 		// Sleep a little for things to see if extra results are generated.
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(EMPTY_DELAY)
 		result, received := channelRead(cond)
 		if received {
 			c.Error("Unexpected result received: ", result)

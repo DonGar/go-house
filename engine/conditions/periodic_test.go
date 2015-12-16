@@ -19,17 +19,44 @@ func setupPeriodicRule(c *check.C, time string) *periodicCondition {
 }
 
 func (suite *MySuite) TestPeriodicStartStop(c *check.C) {
-	cond := setupPeriodicRule(c, "1s")
-	validateChannelRead(c, cond, false)
-	validateChannelEmpty(c, cond)
-	cond.Stop()
+	good := []string{
+		`{
+		      "test": "periodic",
+		      "interval": "200ms"
+		  }`,
+		`{
+        "test": "periodic",
+        "interval": "24h"
+    }`,
+	}
+
+	for _, g := range good {
+		validateConditionJson(c, "", g, false)
+	}
+
+	bad := []string{
+		`{
+	       "test": "periodic"
+	   }`,
+		`{
+	       "test": "periodic",
+	       "interval": []
+	   }`,
+		`{
+	       "test": "periodic",
+	       "interval": "2"
+	   }`,
+	}
+
+	for _, b := range bad {
+		validateConditionBadJson(c, b)
+	}
 }
 
 func (suite *MySuite) TestPeriodicFire(c *check.C) {
 
-	// 10 ms seems to be long enough to be safe when all tests are run in
-	// parallel.
-	period := 50 * time.Millisecond
+	// Seems to be long enough to be safe when all tests are run in parallel.
+	period := 5 * EMPTY_DELAY
 
 	start := time.Now()
 
