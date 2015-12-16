@@ -45,7 +45,7 @@ func actionSet(s *status.Status, action *status.Status) (e error) {
 		return e
 	}
 
-	value, _, e := action.GetString("status://value")
+	value, _, e := action.Get("status://value")
 	if e != nil {
 		return e
 	}
