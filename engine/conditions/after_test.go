@@ -25,7 +25,7 @@ func (suite *MySuite) TestAfterStartStop(c *check.C) {
 	}
 
 	for _, g := range good {
-		validateConditionJson(c, "", g, []bool{false})
+		validateConditionJson(c, "", g, false)
 	}
 
 	bad := []string{
