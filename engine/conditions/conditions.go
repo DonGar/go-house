@@ -67,6 +67,8 @@ func NewCondition(
 			return newDaylightCondition(s, body, false)
 		case "periodic":
 			return newPeriodicCondition(s, body)
+		case "time":
+			return newTimeCondition(s, body)
 		case "watch":
 			return newWatchCondition(s, body)
 		default:

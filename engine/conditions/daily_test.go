@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func setupTimeCondition(c *check.C, time, duration string) *dailyCondition {
+func setupDailyCondition(c *check.C, time, duration string) *dailyCondition {
 	s := &status.Status{}
 
 	body := &status.Status{}
@@ -26,7 +26,7 @@ func setupTimeCondition(c *check.C, time, duration string) *dailyCondition {
 
 func (suite *MySuite) TestDailyStartStop(c *check.C) {
 	// The 0 duration, means the condition is always false.
-	cond := setupTimeCondition(c, "12:00", "0s")
+	cond := setupDailyCondition(c, "12:00", "0s")
 	validateChannelRead(c, cond, false)
 	validateChannelEmpty(c, cond)
 	cond.Stop()
@@ -80,7 +80,7 @@ func (suite *MySuite) TestDailyParseTime(c *check.C) {
 }
 
 func (suite *MySuite) TestFindFireState(c *check.C) {
-	cond := setupTimeCondition(c, "11:00", "")
+	cond := setupDailyCondition(c, "11:00", "")
 
 	// Verify that time/duration were parsed correctly.
 	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
@@ -130,7 +130,7 @@ func (suite *MySuite) TestFindFireState(c *check.C) {
 }
 
 func (suite *MySuite) TestFindFireStateDuration(c *check.C) {
-	cond := setupTimeCondition(c, "11:00", "12s")
+	cond := setupDailyCondition(c, "11:00", "12s")
 
 	// Verify that time/duration were parsed correctly.
 	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
@@ -180,7 +180,7 @@ func (suite *MySuite) TestFindFireStateDuration(c *check.C) {
 }
 
 func (suite *MySuite) TestFindFireStateZeroDuration(c *check.C) {
-	cond := setupTimeCondition(c, "11:00", "0s")
+	cond := setupDailyCondition(c, "11:00", "0s")
 
 	// Verify that time/duration were parsed correctly.
 	c.Check(cond.timeOfDay, check.Equals, 11*time.Hour)
