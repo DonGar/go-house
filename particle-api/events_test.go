@@ -45,12 +45,12 @@ func (suite *MySuite) TestOpenEventConnection(c *check.C) {
 	sa := NewParticleApi(TEST_USER, TEST_PASS)
 	defer sa.Stop()
 
-	response, reader, err := sa.openEventConnection()
-	c.Check(response, check.NotNil)
-	c.Check(reader, check.NotNil)
+	eventReaderCloser, bufferedEventReader, err := sa.openEventConnection()
+	c.Check(eventReaderCloser, check.NotNil)
+	c.Check(bufferedEventReader, check.NotNil)
 	c.Check(err, check.IsNil)
 
-	err = response.Body.Close()
+	err = eventReaderCloser.Close()
 	c.Check(err, check.IsNil)
 }
 

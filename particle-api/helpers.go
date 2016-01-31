@@ -2,6 +2,8 @@ package particleapi
 
 import (
 	"encoding/json"
+	"github.com/DonGar/go-house/http-client"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -12,48 +14,15 @@ import (
 var OAUTH_URL string = PARTICLE_IO_URL + "oauth/token"
 var TOKENS_URL string = PARTICLE_IO_URL + "v1/access_tokens"
 
-//
-// Type to encode HTTP Errors.
-//
-type ResponseError struct {
-	Status     string
-	StatusCode int
-	BodyText   string
-}
-
-func (r ResponseError) Error() string {
-	return "Request got code: " + r.Status + "\nBody:\n" + r.BodyText
-}
-
-// Helper method that makes a request, and reads the result body into an []byte.
-func requestToResponse(request *http.Request) (*http.Response, error) {
-	// Given an http.Request object, perform the request, and return the
-	// body of the response.
-
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	if response.StatusCode != http.StatusOK {
-		// Read the full response, ignore a read error.
-		bodyText, _ := ioutil.ReadAll(response.Body)
-		return nil, ResponseError{response.Status, response.StatusCode, string(bodyText)}
-	}
-
-	return response, err
-}
-
-func (a *ParticleApi) requestToResponseWithToken(request *http.Request) (*http.Response, error) {
+func (a *ParticleApi) requestToReadCloserWithToken(request *http.Request) (io.ReadCloser, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization.
 	request.Header.Set("Authorization", "Bearer "+a.token)
 
-	return requestToResponse(request)
+	return a.hc.RequestToReadCloser(request)
 }
 
-func (a *ParticleApi) requestToResponseWithTokenRefresh(request *http.Request) (*http.Response, error) {
+func (a *ParticleApi) requestToReadCloserWithTokenRefresh(request *http.Request) (io.ReadCloser, error) {
 	// Helper for performing an HTTP request, and getting back the body of
 	// the response. Our access token is used for authorization. Lookup/refresh
 	// the token as needed.
@@ -63,46 +32,46 @@ func (a *ParticleApi) requestToResponseWithTokenRefresh(request *http.Request) (
 	// If we have a token, try to use it. It might fail if the token is
 	// expired.
 	if a.token != "" {
-		response, err := a.requestToResponseWithToken(request)
+		bodyReader, err := a.requestToReadCloserWithToken(request)
 
 		// If it worked, we are done.
 		if err == nil {
-			return response, err
+			return bodyReader, err
 		}
 
 		// Exit if not a we are sure a token refresh won't help.
-		responseError, ok := err.(ResponseError)
+		responseError, ok := err.(httpclient.ResponseError)
 		if !ok || responseError.StatusCode != http.StatusBadRequest {
 			return nil, err
 		}
 	}
 
 	// Lookup for generate a new token. If we don't find one, try to create one.
-	a.token, _ = lookupToken(a.username, a.password)
+	a.token, _ = lookupToken(a.hc, a.username, a.password)
 	if a.token == "" {
-		a.token, err = refreshToken(a.username, a.password)
+		a.token, err = refreshToken(a.hc, a.username, a.password)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Request with new token. If this fails, we are done.
-	return a.requestToResponseWithToken(request)
+	return a.requestToReadCloserWithToken(request)
 }
 
-func (a *ParticleApi) urlToResponseWithTokenRefresh(requestUrl string) (*http.Response, error) {
-	// Perform requestToResponseWithTokenRefresh from a URL.
+func (a *ParticleApi) urlToReadCloserWithTokenRefresh(requestUrl string) (io.ReadCloser, error) {
+	// Perform requestToReadCloserWithTokenRefresh from a URL.
 
 	request, err := http.NewRequest("GET", requestUrl, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return a.requestToResponseWithTokenRefresh(request)
+	return a.requestToReadCloserWithTokenRefresh(request)
 }
 
-func (a *ParticleApi) postToResponseWithTokenRefresh(postUrl string, postFormValues url.Values) (*http.Response, error) {
-	// Perform requestToResponseWithTokenRefresh from a URL.
+func (a *ParticleApi) postToReadCloserWithTokenRefresh(postUrl string, postFormValues url.Values) (io.ReadCloser, error) {
+	// Perform requestToReadCloserWithTokenRefresh from a URL.
 
 	request, err := http.NewRequest("POST", postUrl, strings.NewReader(postFormValues.Encode()))
 	if err != nil {
@@ -110,10 +79,10 @@ func (a *ParticleApi) postToResponseWithTokenRefresh(postUrl string, postFormVal
 	}
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	return a.requestToResponseWithTokenRefresh(request)
+	return a.requestToReadCloserWithTokenRefresh(request)
 }
 
-func lookupToken(username, password string) (token string, err error) {
+func lookupToken(hc httpclient.HttpClientInterface, username, password string) (token string, err error) {
 	// Look for an existing token we can use for all requests.
 
 	request, err := http.NewRequest("GET", TOKENS_URL, nil)
@@ -123,13 +92,13 @@ func lookupToken(username, password string) (token string, err error) {
 	request.SetBasicAuth(username, password)
 
 	// Ask for the new token.
-	response, err := requestToResponse(request)
+	bodyReader, err := hc.RequestToReadCloser(request)
 	if err != nil {
 		return "", err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +138,7 @@ func lookupToken(username, password string) (token string, err error) {
 	return "", nil
 }
 
-func refreshToken(username, password string) (token string, err error) {
+func refreshToken(hc httpclient.HttpClientInterface, username, password string) (token string, err error) {
 	// Generate a new token we can use for future requests.
 
 	// Build our request.
@@ -189,13 +158,13 @@ func refreshToken(username, password string) (token string, err error) {
 	request.SetBasicAuth("spark", "spark")
 
 	// Ask for the new token.
-	response, err := requestToResponse(request)
+	bodyReader, err := hc.RequestToReadCloser(request)
 	if err != nil {
 		return "", err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return "", err
 	}

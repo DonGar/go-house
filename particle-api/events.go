@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"io"
 	"strings"
 )
 
@@ -27,27 +27,27 @@ func readLine(reader *bufio.Reader) (string, error) {
 	return strings.TrimSpace(line), nil
 }
 
-func (a *ParticleApi) openEventConnection() (*http.Response, *bufio.Reader, error) {
-	response, err := a.urlToResponseWithTokenRefresh(EVENTS_URL)
+func (a *ParticleApi) openEventConnection() (io.ReadCloser, *bufio.Reader, error) {
+	bodyReader, err := a.urlToReadCloserWithTokenRefresh(EVENTS_URL)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reader := bufio.NewReader(response.Body)
+	reader := bufio.NewReader(bodyReader)
 
 	// the first line should always be ":ok"
 	line, err := readLine(reader)
 	if err != nil {
-		response.Body.Close()
+		bodyReader.Close()
 		return nil, nil, err
 	}
 
 	if line != ":ok" {
-		response.Body.Close()
+		bodyReader.Close()
 		return nil, nil, fmt.Errorf("Received unexpected ok response: %s", line)
 	}
 
-	return response, reader, nil
+	return bodyReader, reader, nil
 }
 
 func parseEvent(reader *bufio.Reader) (*Event, error) {

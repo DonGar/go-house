@@ -1,6 +1,7 @@
 package particleapi
 
 import (
+	"github.com/DonGar/go-house/http-client"
 	"gopkg.in/check.v1"
 	"net/http"
 )
@@ -19,26 +20,32 @@ func (suite *MySuite) TestUrlToResponse(c *check.C) {
 	request, err := http.NewRequest("GET", DEVICES_URL, nil)
 	c.Assert(err, check.IsNil)
 
-	response, err := sa.requestToResponseWithToken(request)
-	responseError, ok := err.(ResponseError)
+	response, err := sa.requestToReadCloserWithToken(request)
+	responseError, ok := err.(httpclient.ResponseError)
 	c.Check(ok, check.Equals, true)
 	c.Check(responseError.StatusCode, check.Equals, http.StatusBadRequest)
 	c.Check(response, check.IsNil)
 
 	// Do a token refresh.
-	response, err = sa.requestToResponseWithTokenRefresh(request)
+	request, err = http.NewRequest("GET", DEVICES_URL, nil)
+	c.Assert(err, check.IsNil)
+
+	response, err = sa.requestToReadCloserWithTokenRefresh(request)
 	c.Check(err, check.IsNil)
 	c.Check(response, check.NotNil)
-	response.Body.Close()
+	response.Close()
 
 	// We have a new token.
 	c.Check(sa.token, check.Not(check.Equals), "")
 
 	// Redo the original request, and it works.
-	response, err = sa.requestToResponseWithToken(request)
+	request, err = http.NewRequest("GET", DEVICES_URL, nil)
+	c.Assert(err, check.IsNil)
+
+	response, err = sa.requestToReadCloserWithToken(request)
 	c.Check(err, check.IsNil)
 	c.Check(response, check.NotNil)
-	response.Body.Close()
+	// response.Close()
 
 	sa.Stop()
 }
@@ -51,16 +58,18 @@ func (suite *MySuite) TestUrlLookup(c *check.C) {
 		c.Skip("-network tests not enabled.")
 	}
 
+	hc := &httpclient.HttpClient{}
+
 	// We test creating before looking up to ensure there is always something
 	// to look up.
 
 	// Verify that we can create a new token.
-	token, err := refreshToken(TEST_USER, TEST_PASS)
+	token, err := refreshToken(hc, TEST_USER, TEST_PASS)
 	c.Check(err, check.IsNil)
 	c.Check(token, check.Not(check.Equals), "")
 
 	// Verify that we can lookup ao test token.
-	token, err = lookupToken(TEST_USER, TEST_PASS)
+	token, err = lookupToken(hc, TEST_USER, TEST_PASS)
 	c.Check(err, check.IsNil)
 	c.Check(token, check.Not(check.Equals), "")
 }
@@ -75,8 +84,8 @@ func (suite *MySuite) TestUrlToResponseBadUser(c *check.C) {
 	sa := NewParticleApi("", "")
 
 	// Do a token refresh.
-	response, err := sa.urlToResponseWithTokenRefresh(DEVICES_URL)
-	responseError, ok := err.(ResponseError)
+	response, err := sa.urlToReadCloserWithTokenRefresh(DEVICES_URL)
+	responseError, ok := err.(httpclient.ResponseError)
 	c.Check(ok, check.Equals, true)
 	c.Check(responseError.StatusCode, check.Equals, http.StatusBadRequest)
 	c.Check(response, check.IsNil)

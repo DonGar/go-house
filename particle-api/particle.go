@@ -3,9 +3,10 @@ package particleapi
 import (
 	"bufio"
 	"fmt"
+	"github.com/DonGar/go-house/http-client"
 	"github.com/DonGar/go-house/stoppable"
+	"io"
 	"log"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -35,6 +36,9 @@ type ParticleApi struct {
 	// Track current known devices.
 	devices []Device
 
+	// Helper that allows web requests to be mocked out.
+	hc httpclient.HttpClientInterface
+
 	// Publish to external listeners our current known devices.
 	// Will have nil values, if nobody is listening.
 	deviceUpdates chan []Device
@@ -52,6 +56,7 @@ func NewParticleApi(username, password string) *ParticleApi {
 		stoppable.NewBase(),
 		username, password, "",
 		[]Device{},
+		&httpclient.HttpClient{},
 		nil,
 		nil,
 		make(chan [3]string, 10),
@@ -148,7 +153,7 @@ func (a *ParticleApi) reconnectAfterDelay() {
 }
 
 func (a *ParticleApi) handler() {
-	var eventResponse *http.Response
+	var eventReaderCloser io.ReadCloser
 	var err error
 
 	// We don't need an exact timing, just... occasionally.
@@ -159,8 +164,8 @@ func (a *ParticleApi) handler() {
 		select {
 		case <-a.StopChan:
 			refreshTimer.Stop()
-			if eventResponse != nil {
-				eventResponse.Body.Close()
+			if eventReaderCloser != nil {
+				eventReaderCloser.Close()
 			}
 
 			a.StopChan <- true
@@ -194,9 +199,9 @@ func (a *ParticleApi) handler() {
 			a.sendDevicesUpdate(a.devices)
 
 		case <-a.listenEvents:
-			var reader *bufio.Reader
+			var bufferedEventReader *bufio.Reader
 
-			eventResponse, reader, err = a.openEventConnection()
+			eventReaderCloser, bufferedEventReader, err = a.openEventConnection()
 			if err != nil {
 				log.Println("openEventConnection failed: ", err.Error())
 				go a.reconnectAfterDelay()
@@ -208,7 +213,7 @@ func (a *ParticleApi) handler() {
 				a.refreshDevices <- true
 
 				// readEvents never returns without an error.
-				err = a.readEvents(reader)
+				err = a.readEvents(bufferedEventReader)
 				log.Println("readEvents failed: ", err.Error())
 
 				// Always reconnect.

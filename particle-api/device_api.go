@@ -26,13 +26,13 @@ func (a *ParticleApi) discoverDevices() ([]Device, error) {
 
 	// Do the device lookup.
 	requestUrl := DEVICES_URL
-	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
+	bodyReader, err := a.urlToReadCloserWithTokenRefresh(requestUrl)
 	if err != nil {
 		return nil, err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +75,13 @@ func (a *ParticleApi) discoverDeviceDetails(device *Device) (e error) {
 
 	// Look up device detaila.
 	requestUrl := DEVICES_URL + "/" + device.Id
-	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
+	bodyReader, err := a.urlToReadCloserWithTokenRefresh(requestUrl)
 	if err != nil {
 		return err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return err
 	}
@@ -125,13 +125,13 @@ func (a *ParticleApi) lookupDeviceVariable(device *Device, variable string) (e e
 
 	// Look up device details.
 	requestUrl := DEVICES_URL + "/" + device.Id + "/" + variable
-	response, err := a.urlToResponseWithTokenRefresh(requestUrl)
+	bodyReader, err := a.urlToReadCloserWithTokenRefresh(requestUrl)
 	if err != nil {
 		return err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return err
 	}
@@ -162,13 +162,13 @@ func (a *ParticleApi) callFunctionSingle(device *Device, function, argument stri
 	// Invoke a function on a Particle Core.
 	postUrl := DEVICES_URL + "/" + device.Id + "/" + function
 
-	response, err := a.postToResponseWithTokenRefresh(postUrl, url.Values{"args": {argument}})
+	bodyReader, err := a.postToReadCloserWithTokenRefresh(postUrl, url.Values{"args": {argument}})
 	if err != nil {
 		return -1, err
 	}
 
 	// Read the full response.
-	bodyText, err := ioutil.ReadAll(response.Body)
+	bodyText, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return -1, err
 	}
