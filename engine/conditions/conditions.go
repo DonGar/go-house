@@ -110,8 +110,13 @@ func (b *base) sendResult(result bool) {
 	case b.resultChan <- b.lastSent:
 		// Send if we can.
 	default:
-		// If we were blocked, clear one value from the channel buffer, then send.
-		<-b.resultChan
+		select {
+		case <-b.resultChan:
+			// If we were blocked, try to clear one value from the channel buffer..
+		default:
+		}
+
+		// Now send, after ensuring there is at least one place to write too.
 		b.resultChan <- b.lastSent
 	}
 }
