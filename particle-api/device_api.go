@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"time"
 )
 
 var DEVICES_URL string = PARTICLE_IO_URL + "v1/devices"
@@ -157,7 +158,7 @@ func (a *ParticleApi) lookupDeviceVariable(device *Device, variable string) (e e
 	return nil
 }
 
-func (a *ParticleApi) callFunction(device *Device, function, argument string) (int, error) {
+func (a *ParticleApi) callFunctionSingle(device *Device, function, argument string) (int, error) {
 	// Invoke a function on a Particle Core.
 	postUrl := DEVICES_URL + "/" + device.Id + "/" + function
 
@@ -191,4 +192,17 @@ func (a *ParticleApi) callFunction(device *Device, function, argument string) (i
 
 	// The call was successfull.
 	return parsedResponse.Return_value, nil
+}
+
+func (a *ParticleApi) callFunction(device *Device, function, argument string) (result int, err error) {
+
+	result, err = a.callFunctionSingle(device, function, argument)
+
+	// On error, retry the call after a short delay.
+	for i := 0; err != nil && i < 5; i-- {
+		time.Sleep(time.Second * 20)
+		result, err = a.callFunctionSingle(device, function, argument)
+	}
+
+	return result, err
 }
