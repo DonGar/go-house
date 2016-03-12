@@ -15,5 +15,12 @@ var _ = check.Suite(&MySuite{})
 
 func (suite *MySuite) TestSuccess(c *check.C) {
 	// Test that we exit right away if it passes the first time.
-	Wait(time.Second, func() bool { return true })
+	result := Wait(time.Second, func() bool { return true })
+	c.Check(result, check.Equals, true)
+}
+
+func (suite *MySuite) TestFailure(c *check.C) {
+	// Test that we exit right away if it passes the first time.
+	result := Wait(10*time.Millisecond, func() bool { return false })
+	c.Check(result, check.Equals, false)
 }
