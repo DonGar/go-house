@@ -49,15 +49,13 @@ func validateChannelRead(c *check.C, cond Condition, expected bool) {
 }
 
 func validateChannelEmpty(c *check.C, cond Condition) {
-	for {
-		// Sleep a little for things to see if extra results are generated.
-		time.Sleep(EMPTY_DELAY)
-		result, received := channelRead(cond)
-		if received {
-			c.Error("Unexpected result received: ", result)
-		} else {
-			return
-		}
+	// Sleep a little for things to see if extra results are generated.
+	time.Sleep(EMPTY_DELAY)
+	result, received := channelRead(cond)
+	if received {
+		c.Error("Unexpected result received: ", result)
+	} else {
+		return
 	}
 }
 
