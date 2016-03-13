@@ -60,7 +60,7 @@ func (suite *MySuite) TestParseSimple(c *check.C) {
 	c.Check(result.devices, check.HasLen, 2)
 
 	c.Check(result.devices, check.DeepEquals,
-		map[int]Device{
+		deviceMap{
 			3: Device{
 				Id:          3,
 				Name:        "Office Light",
