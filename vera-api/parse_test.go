@@ -20,7 +20,7 @@ func readFile(c *check.C, filename string) []byte {
 
 func (suite *MySuite) TestParseErrorEmpty(c *check.C) {
 	bodyText := []byte("{}")
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 
 	c.Check(err, check.NotNil)
 	c.Check(result, check.IsNil)
@@ -28,7 +28,7 @@ func (suite *MySuite) TestParseErrorEmpty(c *check.C) {
 
 func (suite *MySuite) TestParseErrorInvalid(c *check.C) {
 	bodyText := []byte("{")
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 
 	c.Check(err, check.NotNil)
 	c.Check(result, check.IsNil)
@@ -36,7 +36,7 @@ func (suite *MySuite) TestParseErrorInvalid(c *check.C) {
 
 func (suite *MySuite) TestParseEmpty(c *check.C) {
 	bodyText := readFile(c, MINIMAL_JSON)
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 
 	c.Check(err, check.IsNil)
 	c.Assert(result, check.NotNil)
@@ -49,7 +49,7 @@ func (suite *MySuite) TestParseEmpty(c *check.C) {
 
 func (suite *MySuite) TestParseSimple(c *check.C) {
 	bodyText := readFile(c, SIMPLE_JSON)
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 
 	c.Check(err, check.IsNil)
 	c.Assert(result, check.NotNil)
@@ -97,7 +97,7 @@ func (suite *MySuite) TestParseSimple(c *check.C) {
 
 func (suite *MySuite) TestParseFull(c *check.C) {
 	bodyText := readFile(c, FULL_JSON)
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 
 	c.Check(err, check.IsNil)
 	c.Assert(result, check.NotNil)
@@ -143,17 +143,67 @@ func (suite *MySuite) TestParseFull(c *check.C) {
 	})
 }
 
-func (suite *MySuite) TestParsePartial(c *check.C) {
-	bodyText := readFile(c, PARTIAL_JSON)
-	_, err := parseVeraData(bodyText)
+func (suite *MySuite) TestParseFullPrevious(c *check.C) {
 
-	// For now, ensure we always fail with partial updates.
+	bodyText := readFile(c, MINIMAL_JSON)
+
+	// We can parse a full result, with a previous of nil.
+	resultNil, err := parseVeraData(bodyText, nil)
+	c.Assert(err, check.IsNil)
+
+	// We can parse a full result, with a previous of empty.
+	resultNew, err := parseVeraData(bodyText, newParseResult())
+	c.Assert(err, check.IsNil)
+
+	// We can parse a full result, with a previous of ourselves.
+	resultMinimal, err := parseVeraData(bodyText, resultNil)
+	c.Assert(err, check.IsNil)
+
+	bodyFull := readFile(c, FULL_JSON)
+	resultFull, err := parseVeraData(bodyFull, nil)
+	c.Assert(err, check.IsNil)
+
+	// We can parse a full result, with a previous of different full.
+	resultFull, err = parseVeraData(bodyText, resultFull)
+	c.Assert(err, check.IsNil)
+
+	// But we always get the same result.
+	c.Check(resultNil, check.DeepEquals, resultNew)
+	c.Check(resultNil, check.DeepEquals, resultMinimal)
+	c.Check(resultNil, check.DeepEquals, resultFull)
+}
+
+func (suite *MySuite) TestParsePartialNoPrevious(c *check.C) {
+	bodyText := readFile(c, PARTIAL_JSON)
+
+	// Parse partial with previous of nil, and fail.
+	result, err := parseVeraData(bodyText, nil)
+	c.Check(result, check.IsNil)
 	c.Check(err, check.NotNil)
 
-	// c.Assert(result, check.NotNil)
+	// Parse partial with previous of empty (!full), and fail.
+	result, err = parseVeraData(bodyText, newParseResult())
+	c.Check(result, check.IsNil)
+	c.Check(err, check.NotNil)
+}
 
-	// c.Check(result.full, check.Equals, true)
-	// c.Check(result.loadtime, check.Equals, 1455972866)
-	// c.Check(result.dataversion, check.Equals, 958637941)
-	// c.Check(result.devices, check.HasLen, 54)
+func (suite *MySuite) TestParsePartialPrevious(c *check.C) {
+	// Parse a full result that the partial goes on top of.
+	resultFull, err := parseVeraData(readFile(c, FULL_JSON), nil)
+	c.Assert(resultFull, check.NotNil)
+	c.Assert(err, check.IsNil)
+
+	// Make a duplicate of the full result.
+	resultFullCopy := resultFull.copy()
+
+	// Make sure we can parse on top of the full.
+	result, err := parseVeraData(readFile(c, PARTIAL_JSON), resultFullCopy)
+	c.Check(err, check.IsNil)
+	c.Check(result, check.NotNil)
+
+	// Make sure the full wasn't modified.
+	c.Check(resultFull, check.DeepEquals, resultFullCopy)
+
+	// Make sure our partial result != to full it's based on.
+	c.Check(resultFull, check.Not(check.DeepEquals), result)
 }

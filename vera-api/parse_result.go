@@ -77,6 +77,13 @@ func (r *parseResult) copy() *parseResult {
 
 	devices := deviceMap{}
 	for k, v := range r.devices {
+		// The values copy is copied by reference, so deep copy it.
+		values := ValuesMap{}
+		for k, v := range v.Values {
+			values[k] = v
+		}
+
+		v.Values = values
 		devices[k] = v
 	}
 

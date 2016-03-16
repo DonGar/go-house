@@ -95,7 +95,7 @@ func (a *VeraApi) handler() {
 				}
 
 				// log.Println("Vera parsing:", string(bodyText))
-				result, err := parseVeraData(bodyText)
+				result, err := parseVeraData(bodyText, &a.parseResult)
 				if err != nil {
 					a.handleRefreshError("parse", err)
 					return

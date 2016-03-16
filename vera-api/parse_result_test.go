@@ -29,7 +29,7 @@ func testCopyHelper(c *check.C, src *parseResult) {
 
 func testCopyHelperFromFile(c *check.C, filename string) {
 	bodyText := readFile(c, filename)
-	result, err := parseVeraData(bodyText)
+	result, err := parseVeraData(bodyText, nil)
 	c.Assert(err, check.IsNil)
 
 	testCopyHelper(c, result)
