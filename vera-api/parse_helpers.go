@@ -74,7 +74,9 @@ func parseFloat(raw interface{}) (float64, error) {
 	}
 }
 
-func insertRawString(values ValuesMap, key string, raw interface{}) error {
+func insertRawString(values ValuesMap, key string, raw interface{}) (err error) {
+	defer func() { err = insertErrorValue(key, err) }()
+
 	if raw == nil {
 		return nil
 	}
@@ -95,7 +97,9 @@ func insertRawString(values ValuesMap, key string, raw interface{}) error {
 	return nil
 }
 
-func insertRawBool(values ValuesMap, key string, raw interface{}) error {
+func insertRawBool(values ValuesMap, key string, raw interface{}) (err error) {
+	defer func() { err = insertErrorValue(key, err) }()
+
 	if raw == nil {
 		return nil
 	}
@@ -112,7 +116,9 @@ func insertRawBool(values ValuesMap, key string, raw interface{}) error {
 	return nil
 }
 
-func insertRawInt(values ValuesMap, key string, raw interface{}) error {
+func insertRawInt(values ValuesMap, key string, raw interface{}) (err error) {
+	defer func() { err = insertErrorValue(key, err) }()
+
 	if raw == nil {
 		return nil
 	}
@@ -129,7 +135,9 @@ func insertRawInt(values ValuesMap, key string, raw interface{}) error {
 	return nil
 }
 
-func insertRawFloat(values ValuesMap, key string, raw interface{}) error {
+func insertRawFloat(values ValuesMap, key string, raw interface{}) (err error) {
+	defer func() { err = insertErrorValue(key, err) }()
+
 	if raw == nil {
 		return nil
 	}

@@ -17,10 +17,16 @@ func parseVeraDataJson(bodyText []byte) (result *rawResponse, err error) {
 }
 
 func parseSectionsMap(raw []rawSection) (result sectionMap, err error) {
+	var id int
+	defer func() {
+		err = insertErrorArea("Sections", err)
+		err = insertErrorId(id, err)
+	}()
+
 	result = sectionMap{}
 
 	for _, s := range raw {
-		id, err := parseInt(s.Id)
+		id, err = parseInt(s.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -31,10 +37,16 @@ func parseSectionsMap(raw []rawSection) (result sectionMap, err error) {
 }
 
 func parseRoomsMap(raw []rawRoom, sections sectionMap) (result roomMap, err error) {
+	var id int
+	defer func() {
+		err = insertErrorArea("Rooms", err)
+		err = insertErrorId(id, err)
+	}()
+
 	result = roomMap{}
 
 	for _, r := range raw {
-		id, err := parseInt(r.Id)
+		id, err = parseInt(r.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -54,10 +66,16 @@ func parseRoomsMap(raw []rawRoom, sections sectionMap) (result roomMap, err erro
 }
 
 func parseScenesMap(raw []rawScene, rooms roomMap) (result sceneMap, err error) {
+	var id int
+	defer func() {
+		err = insertErrorArea("Scenes", err)
+		err = insertErrorId(id, err)
+	}()
+
 	result = sceneMap{}
 
 	for _, s := range raw {
-		id, err := parseInt(s.Id)
+		id, err = parseInt(s.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -81,10 +99,16 @@ func parseScenesMap(raw []rawScene, rooms roomMap) (result sceneMap, err error) 
 }
 
 func parseCategoryMap(raw []rawCategory) (result categoryMap, err error) {
+	var id int
+	defer func() {
+		err = insertErrorArea("Categories", err)
+		err = insertErrorId(id, err)
+	}()
+
 	result = categoryMap{}
 
 	for _, c := range raw {
-		id, err := parseInt(c.Id)
+		id, err = parseInt(c.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -95,17 +119,23 @@ func parseCategoryMap(raw []rawCategory) (result categoryMap, err error) {
 }
 
 func parseDevicesMap(raw []rawDevice, categories categoryMap, rooms roomMap) (result deviceMap, err error) {
+	var id int
+	defer func() {
+		err = insertErrorArea("Devices", err)
+		err = insertErrorId(id, err)
+	}()
+
 	result = deviceMap{}
 
 	for _, d := range raw {
-		id, err := parseInt(d.Id)
+		id, err = parseInt(d.Id)
 		if err != nil {
-			return nil, err
+			return nil, insertErrorValue("id", err)
 		}
 
 		categoryId, err := parseInt(d.Category)
 		if err != nil {
-			return nil, err
+			return nil, insertErrorValue("category", err)
 		}
 		category, ok := categories[categoryId]
 		if !ok && categoryId != 0 {
@@ -114,13 +144,13 @@ func parseDevicesMap(raw []rawDevice, categories categoryMap, rooms roomMap) (re
 
 		subCategoryId, err := parseInt(d.Subcategory)
 		if err != nil {
-			return nil, err
+			return nil, insertErrorValue("subcategory", err)
 		}
 		subcategory, ok := categories[subCategoryId]
 		// Ignore lookup values. We sometimes get bad subcategoryId's.
 		roomId, err := parseInt(d.Room)
 		if err != nil {
-			return nil, err
+			return nil, insertErrorValue("room", err)
 		}
 		room, ok := rooms[roomId]
 		if !ok {
@@ -184,13 +214,13 @@ func parseVeraData(bodyText []byte) (result *parseResult, err error) {
 
 	// Parse top level values that should always be present.
 	if result.full, err = parseBool(raw.Full); err != nil {
-		return nil, err
+		return nil, insertErrorValue("full", err)
 	}
 	if result.loadtime, err = parseInt(raw.LoadTime); err != nil {
-		return nil, err
+		return nil, insertErrorValue("loadtime", err)
 	}
 	if result.dataversion, err = parseInt(raw.DataVersion); err != nil {
-		return nil, err
+		return nil, insertErrorValue("dateaversion", err)
 	}
 
 	if result.sections, err = parseSectionsMap(raw.Sections); err != nil {
