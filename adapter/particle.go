@@ -228,7 +228,9 @@ OldNames:
 
 func (a particleAdapter) updateDevice(device particleapi.Device) {
 	// Add/update devices that exist.
-	device_details_url := a.adapterUrl + "/core" + "/" + device.Name + "/details"
+	safeName := status.EscapeUriElement(device.Name)
+
+	device_details_url := a.adapterUrl + "/core" + "/" + safeName + "/details"
 
 	wasConnected := a.status.GetBoolWithDefault(device_details_url+"/connected", false)
 

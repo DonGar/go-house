@@ -166,6 +166,9 @@ func (a veraAdapter) updateDevice(device veraapi.Device) {
 		device.Category = "Generic"
 	}
 
+	device.Name = status.EscapeUriElement(device.Name)
+	device.Category = status.EscapeUriElement(device.Category)
+
 	// Add/update devices that exist.
 	device_url := a.adapterUrl + "/" + device.Category + "/" + device.Name
 

@@ -3,7 +3,26 @@ package status
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
+
+func EscapeUriElement(value string) string {
+	// Sometimes we need to use a supplied name as part of a status URL.
+	// The values '/' and '*' can't be casually dropped in.
+
+	mapping := func(v rune) rune {
+		switch v {
+		case '*':
+			return '.'
+		case '/':
+			return '-'
+		default:
+			return v
+		}
+	}
+
+	return strings.Map(mapping, value)
+}
 
 // This is just like Set, except it accepts the value to set in Json format.
 func (s *Status) SetJson(url string, valueJson []byte, revision int) (e error) {

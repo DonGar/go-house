@@ -92,6 +92,14 @@ func (s *MySuite) TestPrettyDump(c *check.C) {
 	c.Check(value, check.Equals, NormalizeJson(compressedJson))
 }
 
+func (s *MySuite) TestEscapeUriElement(c *check.C) {
+	c.Check(EscapeUriElement(""), check.Equals, "")
+	c.Check(EscapeUriElement("FooBar"), check.Equals, "FooBar")
+	c.Check(EscapeUriElement("Foo/Bar"), check.Equals, "Foo-Bar")
+	c.Check(EscapeUriElement("Foo*"), check.Equals, "Foo.")
+	c.Check(EscapeUriElement("/Foo/Bar/*"), check.Equals, "-Foo-Bar-.")
+}
+
 func (s *MySuite) TestGetSubStatus(c *check.C) {
 	testStatus := Status{}
 	e := testStatus.SetJson(URL, []byte(`{"foo":"bar","int":3}`), 0)
