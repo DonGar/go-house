@@ -259,11 +259,12 @@ func (suite *MySuite) TestExpandFileName(c *check.C) {
 	c.Check(expanded, check.Matches, "/tmp/downloads/foo..+.jpg")
 }
 
-func (suite *MySuite) TestEmail(c *check.C) {
+// Needs to be rewritten to not really use the network.
+func (suite *MySuite) NoTestEmail(c *check.C) {
 	s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",
-		"to":      "dgarrett@acm.org",
+		"to":      "bogus@bogus.com",
 		"subject": "Test Subject",
 		"body":    "Test Body",
 	}, 0)
@@ -273,20 +274,21 @@ func (suite *MySuite) TestEmail(c *check.C) {
 	c.Check(e, check.NotNil)
 }
 
-func (suite *MySuite) TestEmailAttached(c *check.C) {
+// Needs to be rewritten to not really use the network.
+func (suite *MySuite) NoTestEmailAttached(c *check.C) {
 	s, a := setupTestBuiltinActionEnv(c)
 	e := a.Set("status://", map[string]interface{}{
 		"action":  "email",
-		"to":      "dgarrett@acm.org",
+		"to":      "bogus@bogus.com",
 		"subject": "Test Subject",
 		"body":    "Test Body",
 		"attachments": []interface{}{
 			map[string]interface{}{
-				"url":           "http://kitchen/snapshot.cgi?user=guest&pwd=",
+				"url":           "http://fake/snapshot.cgi?user=guest&pwd=",
 				"download_name": "kitchen.jpg",
 			},
 			map[string]interface{}{
-				"url":           "http://garage/snapshot.cgi?user=guest&pwd=",
+				"url":           "http://bogus/snapshot.cgi?user=guest&pwd=",
 				"download_name": "garage.jpg",
 			},
 		},
