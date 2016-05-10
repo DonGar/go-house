@@ -43,12 +43,6 @@ func setupTestStatus(c *check.C) (s *status.Status) {
             	"password": "bar"
             }
           },
-          "spark": {
-            "TestSpark": {
-            	"username": "foo2",
-            	"password": "bar2"
-            }
-          },
           "vera": {
             "TestVera": {
               "hostname": "vera_host"

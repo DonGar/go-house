@@ -19,7 +19,6 @@ type Manager struct {
 var adapterFactories = map[string]newAdapter{
 	"base":     newBaseAdapter,
 	"file":     newFileAdapter,
-	"spark":    newParticleAdapter,
 	"particle": newParticleAdapter,
 	"vera":     newVeraAdapter,
 	"web":      newWebAdapter,
