@@ -162,10 +162,10 @@ func parseDevieValues(raw rawDevice, values ValuesMap) (err error) {
 	if err = insertRawFloat(values, "temperature", raw.Temperature); err != nil {
 		return err
 	}
-	if err = insertRawInt(values, "light", raw.Light); err != nil {
+	if err = insertRawFloat(values, "light", raw.Light); err != nil {
 		return err
 	}
-	if err = insertRawInt(values, "humidity", raw.Humidity); err != nil {
+	if err = insertRawFloat(values, "humidity", raw.Humidity); err != nil {
 		return err
 	}
 	if err = insertRawBool(values, "status", raw.Status); err != nil {
