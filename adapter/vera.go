@@ -61,7 +61,7 @@ func (a *veraAdapter) Handler() {
 	for {
 		select {
 		case devices := <-deviceUpdates:
-			log.Printf("Vera: Got devices. %+v\n", devices)
+			log.Printf("Vera: Got updated devices: %d\n", len(devices))
 			a.updateDeviceList(devices)
 
 		case matches := <-a.targetWatch:
